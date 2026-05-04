@@ -1,0 +1,103 @@
+<mat-card appearance="outlined" class="tenants">
+  <mat-card-header>
+    <mat-card-title>Tenant</mat-card-title>
+    <mat-card-subtitle>Tenant associati a questa installation.</mat-card-subtitle>
+    <div class="tenants__header-actions">
+      <button mat-flat-button color="primary" type="button" (click)="openCreate()">
+        <mat-icon>add</mat-icon>
+        Nuovo tenant
+      </button>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content class="tenants__content">
+    <div class="tenants__toolbar">
+      <mat-slide-toggle
+        [checked]="showInactive()"
+        (change)="toggleInactive($event.checked)"
+      >Mostra anche inattivi</mat-slide-toggle>
+      <span class="tenants__spacer"></span>
+      <button
+        mat-icon-button
+        type="button"
+        (click)="reload()"
+        matTooltip="Ricarica"
+        [disabled]="loading()"
+      >
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    @if (errorMessage(); as err) {
+      <p class="tenants__error" role="alert">{{ err }}</p>
+    }
+
+    <div class="tenants__table-wrap">
+      <table mat-table [dataSource]="rows()">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Nome</th>
+          <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="slug">
+          <th mat-header-cell *matHeaderCellDef>Slug</th>
+          <td mat-cell *matCellDef="let row"><code>{{ row.slug }}</code></td>
+        </ng-container>
+
+        <ng-container matColumnDef="active">
+          <th mat-header-cell *matHeaderCellDef>Stato</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.active) {
+              <span class="chip chip--ok">Attivo</span>
+            } @else {
+              <span class="chip chip--off">Inattivo</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Creato il</th>
+          <td mat-cell *matCellDef="let row">{{ row.createdAt | date:'dd/MM/yyyy' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="tenants__actions-col"></th>
+          <td mat-cell *matCellDef="let row" class="tenants__actions-col">
+            <button
+              mat-icon-button
+              type="button"
+              (click)="openTenant(row); $event.stopPropagation()"
+              matTooltip="Apri dettaglio"
+            >
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          class="tenants__row"
+          (click)="openTenant(row)"
+        ></tr>
+
+        <tr *matNoDataRow class="tenants__no-data">
+          <td [attr.colspan]="displayedColumns.length">
+            @if (loading()) {
+              Caricamento in corso…
+            } @else if (errorMessage()) {
+              Impossibile caricare i tenant.
+            } @else {
+              Nessun tenant per questa installation.
+            }
+          </td>
+        </tr>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>

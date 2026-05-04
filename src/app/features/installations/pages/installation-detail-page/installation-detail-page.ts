@@ -38,6 +38,7 @@ import {
   ShowPayloadMasterKeyDialog,
   ShowPayloadMasterKeyDialogData,
 } from '../../dialogs/show-payload-master-key-dialog/show-payload-master-key-dialog';
+import { InstallationTenantsSection } from '../../../tenants/components/installation-tenants-section/installation-tenants-section';
 import { Installation, INSTALLATION_BASE_URL_PATTERN } from '../../models';
 import { InstallationService } from '../../services/installations';
 
@@ -57,6 +58,7 @@ import { InstallationService } from '../../services/installations';
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatDividerModule,
+    InstallationTenantsSection,
   ],
   templateUrl: './installation-detail-page.html',
   styleUrl: './installation-detail-page.scss',

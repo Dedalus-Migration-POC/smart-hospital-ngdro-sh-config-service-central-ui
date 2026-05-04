@@ -1,0 +1,53 @@
+<h2 mat-dialog-title>Nuovo tenant — {{ data.installationName }}</h2>
+
+<mat-dialog-content>
+  @if (errorMessage(); as err) {
+    <p class="dialog-error" role="alert">{{ err }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" id="tenant-create-form" class="dialog-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Slug</mat-label>
+      <input matInput formControlName="slug" required maxlength="100" autocomplete="off" />
+      <mat-hint>Solo lettere minuscole, cifre e trattini. Non modificabile dopo la creazione.</mat-hint>
+      @if (form.controls.slug.touched) {
+        @if (form.controls.slug.hasError('required')) {
+          <mat-error>Lo slug è obbligatorio.</mat-error>
+        } @else if (form.controls.slug.hasError('maxlength')) {
+          <mat-error>Massimo 100 caratteri.</mat-error>
+        } @else if (form.controls.slug.hasError('pattern')) {
+          <mat-error>Solo lettere minuscole, cifre e trattini.</mat-error>
+        }
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nome</mat-label>
+      <input matInput formControlName="name" required maxlength="255" />
+      @if (form.controls.name.touched) {
+        @if (form.controls.name.hasError('required')) {
+          <mat-error>Il nome è obbligatorio.</mat-error>
+        } @else if (form.controls.name.hasError('maxlength')) {
+          <mat-error>Massimo 255 caratteri.</mat-error>
+        }
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()" [disabled]="saving()">Annulla</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="submit"
+    form="tenant-create-form"
+    [disabled]="saving()"
+  >
+    @if (saving()) {
+      <mat-progress-spinner mode="indeterminate" diameter="20" />
+    } @else {
+      Crea
+    }
+  </button>
+</mat-dialog-actions>

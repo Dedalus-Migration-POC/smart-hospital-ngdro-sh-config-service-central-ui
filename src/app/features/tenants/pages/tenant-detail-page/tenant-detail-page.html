@@ -1,0 +1,114 @@
+<section class="detail">
+  <header class="detail__header">
+    <button mat-icon-button type="button" (click)="goToInstallation()" aria-label="Torna alla installation">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="detail__title">
+      <h1>
+        @if (tenant(); as t) {
+          {{ t.name }}
+        } @else if (loading()) {
+          Caricamento…
+        } @else {
+          Tenant
+        }
+      </h1>
+      @if (tenant(); as t) {
+        <p class="detail__subtitle"><code>{{ t.slug }}</code> · ID {{ t.id }}</p>
+      }
+    </div>
+  </header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (errorMessage(); as err) {
+    <div class="detail__error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ err }}</span>
+    </div>
+  }
+
+  @if (tenant(); as t) {
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Dati base</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="form" (ngSubmit)="save()" class="detail__form" id="tenant-edit-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Slug</mat-label>
+            <input matInput [value]="t.slug" disabled />
+            <mat-hint>Lo slug non è modificabile dopo la creazione.</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nome</mat-label>
+            <input matInput formControlName="name" required maxlength="255" />
+            @if (form.controls.name.touched) {
+              @if (form.controls.name.hasError('required')) {
+                <mat-error>Il nome è obbligatorio.</mat-error>
+              } @else if (form.controls.name.hasError('maxlength')) {
+                <mat-error>Massimo 255 caratteri.</mat-error>
+              }
+            }
+          </mat-form-field>
+
+          <mat-slide-toggle formControlName="active">Attivo</mat-slide-toggle>
+
+          <div class="detail__meta">
+            Creato il {{ t.createdAt | date:'dd/MM/yyyy HH:mm' }}
+          </div>
+        </form>
+      </mat-card-content>
+      <mat-card-actions align="end" class="detail__actions">
+        <button
+          mat-button
+          color="warn"
+          type="button"
+          (click)="confirmDelete()"
+          [disabled]="deleting() || saving()"
+        >
+          <mat-icon>delete_outline</mat-icon>
+          Elimina
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          form="tenant-edit-form"
+          [disabled]="saving() || form.invalid || form.pristine"
+        >
+          @if (saving()) {
+            <mat-progress-spinner mode="indeterminate" diameter="20" />
+          } @else {
+            Salva
+          }
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Configurazioni</mat-card-title>
+        <mat-card-subtitle>Configura ogni canale e pusha all'on-prem.</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="detail__configs">
+        <mat-tab-group animationDuration="150ms" class="detail__tabs">
+          @for (ch of channels; track ch) {
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon class="detail__tab-icon">{{ channelIcon(ch) }}</mat-icon>
+                {{ channelLabel(ch) }}
+              </ng-template>
+              <div class="detail__tab-content">
+                <app-config-channel-section [tenantId]="t.id" [channelId]="ch" />
+              </div>
+            </mat-tab>
+          }
+        </mat-tab-group>
+      </mat-card-content>
+    </mat-card>
+  }
+</section>
