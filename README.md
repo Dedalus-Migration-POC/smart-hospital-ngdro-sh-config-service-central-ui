@@ -52,23 +52,31 @@ npm test
 
 Vitest esegue i `*.spec.ts` nel sorgente.
 
-## Struttura cartelle (target)
+## Struttura cartelle
 
 ```
-src/app/
-├── core/                  # interceptor, guard, servizi singleton
-├── shared/                # componenti/pipe/directive riusabili
-└── features/
-    ├── auth/              # login, /auth/me
-    ├── customers/
-    ├── installations/
-    ├── tenants/
-    ├── configs/
-    ├── users/
-    └── audit/
+src/
+├── environments/
+│   ├── environment.ts             # prod (apiBaseUrl: '/api')
+│   └── environment.development.ts # dev  (apiBaseUrl: 'http://localhost:8081/api')
+└── app/
+    ├── core/
+    │   └── auth/                  # AuthService (signal), interceptor JWT, guard
+    ├── features/
+    │   ├── auth/pages/login-page/ # form Material
+    │   └── home/pages/home-page/  # placeholder protetto
+    └── shared/                    # (vuoto, per ora)
 ```
 
-Ogni feature segue `pages/`, `components/`, `services/`, `models/`. Tipi TS allineati ai DTO Java del backend (records → interfaces).
+Le feature di dominio future (customers, installations, tenants, configs, users, audit) seguiranno `pages/`, `components/`, `services/`, `models/`. Tipi TS allineati ai DTO Java del backend (records → interfaces).
+
+## Auth
+
+- Login: `POST /api/auth/login` → `{token, expiresAt}` salvato in `localStorage` (`sh.cs.authToken`, `sh.cs.authTokenExpiresAt`).
+- Identità: `GET /api/auth/me` chiamato dopo il login e dal route guard quando il token è in storage ma il signal è vuoto (caso refresh).
+- Interceptor: attacca `Authorization: Bearer <token>` a tutte le chiamate verso `apiBaseUrl` eccetto `/auth/login`. Su `401` pulisce lo stato e redirige a `/login?returnUrl=...`.
+- Guard: `authGuard` (functional `CanActivateFn`) protegge le route che richiedono utente loggato.
+- Logout: bottone in `HomePage` → `AuthService.logout()` → clear + redirect.
 
 ## Convenzioni
 

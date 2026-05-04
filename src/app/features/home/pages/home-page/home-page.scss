@@ -1,0 +1,19 @@
+.home-shell {
+  min-height: 100dvh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  background: var(--mat-sys-surface-container);
+}
+
+.home-card {
+  width: 100%;
+  max-width: 640px;
+}
+
+.home-hint {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+  margin-top: 12px;
+}

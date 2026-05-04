@@ -88,10 +88,16 @@ password: DedalUs4$!
 ## Convenzioni
 
 - Stessa convenzione del backend: italiano nei messaggi/errori utente, log misti, niente di shouty.
-- Struttura cartelle: `src/app/features/<feature>/{pages,components,services,models}` per ogni dominio (auth, customers, installations, tenants, configs, users, audit).
+- Struttura cartelle:
+  - `src/app/core/<area>/` per servizi singleton, interceptor, guard (es. `core/auth/`).
+  - `src/app/features/<feature>/{pages,components,services,models}` per ogni dominio (customers, installations, tenants, configs, users, audit).
+  - `src/app/shared/` per componenti/pipe/directive riusabili (vuota finché non serve).
+  - `src/environments/` per `environment.ts` (prod default) + `environment.development.ts` (sostituito via fileReplacements).
+- Naming dei file: niente più suffissi `.service.ts` / `.component.ts` (convenzione Angular 19+, vedi scaffold). Una classe per file, nome file = nome classe in kebab-case.
 - API client: un service per dominio, tipi TS allineati ai DTO Java (records → interfaces).
-- Componenti riusabili in `src/app/shared/`.
 - Niente `any` se evitabile.
+- Errori uniformi dal backend: shape `{error: string, timestamp, fieldErrors?}` (vedi `core/auth/models.ts → ApiError`).
+- Auth: token + expiresAt in `localStorage` (chiavi `sh.cs.authToken` / `sh.cs.authTokenExpiresAt`). Stato corrente in `AuthService.currentUser` (signal). Su 401 di chiamate autenticate l'interceptor pulisce e ridireziona a `/login` con `returnUrl`.
 
 ## Preferenze utente da rispettare anche qui
 
@@ -114,8 +120,8 @@ Branch default: `main`. Niente push iniziale finché non c'è uno scaffold pulit
 
 - [x] Scaffold Angular 21 + Angular Material
 - [x] CORS lato backend per dev (commit `26f7fd5` su `sh-config-service-central`)
-- [ ] `environment.ts` con `apiBaseUrl = 'http://localhost:8081/api'` (dev) e `'/api'` (prod)
-- [ ] Modulo auth: login page, JWT interceptor, auth guard, `/auth/me` chiamato dopo login
+- [x] `environment.ts` con `apiBaseUrl` (`/api` in prod, `http://localhost:8081/api` in dev via fileReplacements)
+- [x] Modulo auth: login page Material, JWT interceptor, auth guard, `/auth/me` post-login + idratazione su refresh
 - [ ] Layout admin (sidenav/toolbar Material con username+ruolo+logout, breadcrumb)
 - [ ] Feature per dominio (customers → installations → tenants → configs)
 - [ ] Users + Audit log (ADMIN-only routes)
