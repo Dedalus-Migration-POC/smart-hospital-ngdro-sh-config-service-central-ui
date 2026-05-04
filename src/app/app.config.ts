@@ -1,9 +1,9 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { APP_INITIALIZER, ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, inject, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
-import { TranslateLoader, TranslateService, provideTranslateService } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import { TranslateService, provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { firstValueFrom } from 'rxjs';
 
 import { authInterceptor } from './core/auth/auth-interceptor';
@@ -21,31 +21,28 @@ function detectLang(): SupportedLang {
   return SUPPORTED_LANGS.includes(browserLang as SupportedLang) ? (browserLang as SupportedLang) : 'en';
 }
 
-function initLanguage(translate: TranslateService): () => Promise<void> {
-  return () => {
-    translate.setDefaultLang('it');
-    const lang = detectLang();
-    return firstValueFrom(translate.use(lang)) as unknown as Promise<void>;
-  };
-}
-
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAnimationsAsync(),
-    provideTranslateService({
-      defaultLanguage: 'it',
-      loader: {
-        provide: TranslateLoader,
-        useClass: TranslateHttpLoader,
-      },
-    }),
+    provideTranslateService({ fallbackLang: 'it' }),
+    ...provideTranslateHttpLoader(),
     {
       provide: APP_INITIALIZER,
-      useFactory: initLanguage,
-      deps: [TranslateService],
+      useFactory: () => {
+        const translate = inject(TranslateService);
+        return async () => {
+          translate.setDefaultLang('it');
+          const lang = detectLang();
+          try {
+            await firstValueFrom(translate.use(lang));
+          } catch {
+            // fallback silenzioso
+          }
+        };
+      },
       multi: true,
     },
   ],
