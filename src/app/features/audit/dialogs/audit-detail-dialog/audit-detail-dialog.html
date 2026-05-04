@@ -1,0 +1,66 @@
+<h2 mat-dialog-title>Dettaglio evento audit</h2>
+
+<mat-dialog-content class="audit-detail">
+  <div class="audit-detail__row">
+    <span class="audit-detail__label">Data / ora</span>
+    <span>{{ log.at | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+  </div>
+  <mat-divider />
+
+  <div class="audit-detail__row">
+    <span class="audit-detail__label">Attore</span>
+    <span><strong>{{ log.actorUsername }}</strong> <span class="audit-detail__id">({{ log.actorId }})</span></span>
+  </div>
+  <mat-divider />
+
+  <div class="audit-detail__row">
+    <span class="audit-detail__label">Azione</span>
+    <code class="audit-detail__code">{{ log.action }}</code>
+  </div>
+  <mat-divider />
+
+  <div class="audit-detail__row">
+    <span class="audit-detail__label">Entità</span>
+    <span><code class="audit-detail__code">{{ log.entityType }}</code>
+      @if (log.entityId) { <span class="audit-detail__id">{{ log.entityId }}</span> }
+    </span>
+  </div>
+  <mat-divider />
+
+  <div class="audit-detail__row">
+    <span class="audit-detail__label">Esito</span>
+    @switch (log.outcome) {
+      @case ('SUCCESS') { <span class="chip chip--ok">SUCCESS</span> }
+      @case ('FAILURE') { <span class="chip chip--warn">FAILURE</span> }
+      @default { <span class="chip chip--off">{{ log.outcome }}</span> }
+    }
+  </div>
+
+  @if (log.ipAddress) {
+    <mat-divider />
+    <div class="audit-detail__row">
+      <span class="audit-detail__label">IP</span>
+      <code class="audit-detail__code">{{ log.ipAddress }}</code>
+    </div>
+  }
+
+  @if (log.userAgent) {
+    <mat-divider />
+    <div class="audit-detail__row audit-detail__row--block">
+      <span class="audit-detail__label">User-Agent</span>
+      <span class="audit-detail__ua">{{ log.userAgent }}</span>
+    </div>
+  }
+
+  @if (log.details) {
+    <mat-divider />
+    <div class="audit-detail__row audit-detail__row--block">
+      <span class="audit-detail__label">Dettagli</span>
+      <pre class="audit-detail__json">{{ log.details | json }}</pre>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">Chiudi</button>
+</mat-dialog-actions>

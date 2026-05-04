@@ -1,4 +1,4 @@
-import { DatePipe, JsonPipe, SlicePipe } from '@angular/common';
+import { DatePipe, SlicePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,7 +8,7 @@ import {
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -18,6 +18,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { toUserMessage } from '../../../../core/http/api-error';
+import {
+  AuditDetailDialog,
+} from '../../dialogs/audit-detail-dialog/audit-detail-dialog';
 import { AuditFilter, AuditLog, AuditLogPage } from '../../models';
 import { AuditService } from '../../services/audit';
 
@@ -27,7 +30,6 @@ import { AuditService } from '../../services/audit';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
-    JsonPipe,
     SlicePipe,
     ReactiveFormsModule,
     MatTableModule,
@@ -38,7 +40,6 @@ import { AuditService } from '../../services/audit';
     MatIconModule,
     MatProgressBarModule,
     MatCardModule,
-    MatExpansionModule,
     MatTooltipModule,
   ],
   templateUrl: './audit-page.html',
@@ -46,12 +47,12 @@ import { AuditService } from '../../services/audit';
 })
 export class AuditPage {
   private readonly auditService = inject(AuditService);
+  private readonly dialog = inject(MatDialog);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly result = signal<AuditLogPage | null>(null);
-  readonly expandedRow = signal<AuditLog | null>(null);
 
   readonly pageSize = signal(50);
   readonly pageIndex = signal(0);
@@ -66,7 +67,7 @@ export class AuditPage {
     to: [''],
   });
 
-  readonly displayedColumns = ['at', 'actor', 'action', 'entityType', 'outcome', 'expand'] as const;
+  readonly displayedColumns = ['at', 'actor', 'action', 'entityType', 'outcome', 'detail'] as const;
 
   constructor() {
     this.load();
@@ -89,12 +90,12 @@ export class AuditPage {
     this.load();
   }
 
-  toggleRow(row: AuditLog): void {
-    this.expandedRow.update((cur) => (cur === row ? null : row));
-  }
-
-  isExpanded(row: AuditLog): boolean {
-    return this.expandedRow() === row;
+  openDetail(row: AuditLog): void {
+    this.dialog.open<AuditDetailDialog, AuditLog>(AuditDetailDialog, {
+      data: row,
+      maxWidth: '680px',
+      width: '100%',
+    });
   }
 
   private load(): void {
