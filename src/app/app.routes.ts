@@ -11,11 +11,18 @@ export const routes: Routes = [
   },
   {
     path: '',
-    pathMatch: 'full',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/home/pages/home-page/home-page').then((m) => m.HomePage),
-    title: 'Configuratore centrale',
+      import('./layout/admin-shell/admin-shell').then((m) => m.AdminShell),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./features/home/pages/home-page/home-page').then((m) => m.HomePage),
+        title: 'Configuratore centrale',
+      },
+    ],
   },
   {
     path: '**',

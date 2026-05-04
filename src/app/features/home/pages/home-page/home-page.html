@@ -1,27 +1,21 @@
-<div class="home-shell">
-  <mat-card appearance="outlined" class="home-card">
+<section class="home">
+  <mat-card appearance="outlined" class="home__card">
     <mat-card-header>
-      <mat-card-title>Configuratore centrale</mat-card-title>
-      <mat-card-subtitle>Sei autenticato</mat-card-subtitle>
-    </mat-card-header>
-
-    <mat-card-content>
+      <mat-card-title>Benvenuto</mat-card-title>
       @if (currentUser(); as user) {
-        <p>
-          Utente: <strong>{{ user.username }}</strong>
+        <mat-card-subtitle>
+          Sei collegato come <strong>{{ user.username }}</strong>
           @if (user.role) {
-            — ruolo <strong>{{ user.role }}</strong>
+            con ruolo <strong>{{ user.role }}</strong>
           }
-        </p>
+        </mat-card-subtitle>
       }
-      <p class="home-hint">
-        Da qui in poi verranno aggiunte le sezioni: customer, installation, tenant,
-        configurazioni, utenti, audit log.
+    </mat-card-header>
+    <mat-card-content>
+      <p class="home__hint">
+        Usa il menu a sinistra per navigare tra le sezioni del configuratore.
+        Le voci marcate <em>prossimamente</em> verranno aggiunte nei prossimi step.
       </p>
     </mat-card-content>
-
-    <mat-card-actions align="end">
-      <button mat-stroked-button (click)="logout()">Logout</button>
-    </mat-card-actions>
   </mat-card>
-</div>
+</section>

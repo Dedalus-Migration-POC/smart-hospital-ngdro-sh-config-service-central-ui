@@ -1,0 +1,92 @@
+<mat-sidenav-container class="admin-shell" autosize>
+  <mat-sidenav
+    class="admin-shell__sidenav"
+    [mode]="sidenavMode()"
+    [opened]="sidenavOpened()"
+    (openedChange)="sidenavOpened.set($event)"
+    [fixedInViewport]="isMobile()"
+  >
+    <div class="admin-shell__brand">
+      <mat-icon class="admin-shell__brand-icon">settings_suggest</mat-icon>
+      <div class="admin-shell__brand-text">
+        <span class="admin-shell__brand-title">SmartHospital</span>
+        <span class="admin-shell__brand-subtitle">Configuratore centrale</span>
+      </div>
+    </div>
+
+    <mat-divider />
+
+    <mat-nav-list class="admin-shell__nav">
+      @for (item of visibleNavItems(); track item.label) {
+        @if (item.path) {
+          <a
+            mat-list-item
+            [routerLink]="item.path"
+            routerLinkActive="admin-shell__nav-item--active"
+            [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+            (click)="onNavClick()"
+          >
+            <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label }}</span>
+          </a>
+        } @else {
+          <mat-list-item disabled class="admin-shell__nav-item--placeholder">
+            <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label }}</span>
+            <span matListItemMeta class="admin-shell__nav-item-meta">prossimamente</span>
+          </mat-list-item>
+        }
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="admin-shell__content">
+    <mat-toolbar color="primary" class="admin-shell__toolbar">
+      <button
+        mat-icon-button
+        type="button"
+        (click)="toggleSidenav()"
+        aria-label="Apri o chiudi il menu di navigazione"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <span class="admin-shell__toolbar-title">Configuratore centrale</span>
+
+      <span class="admin-shell__toolbar-spacer"></span>
+
+      @if (currentUser(); as user) {
+        <button
+          mat-button
+          type="button"
+          [matMenuTriggerFor]="userMenu"
+          class="admin-shell__user"
+          aria-label="Menu utente"
+        >
+          <mat-icon>account_circle</mat-icon>
+          <span class="admin-shell__user-name">{{ user.username }}</span>
+          @if (user.role) {
+            <span class="admin-shell__user-role">{{ user.role }}</span>
+          }
+        </button>
+        <mat-menu #userMenu="matMenu" xPosition="before">
+          <div class="admin-shell__user-menu-header" mat-menu-item disabled>
+            <strong>{{ user.username }}</strong>
+            @if (user.role) {
+              <small>ruolo {{ user.role }}</small>
+            }
+          </div>
+          <mat-divider />
+          <button mat-menu-item type="button" (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      }
+    </mat-toolbar>
+
+    <main class="admin-shell__main">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,141 @@
+:host {
+  display: block;
+  height: 100dvh;
+}
+
+.admin-shell {
+  height: 100%;
+  background: var(--mat-sys-surface-container);
+}
+
+.admin-shell__sidenav {
+  width: 260px;
+  background: var(--mat-sys-surface);
+  border-right: 1px solid var(--mat-sys-outline-variant);
+}
+
+.admin-shell__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px;
+}
+
+.admin-shell__brand-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  color: var(--mat-sys-primary);
+}
+
+.admin-shell__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.admin-shell__brand-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.admin-shell__brand-subtitle {
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.admin-shell__nav {
+  padding-top: 8px;
+}
+
+.admin-shell__nav-item--active {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+
+  mat-icon {
+    color: var(--mat-sys-on-secondary-container);
+  }
+}
+
+.admin-shell__nav-item-meta {
+  font-size: 0.7rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-shell__content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.admin-shell__toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  gap: 8px;
+}
+
+.admin-shell__toolbar-title {
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-shell__toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.admin-shell__user {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-shell__user-name {
+  font-weight: 500;
+}
+
+.admin-shell__user-role {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-shell__user-menu-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.3;
+  gap: 2px;
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.admin-shell__main {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 24px;
+}
+
+@media (max-width: 599px) {
+  .admin-shell__main {
+    padding: 16px;
+  }
+
+  .admin-shell__user-name,
+  .admin-shell__user-role {
+    display: none;
+  }
+}

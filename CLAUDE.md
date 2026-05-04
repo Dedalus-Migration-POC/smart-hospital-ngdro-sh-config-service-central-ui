@@ -90,6 +90,7 @@ password: DedalUs4$!
 - Stessa convenzione del backend: italiano nei messaggi/errori utente, log misti, niente di shouty.
 - Struttura cartelle:
   - `src/app/core/<area>/` per servizi singleton, interceptor, guard (es. `core/auth/`).
+  - `src/app/layout/` per la shell admin (sidenav + toolbar) e altri layout di pagina condivisi.
   - `src/app/features/<feature>/{pages,components,services,models}` per ogni dominio (customers, installations, tenants, configs, users, audit).
   - `src/app/shared/` per componenti/pipe/directive riusabili (vuota finché non serve).
   - `src/environments/` per `environment.ts` (prod default) + `environment.development.ts` (sostituito via fileReplacements).
@@ -98,6 +99,8 @@ password: DedalUs4$!
 - Niente `any` se evitabile.
 - Errori uniformi dal backend: shape `{error: string, timestamp, fieldErrors?}` (vedi `core/auth/models.ts → ApiError`).
 - Auth: token + expiresAt in `localStorage` (chiavi `sh.cs.authToken` / `sh.cs.authTokenExpiresAt`). Stato corrente in `AuthService.currentUser` (signal). Su 401 di chiamate autenticate l'interceptor pulisce e ridireziona a `/login` con `returnUrl`.
+- Routing: `/login` è una route bare (no shell). Tutto il resto è child di una route `''` che monta `AdminShell` con `canActivate: [authGuard]`. Le nuove sezioni vanno aggiunte come children di quella, in modo che ereditino sidenav e toolbar.
+- Sidenav: `AdminShell.navItems` è la fonte di verità per il menu di sinistra. Item con `path` cliccabili, item senza `path` mostrati come "prossimamente". Aggiungere il `path` (e creare la route relativa) man mano che le sezioni vengono implementate.
 
 ## Preferenze utente da rispettare anche qui
 
@@ -122,7 +125,7 @@ Branch default: `main`. Niente push iniziale finché non c'è uno scaffold pulit
 - [x] CORS lato backend per dev (commit `26f7fd5` su `sh-config-service-central`)
 - [x] `environment.ts` con `apiBaseUrl` (`/api` in prod, `http://localhost:8081/api` in dev via fileReplacements)
 - [x] Modulo auth: login page Material, JWT interceptor, auth guard, `/auth/me` post-login + idratazione su refresh
-- [ ] Layout admin (sidenav/toolbar Material con username+ruolo+logout, breadcrumb)
+- [x] Layout admin (`AdminShell`: sidenav responsive + toolbar con utente/ruolo/logout, nav items con placeholder per le sezioni future, filtraggio per ruolo)
 - [ ] Feature per dominio (customers → installations → tenants → configs)
 - [ ] Users + Audit log (ADMIN-only routes)
 - [ ] Build di produzione + Dockerfile + Jenkinsfile (`buildNode` se shared lib disponibile)

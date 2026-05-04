@@ -62,13 +62,15 @@ src/
 └── app/
     ├── core/
     │   └── auth/                  # AuthService (signal), interceptor JWT, guard
+    ├── layout/
+    │   └── admin-shell/           # sidenav + toolbar, parent delle route protette
     ├── features/
-    │   ├── auth/pages/login-page/ # form Material
-    │   └── home/pages/home-page/  # placeholder protetto
+    │   ├── auth/pages/login-page/ # form Material (route bare /login)
+    │   └── home/pages/home-page/  # contenuto home dentro la shell
     └── shared/                    # (vuoto, per ora)
 ```
 
-Le feature di dominio future (customers, installations, tenants, configs, users, audit) seguiranno `pages/`, `components/`, `services/`, `models/`. Tipi TS allineati ai DTO Java del backend (records → interfaces).
+Le feature di dominio future (customers, installations, tenants, configs, users, audit) andranno come **children** della route che monta `AdminShell`, così ereditano sidenav e toolbar. Tipi TS allineati ai DTO Java del backend (records → interfaces).
 
 ## Auth
 
@@ -76,7 +78,15 @@ Le feature di dominio future (customers, installations, tenants, configs, users,
 - Identità: `GET /api/auth/me` chiamato dopo il login e dal route guard quando il token è in storage ma il signal è vuoto (caso refresh).
 - Interceptor: attacca `Authorization: Bearer <token>` a tutte le chiamate verso `apiBaseUrl` eccetto `/auth/login`. Su `401` pulisce lo stato e redirige a `/login?returnUrl=...`.
 - Guard: `authGuard` (functional `CanActivateFn`) protegge le route che richiedono utente loggato.
-- Logout: bottone in `HomePage` → `AuthService.logout()` → clear + redirect.
+- Logout: dal menu utente nella toolbar dell'`AdminShell` → `AuthService.logout()` → clear + redirect.
+
+## Layout admin
+
+- `AdminShell` (`src/app/layout/admin-shell/`) è la shell per tutte le route protette.
+- Sidenav responsive: `mode="side"` e aperta su desktop (≥960px), `mode="over"` e chiusa su mobile, toggle dall'hamburger nella toolbar.
+- Toolbar in alto con titolo, username + ruolo (badge) e menu utente con logout.
+- Voci di navigazione definite in `AdminShell.navItems`: ogni voce ha `icon`, `label`, opzionale `path` (se mancante è un placeholder "prossimamente") e opzionale `requiredRole` (oggi filtra per `ADMIN`).
+- Per aggiungere una nuova sezione: 1) crea la feature in `src/app/features/<nome>/`, 2) aggiungi una child route in `app.routes.ts` sotto la route che monta `AdminShell`, 3) imposta il `path` corrispondente sulla voce di `navItems`.
 
 ## Convenzioni
 
