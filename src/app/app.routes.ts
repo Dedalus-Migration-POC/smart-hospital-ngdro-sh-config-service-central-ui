@@ -22,6 +22,11 @@ export const routes: Routes = [
           import('./features/home/pages/home-page/home-page').then((m) => m.HomePage),
         title: 'Configuratore centrale',
       },
+      {
+        path: 'customers',
+        loadChildren: () =>
+          import('./features/customers/customers.routes').then((m) => m.customersRoutes),
+      },
     ],
   },
   {

@@ -18,12 +18,5 @@ export interface CurrentUser {
   role: string | null;
 }
 
-/** Shape uniforme degli errori dal backend (vedi GlobalExceptionHandler). */
-export interface ApiError {
-  error: string;
-  timestamp?: string;
-  fieldErrors?: Record<string, string>;
-}
-
 export const AUTH_TOKEN_KEY = 'sh.cs.authToken';
 export const AUTH_TOKEN_EXPIRES_AT_KEY = 'sh.cs.authTokenExpiresAt';

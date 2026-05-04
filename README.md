@@ -66,8 +66,15 @@ src/
     │   └── admin-shell/           # sidenav + toolbar, parent delle route protette
     ├── features/
     │   ├── auth/pages/login-page/ # form Material (route bare /login)
-    │   └── home/pages/home-page/  # contenuto home dentro la shell
-    └── shared/                    # (vuoto, per ora)
+    │   ├── home/pages/home-page/  # contenuto home dentro la shell
+    │   └── customers/             # feature di dominio: lista + dettaglio + create dialog
+    │       ├── customers.routes.ts
+    │       ├── models.ts
+    │       ├── services/customers.ts
+    │       ├── pages/{customers-page,customer-detail-page}/
+    │       └── dialogs/customer-create-dialog/
+    └── shared/
+        └── dialogs/confirm-dialog/  # dialog di conferma OK/Annulla riusabile
 ```
 
 Le feature di dominio future (customers, installations, tenants, configs, users, audit) andranno come **children** della route che monta `AdminShell`, così ereditano sidenav e toolbar. Tipi TS allineati ai DTO Java del backend (records → interfaces).

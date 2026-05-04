@@ -97,10 +97,13 @@ password: DedalUs4$!
 - Naming dei file: niente più suffissi `.service.ts` / `.component.ts` (convenzione Angular 19+, vedi scaffold). Una classe per file, nome file = nome classe in kebab-case.
 - API client: un service per dominio, tipi TS allineati ai DTO Java (records → interfaces).
 - Niente `any` se evitabile.
-- Errori uniformi dal backend: shape `{error: string, timestamp, fieldErrors?}` (vedi `core/auth/models.ts → ApiError`).
+- Errori uniformi dal backend: shape `{error: string, timestamp, fieldErrors?}` (vedi `core/http/api-error.ts → ApiError`). Estrazione del messaggio user-facing tramite `toUserMessage(err, fallback?)` dello stesso modulo — usalo ovunque devi mostrare un errore HTTP all'utente (snackbar / inline).
 - Auth: token + expiresAt in `localStorage` (chiavi `sh.cs.authToken` / `sh.cs.authTokenExpiresAt`). Stato corrente in `AuthService.currentUser` (signal). Su 401 di chiamate autenticate l'interceptor pulisce e ridireziona a `/login` con `returnUrl`.
 - Routing: `/login` è una route bare (no shell). Tutto il resto è child di una route `''` che monta `AdminShell` con `canActivate: [authGuard]`. Le nuove sezioni vanno aggiunte come children di quella, in modo che ereditino sidenav e toolbar.
 - Sidenav: `AdminShell.navItems` è la fonte di verità per il menu di sinistra. Item con `path` cliccabili, item senza `path` mostrati come "prossimamente". Aggiungere il `path` (e creare la route relativa) man mano che le sezioni vengono implementate.
+- Feature di dominio: ogni feature è un sottoalbero `src/app/features/<nome>/` con `pages/`, `services/`, `models.ts`, `dialogs/` (se servono dialog dedicati), e un file `<nome>.routes.ts` che esporta le routes della feature. Wire-up: `loadChildren` su una child route dell'`AdminShell` in `app.routes.ts` + path corrispondente nei `navItems`. Esempio di riferimento: `features/customers/`.
+- Componenti riusabili tra più feature → `src/app/shared/` (es. `shared/dialogs/confirm-dialog/` per i conferma OK/Annulla).
+- Per messaggi utente di esito (success/error) usare `MatSnackBar` (default Material): inject e `snackbar.open(testo, 'OK', { duration: 3000-6000 })`. Errori: 6000ms; conferme: 3000-4000ms.
 
 ## Preferenze utente da rispettare anche qui
 
@@ -126,7 +129,8 @@ Branch default: `main`. Niente push iniziale finché non c'è uno scaffold pulit
 - [x] `environment.ts` con `apiBaseUrl` (`/api` in prod, `http://localhost:8081/api` in dev via fileReplacements)
 - [x] Modulo auth: login page Material, JWT interceptor, auth guard, `/auth/me` post-login + idratazione su refresh
 - [x] Layout admin (`AdminShell`: sidenav responsive + toolbar con utente/ruolo/logout, nav items con placeholder per le sezioni future, filtraggio per ruolo)
-- [ ] Feature per dominio (customers → installations → tenants → configs)
+- [x] Feature **Customer**: lista (mat-table, search, sort, paginator, toggle inattivi), create dialog, detail page con edit + soft delete (confirm dialog condiviso)
+- [ ] Feature per dominio rimanenti (installations → tenants → configs)
 - [ ] Users + Audit log (ADMIN-only routes)
 - [ ] Build di produzione + Dockerfile + Jenkinsfile (`buildNode` se shared lib disponibile)
 

@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,7 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService } from '../../../../core/auth/auth';
-import { ApiError } from '../../../../core/auth/models';
+import { toUserMessage } from '../../../../core/http/api-error';
 
 @Component({
   selector: 'app-login-page',
@@ -56,24 +55,8 @@ export class LoginPage {
       },
       error: (err: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set(this.toMessage(err));
+        this.errorMessage.set(toUserMessage(err, 'Errore inatteso durante il login.'));
       },
     });
-  }
-
-  private toMessage(err: unknown): string {
-    if (err instanceof HttpErrorResponse) {
-      if (err.status === 0) {
-        return 'Backend non raggiungibile. Verifica che sh-config-service-central sia in esecuzione.';
-      }
-      const body = err.error as ApiError | string | null;
-      if (body && typeof body === 'object' && typeof body.error === 'string') {
-        return body.error;
-      }
-      if (typeof body === 'string' && body.length > 0) {
-        return body;
-      }
-    }
-    return 'Errore inatteso durante il login.';
   }
 }
