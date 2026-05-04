@@ -1,0 +1,118 @@
+<section class="detail">
+  <header class="detail__header">
+    <a mat-icon-button routerLink="/users" aria-label="Torna alla lista utenti">
+      <mat-icon>arrow_back</mat-icon>
+    </a>
+    <div class="detail__title">
+      <h1>
+        @if (user(); as u) {
+          {{ u.username }}
+        } @else if (loading()) {
+          Caricamento…
+        } @else {
+          Utente
+        }
+      </h1>
+      @if (user(); as u) {
+        <p class="detail__subtitle">ID {{ u.id }}</p>
+      }
+    </div>
+  </header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (errorMessage(); as err) {
+    <div class="detail__error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ err }}</span>
+    </div>
+  }
+
+  @if (user(); as u) {
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Dati utente</mat-card-title>
+        @if (isSelf()) {
+          <mat-card-subtitle>Stai modificando il tuo account.</mat-card-subtitle>
+        }
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="form" (ngSubmit)="save()" class="detail__form" id="user-edit-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Username</mat-label>
+            <input matInput [value]="u.username" disabled />
+            <mat-hint>Lo username non è modificabile.</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Ruolo</mat-label>
+            <mat-select formControlName="role" required>
+              @for (r of availableRoles; track r) {
+                <mat-option [value]="r">{{ r }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-slide-toggle formControlName="active">Attivo</mat-slide-toggle>
+
+          <div class="detail__meta">
+            Creato il {{ u.createdAt | date:'dd/MM/yyyy HH:mm' }} ·
+            Aggiornato il {{ u.updatedAt | date:'dd/MM/yyyy HH:mm' }}
+          </div>
+        </form>
+      </mat-card-content>
+      <mat-card-actions align="end" class="detail__actions">
+        @if (!isSelf()) {
+          <button
+            mat-button
+            color="warn"
+            type="button"
+            (click)="confirmDelete()"
+            [disabled]="deleting() || saving()"
+          >
+            <mat-icon>delete_outline</mat-icon>
+            Elimina
+          </button>
+        }
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          form="user-edit-form"
+          [disabled]="saving() || form.invalid || form.pristine"
+        >
+          @if (saving()) {
+            <mat-progress-spinner mode="indeterminate" diameter="20" />
+          } @else {
+            Salva
+          }
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Sicurezza</mat-card-title>
+        <mat-card-subtitle>
+          @if (isSelf()) {
+            Cambia la tua password.
+          } @else {
+            Reset password (admin). Non è richiesta la password attuale.
+          }
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-actions>
+        <button mat-stroked-button type="button" (click)="openChangePassword()">
+          <mat-icon>lock_reset</mat-icon>
+          @if (isSelf()) {
+            Cambia password
+          } @else {
+            Reset password
+          }
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  }
+</section>

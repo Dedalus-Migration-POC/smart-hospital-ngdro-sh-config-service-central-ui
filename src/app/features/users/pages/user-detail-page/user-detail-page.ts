@@ -1,0 +1,192 @@
+import { DatePipe } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { RouterLink } from '@angular/router';
+
+import { AuthService } from '../../../../core/auth/auth';
+import { toUserMessage } from '../../../../core/http/api-error';
+import {
+  ConfirmDialog,
+  ConfirmDialogData,
+} from '../../../../shared/dialogs/confirm-dialog/confirm-dialog';
+import {
+  ChangePasswordDialog,
+  ChangePasswordDialogData,
+} from '../../dialogs/change-password-dialog/change-password-dialog';
+import { AVAILABLE_ROLES, User } from '../../models';
+import { UserService } from '../../services/users';
+
+@Component({
+  selector: 'app-user-detail-page',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    DatePipe,
+    RouterLink,
+    ReactiveFormsModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatIconModule,
+    MatSlideToggleModule,
+    MatProgressBarModule,
+    MatProgressSpinnerModule,
+  ],
+  templateUrl: './user-detail-page.html',
+  styleUrl: './user-detail-page.scss',
+})
+export class UserDetailPage {
+  readonly id = input.required<string>();
+
+  private readonly fb = inject(FormBuilder);
+  private readonly userService = inject(UserService);
+  private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackbar = inject(MatSnackBar);
+
+  readonly loading = signal(false);
+  readonly saving = signal(false);
+  readonly deleting = signal(false);
+  readonly errorMessage = signal<string | null>(null);
+  readonly user = signal<User | null>(null);
+
+  readonly availableRoles = AVAILABLE_ROLES;
+
+  readonly isSelf = computed(() => {
+    const u = this.user();
+    const current = this.auth.currentUser();
+    return !!u && !!current && u.username === current.username;
+  });
+
+  readonly form = this.fb.nonNullable.group({
+    role: ['ADMIN', [Validators.required]],
+    active: [true],
+  });
+
+  constructor() {
+    effect(() => {
+      const id = this.id();
+      this.load(id);
+    });
+  }
+
+  private load(id: string): void {
+    this.loading.set(true);
+    this.errorMessage.set(null);
+    this.userService.get(id).subscribe({
+      next: (user) => {
+        this.user.set(user);
+        this.form.reset({ role: user.role, active: user.active });
+        this.loading.set(false);
+      },
+      error: (err: unknown) => {
+        this.user.set(null);
+        this.loading.set(false);
+        this.errorMessage.set(toUserMessage(err, 'Impossibile caricare l\'utente.'));
+      },
+    });
+  }
+
+  save(): void {
+    const u = this.user();
+    if (!u || this.form.invalid || this.saving()) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.saving.set(true);
+    const v = this.form.getRawValue();
+    this.userService.update(u.id, { role: v.role, active: v.active }).subscribe({
+      next: (updated) => {
+        this.user.set(updated);
+        this.form.reset({ role: updated.role, active: updated.active });
+        this.saving.set(false);
+        this.snackbar.open('Modifiche salvate.', 'OK', { duration: 3000 });
+      },
+      error: (err: unknown) => {
+        this.saving.set(false);
+        this.snackbar.open(
+          toUserMessage(err, 'Impossibile salvare le modifiche.'),
+          'OK',
+          { duration: 6000 },
+        );
+      },
+    });
+  }
+
+  openChangePassword(): void {
+    const u = this.user();
+    if (!u) return;
+    const data: ChangePasswordDialogData = {
+      userId: u.id,
+      username: u.username,
+      isSelf: this.isSelf(),
+    };
+    const ref = this.dialog.open<ChangePasswordDialog, ChangePasswordDialogData, boolean>(
+      ChangePasswordDialog,
+      { data, autoFocus: 'first-tabbable', width: '420px' },
+    );
+    ref.afterClosed().subscribe((changed) => {
+      if (changed) {
+        this.snackbar.open('Password aggiornata.', 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  confirmDelete(): void {
+    const u = this.user();
+    if (!u) return;
+    const data: ConfirmDialogData = {
+      title: `Eliminare l'utente "${u.username}"?`,
+      message: 'L\'utente verrà disattivato (soft delete). Continuare?',
+      confirmLabel: 'Elimina',
+      destructive: true,
+    };
+    const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, {
+      data,
+    });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) this.delete(u);
+    });
+  }
+
+  private delete(u: User): void {
+    this.deleting.set(true);
+    this.userService.delete(u.id).subscribe({
+      next: () => {
+        this.deleting.set(false);
+        this.snackbar.open(`Utente "${u.username}" disattivato.`, 'OK', { duration: 4000 });
+        // ricarica per riflettere lo stato aggiornato
+        this.load(u.id);
+      },
+      error: (err: unknown) => {
+        this.deleting.set(false);
+        this.snackbar.open(
+          toUserMessage(err, 'Impossibile eliminare l\'utente.'),
+          'OK',
+          { duration: 6000 },
+        );
+      },
+    });
+  }
+}

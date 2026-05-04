@@ -1,0 +1,74 @@
+<h2 mat-dialog-title>Nuovo utente</h2>
+
+<mat-dialog-content>
+  @if (errorMessage(); as err) {
+    <p class="dialog-error" role="alert">{{ err }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" id="user-create-form" class="dialog-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Username</mat-label>
+      <input matInput formControlName="username" required maxlength="100" autocomplete="off" />
+      <mat-hint>Lettere, cifre, '.', '_', '-'. Non modificabile dopo la creazione.</mat-hint>
+      @if (form.controls.username.touched) {
+        @if (form.controls.username.hasError('required')) {
+          <mat-error>Lo username è obbligatorio.</mat-error>
+        } @else if (form.controls.username.hasError('maxlength')) {
+          <mat-error>Massimo 100 caratteri.</mat-error>
+        } @else if (form.controls.username.hasError('pattern')) {
+          <mat-error>Solo lettere, cifre, '.', '_', '-'.</mat-error>
+        }
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Password</mat-label>
+      <input
+        matInput
+        formControlName="password"
+        [type]="showPassword() ? 'text' : 'password'"
+        required
+        maxlength="128"
+        autocomplete="new-password"
+      />
+      <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()" tabindex="-1">
+        <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      @if (form.controls.password.touched) {
+        @if (form.controls.password.hasError('required')) {
+          <mat-error>La password è obbligatoria.</mat-error>
+        } @else if (form.controls.password.hasError('minlength')) {
+          <mat-error>Almeno 8 caratteri.</mat-error>
+        } @else if (form.controls.password.hasError('maxlength')) {
+          <mat-error>Massimo 128 caratteri.</mat-error>
+        }
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Ruolo</mat-label>
+      <mat-select formControlName="role" required>
+        @for (r of availableRoles; track r) {
+          <mat-option [value]="r">{{ r }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()" [disabled]="saving()">Annulla</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="submit"
+    form="user-create-form"
+    [disabled]="saving()"
+  >
+    @if (saving()) {
+      <mat-progress-spinner mode="indeterminate" diameter="20" />
+    } @else {
+      Crea
+    }
+  </button>
+</mat-dialog-actions>

@@ -70,8 +70,8 @@ export class AdminShell {
     { icon: 'dns', label: 'Installation' },
     { icon: 'domain', label: 'Tenant' },
     { icon: 'settings', label: 'Configurazioni' },
-    { icon: 'people', label: 'Utenti', requiredRole: 'ADMIN' },
-    { icon: 'receipt_long', label: 'Audit log', requiredRole: 'ADMIN' },
+    { icon: 'people', label: 'Utenti', path: '/users', requiredRole: 'ADMIN' },
+    { icon: 'receipt_long', label: 'Audit log', path: '/audit', requiredRole: 'ADMIN' },
   ];
 
   readonly visibleNavItems = computed(() => {

@@ -37,6 +37,16 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/tenants/tenants.routes').then((m) => m.tenantsRoutes),
       },
+      {
+        path: 'users',
+        loadChildren: () =>
+          import('./features/users/users.routes').then((m) => m.usersRoutes),
+      },
+      {
+        path: 'audit',
+        loadChildren: () =>
+          import('./features/audit/audit.routes').then((m) => m.auditRoutes),
+      },
     ],
   },
   {

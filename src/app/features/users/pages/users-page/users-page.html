@@ -1,0 +1,113 @@
+<section class="users">
+  <header class="users__header">
+    <h1 class="users__title">Utenti</h1>
+    <button mat-flat-button color="primary" type="button" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      Nuovo utente
+    </button>
+  </header>
+
+  <div class="users__toolbar">
+    <mat-form-field appearance="outline" class="users__search">
+      <mat-label>Cerca username</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [formControl]="searchControl" />
+    </mat-form-field>
+
+    <mat-slide-toggle
+      [checked]="showInactive()"
+      (change)="toggleInactive($event.checked)"
+    >Mostra anche inattivi</mat-slide-toggle>
+
+    <span class="users__spacer"></span>
+
+    <button
+      mat-icon-button
+      type="button"
+      (click)="reload()"
+      matTooltip="Ricarica"
+      [disabled]="loading()"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (errorMessage(); as err) {
+    <div class="users__error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ err }}</span>
+    </div>
+  }
+
+  <div class="users__table-wrap">
+    <table mat-table [dataSource]="dataSource" matSort>
+      <ng-container matColumnDef="username">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Username</th>
+        <td mat-cell *matCellDef="let row"><strong>{{ row.username }}</strong></td>
+      </ng-container>
+
+      <ng-container matColumnDef="role">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ruolo</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="chip chip--primary">{{ row.role }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="active">
+        <th mat-header-cell *matHeaderCellDef>Stato</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.active) {
+            <span class="chip chip--ok">Attivo</span>
+          } @else {
+            <span class="chip chip--off">Inattivo</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Creato il</th>
+        <td mat-cell *matCellDef="let row">{{ row.createdAt | date:'dd/MM/yyyy' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="users__actions-col"></th>
+        <td mat-cell *matCellDef="let row" class="users__actions-col">
+          <button
+            mat-icon-button
+            type="button"
+            (click)="openUser(row); $event.stopPropagation()"
+            matTooltip="Apri dettaglio"
+          >
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="users__row"
+        (click)="openUser(row)"
+      ></tr>
+
+      <tr *matNoDataRow class="users__no-data">
+        <td [attr.colspan]="displayedColumns.length">
+          @if (loading()) {
+            Caricamento in corso…
+          } @else if (searchControl.value) {
+            Nessun utente corrisponde alla ricerca.
+          } @else {
+            Nessun utente trovato.
+          }
+        </td>
+      </tr>
+    </table>
+
+    <mat-paginator [pageSizeOptions]="[25, 50, 100]" showFirstLastButtons />
+  </div>
+</section>
