@@ -4,15 +4,10 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { TranslateLoader, TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
 import { authInterceptor } from './core/auth/auth-interceptor';
 import { routes } from './app.routes';
-
-function createTranslateLoader(http: HttpClient): TranslateHttpLoader {
-  return new TranslateHttpLoader(http, './assets/i18n/', '.json');
-}
 
 const SUPPORTED_LANGS = ['it', 'en'] as const;
 type SupportedLang = (typeof SUPPORTED_LANGS)[number];
@@ -30,7 +25,7 @@ function initLanguage(translate: TranslateService): () => Promise<void> {
   return () => {
     translate.setDefaultLang('it');
     const lang = detectLang();
-    return firstValueFrom(translate.use(lang)) as Promise<void>;
+    return firstValueFrom(translate.use(lang)) as unknown as Promise<void>;
   };
 }
 
@@ -44,8 +39,7 @@ export const appConfig: ApplicationConfig = {
       defaultLanguage: 'it',
       loader: {
         provide: TranslateLoader,
-        useFactory: createTranslateLoader,
-        deps: [HttpClient],
+        useClass: TranslateHttpLoader,
       },
     }),
     {
