@@ -68,7 +68,7 @@ function jsonValidator(): ValidatorFn {
   };
 }
 
-const ENTITY_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+const ENTITY_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 
 @Component({
   selector: 'app-config-channel-section',
