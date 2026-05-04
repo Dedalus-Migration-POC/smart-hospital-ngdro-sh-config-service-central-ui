@@ -27,6 +27,7 @@ import {
   ConfirmDialog,
   ConfirmDialogData,
 } from '../../../../shared/dialogs/confirm-dialog/confirm-dialog';
+import { CustomerInstallationsSection } from '../../../installations/components/customer-installations-section/customer-installations-section';
 import { Customer } from '../../models';
 import { CustomerService } from '../../services/customers';
 
@@ -47,6 +48,7 @@ import { CustomerService } from '../../services/customers';
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatDividerModule,
+    CustomerInstallationsSection,
   ],
   templateUrl: './customer-detail-page.html',
   styleUrl: './customer-detail-page.scss',

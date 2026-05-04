@@ -1,0 +1,168 @@
+<mat-card appearance="outlined" class="installations">
+  <mat-card-header>
+    <mat-card-title>Installation</mat-card-title>
+    <mat-card-subtitle>On-prem associate a questo customer.</mat-card-subtitle>
+    <div class="installations__header-actions">
+      <button mat-flat-button color="primary" type="button" (click)="openCreate()">
+        <mat-icon>add</mat-icon>
+        Nuova installation
+      </button>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content class="installations__content">
+    @if (newKeyAlert(); as alert) {
+      <div class="installations__key-alert" role="alert">
+        <mat-icon>vpn_key</mat-icon>
+        <div class="installations__key-alert-body">
+          <div class="installations__key-alert-title">
+            Payload master key generata per <strong>{{ alert.installationName }}</strong>
+          </div>
+          <p>
+            Il central ha generato una nuova chiave AES-256. Copiala subito nell'on-prem
+            (env <code>CRYPTO_MASTER_KEY</code>) — puoi sempre ricavarla dal dettaglio dell'installation,
+            ma è comodo farlo ora.
+          </p>
+          <div class="installations__key-alert-key">
+            <code>{{ alert.key }}</code>
+            <button mat-icon-button type="button" (click)="copyAlertKey()" aria-label="Copia">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+        </div>
+        <button mat-icon-button type="button" (click)="dismissAlert()" aria-label="Nascondi">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    }
+
+    <div class="installations__toolbar">
+      <mat-slide-toggle
+        [checked]="showInactive()"
+        (change)="toggleInactive($event.checked)"
+      >Mostra anche inattive</mat-slide-toggle>
+      <span class="installations__spacer"></span>
+      <button
+        mat-icon-button
+        type="button"
+        (click)="reload()"
+        matTooltip="Ricarica"
+        [disabled]="loading()"
+      >
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    @if (errorMessage(); as err) {
+      <p class="installations__error" role="alert">{{ err }}</p>
+    }
+
+    <div class="installations__table-wrap">
+      <table mat-table [dataSource]="rows()">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Nome</th>
+          <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="baseUrl">
+          <th mat-header-cell *matHeaderCellDef>URL base</th>
+          <td mat-cell *matCellDef="let row"><code>{{ row.baseUrl }}</code></td>
+        </ng-container>
+
+        <ng-container matColumnDef="security">
+          <th mat-header-cell *matHeaderCellDef>Sicurezza</th>
+          <td mat-cell *matCellDef="let row">
+            <span
+              class="chip"
+              [class.chip--ok]="row.apiKeyConfigured"
+              [class.chip--off]="!row.apiKeyConfigured"
+              matTooltip="API key di scrittura"
+            >api</span>
+            <span
+              class="chip"
+              [class.chip--ok]="row.payloadMasterKeyConfigured"
+              [class.chip--off]="!row.payloadMasterKeyConfigured"
+              matTooltip="Payload master key"
+            >key</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="sync">
+          <th mat-header-cell *matHeaderCellDef>Sync</th>
+          <td mat-cell *matCellDef="let row">
+            @if (!row.lastSyncAt) {
+              <span class="chip chip--off" matTooltip="Nessun push effettuato">—</span>
+            } @else {
+              @switch (row.lastSyncStatus) {
+                @case ('SYNCED') {
+                  <span
+                    class="chip chip--ok"
+                    [matTooltip]="'Ultimo push: ' + (row.lastSyncAt | date:'dd/MM/yyyy HH:mm')"
+                  >SYNCED</span>
+                }
+                @case ('DRAFT') {
+                  <span
+                    class="chip chip--warn"
+                    [matTooltip]="row.lastSyncError || 'Push fallito'"
+                  >DRAFT</span>
+                }
+                @default {
+                  <span class="chip chip--off">{{ row.lastSyncStatus }}</span>
+                }
+              }
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="active">
+          <th mat-header-cell *matHeaderCellDef>Stato</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.active) {
+              <span class="chip chip--ok">Attiva</span>
+            } @else {
+              <span class="chip chip--off">Inattiva</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="installations__actions-col"></th>
+          <td mat-cell *matCellDef="let row" class="installations__actions-col">
+            <button
+              mat-icon-button
+              type="button"
+              (click)="openInstallation(row); $event.stopPropagation()"
+              matTooltip="Apri dettaglio"
+            >
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          class="installations__row"
+          (click)="openInstallation(row)"
+        ></tr>
+
+        <tr *matNoDataRow class="installations__no-data">
+          <td [attr.colspan]="displayedColumns.length">
+            @if (loading()) {
+              Caricamento in corso…
+            } @else if (errorMessage()) {
+              Impossibile caricare le installation.
+            } @else {
+              Nessuna installation per questo customer.
+            }
+          </td>
+        </tr>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>

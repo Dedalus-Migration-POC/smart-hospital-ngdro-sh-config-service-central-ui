@@ -101,9 +101,13 @@ password: DedalUs4$!
 - Auth: token + expiresAt in `localStorage` (chiavi `sh.cs.authToken` / `sh.cs.authTokenExpiresAt`). Stato corrente in `AuthService.currentUser` (signal). Su 401 di chiamate autenticate l'interceptor pulisce e ridireziona a `/login` con `returnUrl`.
 - Routing: `/login` è una route bare (no shell). Tutto il resto è child di una route `''` che monta `AdminShell` con `canActivate: [authGuard]`. Le nuove sezioni vanno aggiunte come children di quella, in modo che ereditino sidenav e toolbar.
 - Sidenav: `AdminShell.navItems` è la fonte di verità per il menu di sinistra. Item con `path` cliccabili, item senza `path` mostrati come "prossimamente". Aggiungere il `path` (e creare la route relativa) man mano che le sezioni vengono implementate.
-- Feature di dominio: ogni feature è un sottoalbero `src/app/features/<nome>/` con `pages/`, `services/`, `models.ts`, `dialogs/` (se servono dialog dedicati), e un file `<nome>.routes.ts` che esporta le routes della feature. Wire-up: `loadChildren` su una child route dell'`AdminShell` in `app.routes.ts` + path corrispondente nei `navItems`. Esempio di riferimento: `features/customers/`.
+- Feature di dominio: ogni feature è un sottoalbero `src/app/features/<nome>/` con `pages/`, `services/`, `models.ts`, `dialogs/` (se servono dialog dedicati), `components/` (per componenti embeddable in altre feature, es. `installations/components/customer-installations-section/`), e un file `<nome>.routes.ts` che esporta le routes della feature. Wire-up: `loadChildren` su una child route dell'`AdminShell` in `app.routes.ts` + path corrispondente nei `navItems` (oppure nessun path se la feature vive solo come embedded — è il caso di Installation che non ha lista globale lato BE).
 - Componenti riusabili tra più feature → `src/app/shared/` (es. `shared/dialogs/confirm-dialog/` per i conferma OK/Annulla).
 - Per messaggi utente di esito (success/error) usare `MatSnackBar` (default Material): inject e `snackbar.open(testo, 'OK', { duration: 3000-6000 })`. Errori: 6000ms; conferme: 3000-4000ms.
+- Sicurezza / segreti:
+  - API key di scrittura: cifrata a riposo, mai mostrata in chiaro lato FE (badge "configurata" + bottone "Ruota" via dialog).
+  - Payload master key: il backend la espone in chiaro tramite `GET /installations/{id}/payload-master-key` (serve all'admin per copiarla nell'on-prem). Mostrarla solo dentro un dialog dedicato con bottone "Copia" e nessuna persistenza inline.
+  - Quando il central genera una nuova master key (creazione installation senza chiave fornita, oppure rotate senza body): mostrare la chiave in chiaro **una sola volta** subito dopo l'operazione, con bottone copia, perché poi rimane recuperabile sì, ma è scomodo.
 
 ## Preferenze utente da rispettare anche qui
 
@@ -130,7 +134,8 @@ Branch default: `main`. Niente push iniziale finché non c'è uno scaffold pulit
 - [x] Modulo auth: login page Material, JWT interceptor, auth guard, `/auth/me` post-login + idratazione su refresh
 - [x] Layout admin (`AdminShell`: sidenav responsive + toolbar con utente/ruolo/logout, nav items con placeholder per le sezioni future, filtraggio per ruolo)
 - [x] Feature **Customer**: lista (mat-table, search, sort, paginator, toggle inattivi), create dialog, detail page con edit + soft delete (confirm dialog condiviso)
-- [ ] Feature per dominio rimanenti (installations → tenants → configs)
+- [x] Feature **Installation**: sezione embedded nel dettaglio Customer (lista + create dialog + alert master key generata) + pagina `/installations/:id` (edit, sezione sicurezza con rotate api-key + rotate/show payload-master-key, sezione sync status, soft delete). Nessuna lista globale lato BE → voce sidenav resta "prossimamente".
+- [ ] Feature per dominio rimanenti (tenants → configs)
 - [ ] Users + Audit log (ADMIN-only routes)
 - [ ] Build di produzione + Dockerfile + Jenkinsfile (`buildNode` se shared lib disponibile)
 

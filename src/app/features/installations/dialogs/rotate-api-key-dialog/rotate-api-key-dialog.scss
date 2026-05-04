@@ -1,0 +1,13 @@
+.rotate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 380px;
+  margin-top: 12px;
+}
+
+.rotate-form__error {
+  margin: 0;
+  color: var(--mat-sys-error);
+  font-size: 0.875rem;
+}

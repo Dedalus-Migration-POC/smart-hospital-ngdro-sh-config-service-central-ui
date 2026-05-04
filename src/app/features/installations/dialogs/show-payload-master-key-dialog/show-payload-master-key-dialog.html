@@ -1,0 +1,28 @@
+<h2 mat-dialog-title>Payload master key</h2>
+
+<mat-dialog-content>
+  <p class="show-key__intro">
+    Chiave AES-256 attualmente configurata per <strong>{{ data.installationName }}</strong>.
+    Serve all'on-prem per decifrare i payload di config pushati dal central.
+  </p>
+
+  @if (loading()) {
+    <div class="show-key__loading">
+      <mat-progress-spinner mode="indeterminate" diameter="24" />
+      <span>Recupero in corso…</span>
+    </div>
+  } @else if (errorMessage(); as err) {
+    <p class="show-key__error" role="alert">{{ err }}</p>
+  } @else if (key(); as k) {
+    <div class="show-key__value">
+      <code>{{ k }}</code>
+      <button mat-icon-button type="button" (click)="copyKey()" aria-label="Copia chiave">
+        <mat-icon>content_copy</mat-icon>
+      </button>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close type="button">Chiudi</button>
+</mat-dialog-actions>

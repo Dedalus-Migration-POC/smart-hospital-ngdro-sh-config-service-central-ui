@@ -67,12 +67,19 @@ src/
     ├── features/
     │   ├── auth/pages/login-page/ # form Material (route bare /login)
     │   ├── home/pages/home-page/  # contenuto home dentro la shell
-    │   └── customers/             # feature di dominio: lista + dettaglio + create dialog
-    │       ├── customers.routes.ts
+    │   ├── customers/             # feature di dominio: lista + dettaglio + create dialog
+    │   │   ├── customers.routes.ts
+    │   │   ├── models.ts
+    │   │   ├── services/customers.ts
+    │   │   ├── pages/{customers-page,customer-detail-page}/
+    │   │   └── dialogs/customer-create-dialog/
+    │   └── installations/         # dettaglio /installations/:id + sezione embedded in CustomerDetail
+    │       ├── installations.routes.ts
     │       ├── models.ts
-    │       ├── services/customers.ts
-    │       ├── pages/{customers-page,customer-detail-page}/
-    │       └── dialogs/customer-create-dialog/
+    │       ├── services/installations.ts
+    │       ├── pages/installation-detail-page/
+    │       ├── components/customer-installations-section/
+    │       └── dialogs/{installation-create,rotate-api-key,rotate-payload-master-key,show-payload-master-key}-dialog/
     └── shared/
         └── dialogs/confirm-dialog/  # dialog di conferma OK/Annulla riusabile
 ```

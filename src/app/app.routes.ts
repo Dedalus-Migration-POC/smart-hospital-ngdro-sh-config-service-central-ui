@@ -27,6 +27,11 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/customers/customers.routes').then((m) => m.customersRoutes),
       },
+      {
+        path: 'installations',
+        loadChildren: () =>
+          import('./features/installations/installations.routes').then((m) => m.installationsRoutes),
+      },
     ],
   },
   {

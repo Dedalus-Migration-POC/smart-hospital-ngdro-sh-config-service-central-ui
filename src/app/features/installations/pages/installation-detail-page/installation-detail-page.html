@@ -1,0 +1,200 @@
+<section class="detail">
+  <header class="detail__header">
+    <button mat-icon-button type="button" (click)="goToCustomer()" aria-label="Torna al customer">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="detail__title">
+      <h1>
+        @if (installation(); as i) {
+          {{ i.name }}
+        } @else if (loading()) {
+          Caricamento…
+        } @else {
+          Installation
+        }
+      </h1>
+      @if (installation(); as i) {
+        <p class="detail__subtitle">
+          <code>{{ i.baseUrl }}</code>
+        </p>
+      }
+    </div>
+  </header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (errorMessage(); as err) {
+    <div class="detail__error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ err }}</span>
+    </div>
+  }
+
+  @if (installation(); as i) {
+    <mat-card appearance="outlined" class="detail__card">
+      <mat-card-header>
+        <mat-card-title>Dati base</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="form" (ngSubmit)="save()" class="detail__form" id="installation-edit-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Nome</mat-label>
+            <input matInput formControlName="name" required maxlength="255" />
+            @if (form.controls.name.touched) {
+              @if (form.controls.name.hasError('required')) {
+                <mat-error>Il nome è obbligatorio.</mat-error>
+              } @else if (form.controls.name.hasError('maxlength')) {
+                <mat-error>Massimo 255 caratteri.</mat-error>
+              }
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>URL base on-prem</mat-label>
+            <input matInput formControlName="baseUrl" required maxlength="500" />
+            @if (form.controls.baseUrl.touched) {
+              @if (form.controls.baseUrl.hasError('required')) {
+                <mat-error>L'URL base è obbligatorio.</mat-error>
+              } @else if (form.controls.baseUrl.hasError('pattern')) {
+                <mat-error>L'URL deve iniziare con http:// o https://.</mat-error>
+              } @else if (form.controls.baseUrl.hasError('maxlength')) {
+                <mat-error>Massimo 500 caratteri.</mat-error>
+              }
+            }
+          </mat-form-field>
+
+          <mat-slide-toggle formControlName="active">Attiva</mat-slide-toggle>
+
+          <div class="detail__meta">Creata il {{ i.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
+        </form>
+      </mat-card-content>
+      <mat-card-actions align="end" class="detail__actions">
+        <button
+          mat-button
+          color="warn"
+          type="button"
+          (click)="confirmDelete()"
+          [disabled]="deleting() || saving()"
+        >
+          <mat-icon>delete_outline</mat-icon>
+          Elimina
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          form="installation-edit-form"
+          [disabled]="saving() || form.invalid || form.pristine"
+        >
+          @if (saving()) {
+            <mat-progress-spinner mode="indeterminate" diameter="20" />
+          } @else {
+            Salva
+          }
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="detail__card">
+      <mat-card-header>
+        <mat-card-title>Sicurezza</mat-card-title>
+        <mat-card-subtitle>Credenziali del canale central → on-prem.</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="detail__security">
+        <div class="security__row">
+          <div class="security__label">
+            <mat-icon>vpn_key</mat-icon>
+            <div>
+              <div class="security__title">API key di scrittura</div>
+              <div class="security__hint">
+                @if (i.apiKeyConfigured) {
+                  <span class="chip chip--ok">Configurata</span>
+                  Cifrata a riposo, non recuperabile in chiaro.
+                } @else {
+                  <span class="chip chip--off">Mancante</span>
+                  L'on-prem non potrà autenticare le scritture finché non viene impostata.
+                }
+              </div>
+            </div>
+          </div>
+          <div class="security__actions">
+            <button mat-stroked-button type="button" (click)="rotateApiKey()">
+              <mat-icon>autorenew</mat-icon>
+              Ruota
+            </button>
+          </div>
+        </div>
+
+        <mat-divider />
+
+        <div class="security__row">
+          <div class="security__label">
+            <mat-icon>enhanced_encryption</mat-icon>
+            <div>
+              <div class="security__title">Payload master key</div>
+              <div class="security__hint">
+                @if (i.payloadMasterKeyConfigured) {
+                  <span class="chip chip--ok">Configurata</span>
+                  Recuperabile in chiaro per copiarla nell'on-prem.
+                } @else {
+                  <span class="chip chip--off">Mancante</span>
+                  Il push delle config fallirà finché on-prem e central non condividono la stessa chiave.
+                }
+              </div>
+            </div>
+          </div>
+          <div class="security__actions">
+            <button
+              mat-button
+              type="button"
+              (click)="showPayloadMasterKey()"
+              [disabled]="!i.payloadMasterKeyConfigured"
+            >
+              <mat-icon>visibility</mat-icon>
+              Mostra
+            </button>
+            <button mat-stroked-button type="button" (click)="rotatePayloadMasterKey()">
+              <mat-icon>autorenew</mat-icon>
+              Ruota
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="detail__card">
+      <mat-card-header>
+        <mat-card-title>Stato sync</mat-card-title>
+        <mat-card-subtitle>Ultimo push delle config verso questa on-prem.</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (!i.lastSyncAt) {
+          <p class="detail__meta">Nessun push effettuato finora.</p>
+        } @else {
+          <div class="sync">
+            <div class="sync__row">
+              <span class="sync__label">Stato</span>
+              @switch (i.lastSyncStatus) {
+                @case ('SYNCED') { <span class="chip chip--ok">SYNCED</span> }
+                @case ('DRAFT') { <span class="chip chip--warn">DRAFT</span> }
+                @default { <span class="chip chip--off">{{ i.lastSyncStatus ?? '—' }}</span> }
+              }
+            </div>
+            <div class="sync__row">
+              <span class="sync__label">Quando</span>
+              <span>{{ i.lastSyncAt | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+            </div>
+            @if (i.lastSyncError) {
+              <div class="sync__error" role="alert">
+                <mat-icon>error_outline</mat-icon>
+                <span>{{ i.lastSyncError }}</span>
+              </div>
+            }
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</section>
