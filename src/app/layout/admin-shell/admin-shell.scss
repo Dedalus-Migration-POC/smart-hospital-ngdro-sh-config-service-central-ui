@@ -16,32 +16,23 @@
 
 .admin-shell__brand {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 16px;
-}
-
-.admin-shell__brand-icon {
-  font-size: 32px;
-  width: 32px;
-  height: 32px;
-  color: var(--mat-sys-primary);
-}
-
-.admin-shell__brand-text {
-  display: flex;
   flex-direction: column;
-  line-height: 1.2;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 20px 16px 16px;
 }
 
-.admin-shell__brand-title {
-  font-weight: 600;
-  font-size: 1rem;
+.admin-shell__brand-logo {
+  width: 148px;
+  height: auto;
+  display: block;
 }
 
 .admin-shell__brand-subtitle {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--mat-sys-on-surface-variant);
+  letter-spacing: 0.02em;
+  padding-left: 2px;
 }
 
 .admin-shell__nav {

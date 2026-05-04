@@ -10,6 +10,29 @@
 .login-card {
   width: 100%;
   max-width: 420px;
+  overflow: hidden;
+}
+
+.login-card__brand {
+  background: var(--mat-sys-primary);
+  padding: 32px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.login-card__logo {
+  width: 200px;
+  height: auto;
+  display: block;
+}
+
+.login-card__brand-subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
 }
 
 .login-form {

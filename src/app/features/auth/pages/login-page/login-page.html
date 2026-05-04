@@ -1,9 +1,9 @@
 <div class="login-shell">
   <mat-card appearance="outlined" class="login-card">
-    <mat-card-header>
-      <mat-card-title>Configuratore centrale SmartHospital</mat-card-title>
-      <mat-card-subtitle>Accesso operatore Dedalus</mat-card-subtitle>
-    </mat-card-header>
+    <div class="login-card__brand">
+      <img src="dedalus-logo-white.svg" alt="Dedalus" class="login-card__logo" />
+      <p class="login-card__brand-subtitle">SmartHospital · Configuratore centrale</p>
+    </div>
 
     <mat-card-content>
       <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
