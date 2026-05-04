@@ -1,15 +1,15 @@
 <section class="users">
   <header class="users__header">
-    <h1 class="users__title">Utenti</h1>
+    <h1 class="users__title">{{ 'user.title' | translate }}</h1>
     <button mat-flat-button color="primary" type="button" (click)="openCreate()">
       <mat-icon>add</mat-icon>
-      Nuovo utente
+      {{ 'user.new' | translate }}
     </button>
   </header>
 
   <div class="users__toolbar">
     <mat-form-field appearance="outline" class="users__search">
-      <mat-label>Cerca username</mat-label>
+      <mat-label>{{ 'user.searchLabel' | translate }}</mat-label>
       <mat-icon matPrefix>search</mat-icon>
       <input matInput [formControl]="searchControl" />
     </mat-form-field>
@@ -17,7 +17,7 @@
     <mat-slide-toggle
       [checked]="showInactive()"
       (change)="toggleInactive($event.checked)"
-    >Mostra anche inattivi</mat-slide-toggle>
+    >{{ 'user.showInactive' | translate }}</mat-slide-toggle>
 
     <span class="users__spacer"></span>
 
@@ -25,7 +25,7 @@
       mat-icon-button
       type="button"
       (click)="reload()"
-      matTooltip="Ricarica"
+      [matTooltip]="'common.refresh' | translate"
       [disabled]="loading()"
     >
       <mat-icon>refresh</mat-icon>
@@ -46,30 +46,30 @@
   <div class="users__table-wrap">
     <table mat-table [dataSource]="dataSource" matSort>
       <ng-container matColumnDef="username">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Username</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'user.colUsername' | translate }}</th>
         <td mat-cell *matCellDef="let row"><strong>{{ row.username }}</strong></td>
       </ng-container>
 
       <ng-container matColumnDef="role">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ruolo</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'user.colRole' | translate }}</th>
         <td mat-cell *matCellDef="let row">
           <span class="chip chip--primary">{{ row.role }}</span>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="active">
-        <th mat-header-cell *matHeaderCellDef>Stato</th>
+        <th mat-header-cell *matHeaderCellDef>{{ 'user.colStatus' | translate }}</th>
         <td mat-cell *matCellDef="let row">
           @if (row.active) {
-            <span class="chip chip--ok">Attivo</span>
+            <span class="chip chip--ok">{{ 'common.active' | translate }}</span>
           } @else {
-            <span class="chip chip--off">Inattivo</span>
+            <span class="chip chip--off">{{ 'common.inactive' | translate }}</span>
           }
         </td>
       </ng-container>
 
       <ng-container matColumnDef="createdAt">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Creato il</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'user.colCreatedAt' | translate }}</th>
         <td mat-cell *matCellDef="let row">{{ row.createdAt | date:'dd/MM/yyyy' }}</td>
       </ng-container>
 
@@ -80,7 +80,7 @@
             mat-icon-button
             type="button"
             (click)="openUser(row); $event.stopPropagation()"
-            matTooltip="Apri dettaglio"
+            [matTooltip]="'common.openDetail' | translate"
           >
             <mat-icon>chevron_right</mat-icon>
           </button>
@@ -98,11 +98,11 @@
       <tr *matNoDataRow class="users__no-data">
         <td [attr.colspan]="displayedColumns.length">
           @if (loading()) {
-            Caricamento in corso…
+            {{ 'common.loadingInProgress' | translate }}
           } @else if (searchControl.value) {
-            Nessun utente corrisponde alla ricerca.
+            {{ 'user.noDataSearch' | translate }}
           } @else {
-            Nessun utente trovato.
+            {{ 'user.noData' | translate }}
           }
         </td>
       </tr>

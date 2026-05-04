@@ -11,6 +11,69 @@
   }
 
   @if (!loading() && !errorMessage()) {
+    <!-- Entity selector -->
+    <div class="channel__entity-bar">
+      @for (e of entities(); track e) {
+        <button
+          type="button"
+          class="entity-chip"
+          [class.entity-chip--active]="entity() === e"
+          (click)="selectEntity(e)"
+          [attr.aria-pressed]="entity() === e"
+        >
+          {{ e }}
+        </button>
+      }
+      @if (!addingEntity()) {
+        <button
+          type="button"
+          class="entity-chip entity-chip--add"
+          (click)="startAddEntity()"
+          [matTooltip]="'config.addEntityTooltip' | translate"
+        >
+          <mat-icon>add</mat-icon>
+          {{ 'config.addEntity' | translate }}
+        </button>
+      }
+    </div>
+
+    @if (addingEntity()) {
+      <div class="channel__add-entity-form">
+        <mat-form-field appearance="outline" class="channel__add-entity-field">
+          <mat-label>{{ 'config.addEntityLabel' | translate }}</mat-label>
+          <input
+            matInput
+            [formControl]="newEntityControl"
+            [placeholder]="'config.addEntityPlaceholder' | translate"
+            (keyup.enter)="confirmAddEntity()"
+            (keyup.escape)="cancelAddEntity()"
+            autocomplete="off"
+            autofocus
+          />
+          <mat-hint>{{ 'config.addEntityHint' | translate }}</mat-hint>
+          @if (newEntityControl.touched) {
+            @if (newEntityControl.hasError('required')) {
+              <mat-error>{{ 'config.addEntityRequired' | translate }}</mat-error>
+            } @else if (newEntityControl.hasError('pattern')) {
+              <mat-error>{{ 'config.addEntityPattern' | translate }}</mat-error>
+            }
+          }
+        </mat-form-field>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="confirmAddEntity()"
+          [disabled]="newEntityControl.invalid"
+        >
+          {{ 'config.addEntityConfirm' | translate }}
+        </button>
+        <button mat-button type="button" (click)="cancelAddEntity()">
+          {{ 'common.cancel' | translate }}
+        </button>
+      </div>
+    }
+
     <div class="channel__status-bar">
       @if (activeVersion(); as v) {
         <div class="channel__status">
@@ -18,14 +81,14 @@
             @case ('SYNCED') {
               <span class="chip chip--ok">SYNCED</span>
               <span class="channel__status-meta">
-                v{{ v.version }} — pushata il {{ v.syncedAt | date:'dd/MM/yyyy HH:mm' }}
-                @if (v.remoteVersion) { · versione remota {{ v.remoteVersion }} }
+                v{{ v.version }} — {{ 'config.syncedPushedAt' | translate }} {{ v.syncedAt | date:'dd/MM/yyyy HH:mm' }}
+                @if (v.remoteVersion) { · {{ 'config.remoteVersion' | translate }} {{ v.remoteVersion }} }
               </span>
             }
             @case ('DRAFT') {
               <span class="chip chip--warn">DRAFT</span>
               <span class="channel__status-meta">
-                v{{ v.version }} — push fallito
+                v{{ v.version }} — {{ 'config.pushFailed' | translate }}
                 @if (v.syncError) { : {{ v.syncError }} }
               </span>
             }
@@ -35,29 +98,39 @@
           }
         </div>
 
+        @if (isUnauthorizedSync()) {
+          <div class="channel__hint" role="alert">
+            <mat-icon>info_outline</mat-icon>
+            <div>
+              <strong>{{ 'config.hint401Title' | translate }}</strong><br />
+              {{ 'config.hint401Body' | translate }}
+            </div>
+          </div>
+        }
+
         @if (v.syncStatus === 'DRAFT') {
           <button
             mat-stroked-button
             type="button"
             (click)="resync()"
             [disabled]="resyncing()"
-            matTooltip="Riprova il push dell'ultima versione attiva"
+            [matTooltip]="'config.resyncTooltip' | translate"
           >
             @if (resyncing()) {
               <mat-progress-spinner mode="indeterminate" diameter="18" />
             } @else {
               <mat-icon>sync</mat-icon>
             }
-            Risincronizza
+            {{ 'config.resync' | translate }}
           </button>
         }
       } @else {
-        <span class="channel__status-meta">Nessuna configurazione salvata per questo canale.</span>
+        <span class="channel__status-meta">{{ 'config.noConfig' | translate }}</span>
       }
     </div>
 
     <mat-form-field appearance="outline" class="channel__editor">
-      <mat-label>Configurazione JSON</mat-label>
+      <mat-label>{{ 'config.jsonLabel' | translate: { entity: entity() } }}</mat-label>
       <textarea
         matInput
         [formControl]="configControl"
@@ -68,14 +141,30 @@
       ></textarea>
       @if (configControl.touched) {
         @if (configControl.hasError('required')) {
-          <mat-error>Il JSON è obbligatorio.</mat-error>
+          <mat-error>{{ 'config.jsonRequired' | translate }}</mat-error>
         } @else if (configControl.hasError('invalidJson')) {
-          <mat-error>Il testo non è un JSON valido.</mat-error>
+          @let jsonErr = configControl.errors!['invalidJson'];
+          <mat-error>
+            {{ 'config.jsonInvalid' | translate }}
+            @if (jsonErr.line) {
+              {{ 'config.jsonInvalidAt' | translate: { line: jsonErr.line, col: jsonErr.col } }}
+            }
+          </mat-error>
         }
       }
     </mat-form-field>
 
     <div class="channel__actions">
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="prettify()"
+        [disabled]="saving() || !configControl.value?.trim()"
+        [matTooltip]="'config.formatTooltip' | translate"
+      >
+        <mat-icon>auto_fix_high</mat-icon>
+        {{ 'config.format' | translate }}
+      </button>
       <button
         mat-flat-button
         color="primary"
@@ -88,14 +177,14 @@
         } @else {
           <mat-icon>cloud_upload</mat-icon>
         }
-        Salva e pusha
+        {{ 'config.saveAndPush' | translate }}
       </button>
     </div>
 
     <mat-expansion-panel class="channel__history-panel">
       <mat-expansion-panel-header>
         <mat-panel-title>
-          Storico versioni
+          {{ 'config.historyTitle' | translate }} — <code class="channel__history-entity">{{ entity() }}</code>
           @if (historyLoading()) {
             <mat-progress-spinner mode="indeterminate" diameter="16" class="channel__history-spinner" />
           } @else if (history().length) {
@@ -105,7 +194,7 @@
       </mat-expansion-panel-header>
 
       @if (history().length === 0 && !historyLoading()) {
-        <p class="channel__history-empty">Nessuna versione nella cronologia.</p>
+        <p class="channel__history-empty">{{ 'config.historyEmpty' | translate }}</p>
       } @else {
         <div class="channel__history-list">
           @for (v of history(); track v.id) {
@@ -131,7 +220,7 @@
                   type="button"
                   (click)="confirmRollback(v)"
                   [disabled]="rollingBack() !== null"
-                  matTooltip="Ripristina questa versione e pusha"
+                  [matTooltip]="'config.rollbackTooltip' | translate"
                 >
                   @if (rollingBack() === v.version) {
                     <mat-progress-spinner mode="indeterminate" diameter="18" />

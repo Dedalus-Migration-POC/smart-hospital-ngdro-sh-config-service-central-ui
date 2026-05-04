@@ -17,6 +17,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
   AuditDetailDialog,
@@ -41,6 +43,7 @@ import { AuditService } from '../../services/audit';
     MatProgressBarModule,
     MatCardModule,
     MatTooltipModule,
+    TranslatePipe,
   ],
   templateUrl: './audit-page.html',
   styleUrl: './audit-page.scss',
@@ -49,6 +52,7 @@ export class AuditPage {
   private readonly auditService = inject(AuditService);
   private readonly dialog = inject(MatDialog);
   private readonly fb = inject(FormBuilder);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -120,7 +124,7 @@ export class AuditPage {
       },
       error: (err: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile caricare il log di audit.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('audit.loadError')));
       },
     });
   }

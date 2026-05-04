@@ -8,13 +8,13 @@
   >
     <div class="admin-shell__brand">
       <img src="dedalus-logo-color.svg" alt="Dedalus" class="admin-shell__brand-logo" />
-      <span class="admin-shell__brand-subtitle">SmartHospital · Configuratore centrale</span>
+      <span class="admin-shell__brand-subtitle">{{ 'shell.brandSubtitle' | translate }}</span>
     </div>
 
     <mat-divider />
 
     <mat-nav-list class="admin-shell__nav">
-      @for (item of visibleNavItems(); track item.label) {
+      @for (item of visibleNavItems(); track item.labelKey) {
         @if (item.path) {
           <a
             mat-list-item
@@ -24,13 +24,13 @@
             (click)="onNavClick()"
           >
             <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-            <span matListItemTitle>{{ item.label }}</span>
+            <span matListItemTitle>{{ item.labelKey | translate }}</span>
           </a>
         } @else {
           <mat-list-item disabled class="admin-shell__nav-item--placeholder">
             <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-            <span matListItemTitle>{{ item.label }}</span>
-            <span matListItemMeta class="admin-shell__nav-item-meta">prossimamente</span>
+            <span matListItemTitle>{{ item.labelKey | translate }}</span>
+            <span matListItemMeta class="admin-shell__nav-item-meta">{{ 'shell.comingSoon' | translate }}</span>
           </mat-list-item>
         }
       }
@@ -43,14 +43,24 @@
         mat-icon-button
         type="button"
         (click)="toggleSidenav()"
-        aria-label="Apri o chiudi il menu di navigazione"
+        [attr.aria-label]="'shell.openCloseMenu' | translate"
       >
         <mat-icon>menu</mat-icon>
       </button>
 
-      <span class="admin-shell__toolbar-title">Configuratore centrale</span>
+      <span class="admin-shell__toolbar-title">{{ 'shell.title' | translate }}</span>
 
       <span class="admin-shell__toolbar-spacer"></span>
+
+      <button
+        mat-button
+        type="button"
+        (click)="toggleLanguage()"
+        class="admin-shell__lang-btn"
+        [attr.aria-label]="currentLang() === 'it' ? 'Switch to English' : 'Passa all\'Italiano'"
+      >
+        {{ currentLang() === 'it' ? 'EN' : 'IT' }}
+      </button>
 
       @if (currentUser(); as user) {
         <button
@@ -70,13 +80,13 @@
           <div class="admin-shell__user-menu-header" mat-menu-item disabled>
             <strong>{{ user.username }}</strong>
             @if (user.role) {
-              <small>ruolo {{ user.role }}</small>
+              <small>{{ 'shell.role' | translate }} {{ user.role }}</small>
             }
           </div>
           <mat-divider />
           <button mat-menu-item type="button" (click)="logout()">
             <mat-icon>logout</mat-icon>
-            <span>Logout</span>
+            <span>{{ 'shell.logout' | translate }}</span>
           </button>
         </mat-menu>
       }

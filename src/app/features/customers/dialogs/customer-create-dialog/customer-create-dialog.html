@@ -1,9 +1,9 @@
-<h2 mat-dialog-title>Nuovo customer</h2>
+<h2 mat-dialog-title>{{ 'customer.createTitle' | translate }}</h2>
 
 <mat-dialog-content>
   <form [formGroup]="form" (ngSubmit)="submit()" class="customer-create-form" id="customer-create-form">
     <mat-form-field appearance="outline">
-      <mat-label>Slug</mat-label>
+      <mat-label>{{ 'common.slug' | translate }}</mat-label>
       <input
         matInput
         formControlName="slug"
@@ -12,26 +12,26 @@
         spellcheck="false"
         required
       />
-      <mat-hint>Solo lettere minuscole, cifre e trattini (es. <code>asl-latina</code>).</mat-hint>
+      <mat-hint>{{ 'customer.slugHintCreate' | translate }}</mat-hint>
       @if (form.controls.slug.touched) {
         @if (form.controls.slug.hasError('required')) {
-          <mat-error>Lo slug è obbligatorio.</mat-error>
+          <mat-error>{{ 'customer.slugRequired' | translate }}</mat-error>
         } @else if (form.controls.slug.hasError('pattern')) {
-          <mat-error>Solo lettere minuscole, cifre e trattini.</mat-error>
+          <mat-error>{{ 'customer.slugPattern' | translate }}</mat-error>
         } @else if (form.controls.slug.hasError('maxlength')) {
-          <mat-error>Massimo 100 caratteri.</mat-error>
+          <mat-error>{{ 'customer.slugMax' | translate }}</mat-error>
         }
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Nome</mat-label>
+      <mat-label>{{ 'common.name' | translate }}</mat-label>
       <input matInput formControlName="name" required />
       @if (form.controls.name.touched) {
         @if (form.controls.name.hasError('required')) {
-          <mat-error>Il nome è obbligatorio.</mat-error>
+          <mat-error>{{ 'customer.nameRequired' | translate }}</mat-error>
         } @else if (form.controls.name.hasError('maxlength')) {
-          <mat-error>Massimo 255 caratteri.</mat-error>
+          <mat-error>{{ 'customer.nameMax' | translate }}</mat-error>
         }
       }
     </mat-form-field>
@@ -43,7 +43,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close type="button" [disabled]="saving()">Annulla</button>
+  <button mat-button mat-dialog-close type="button" [disabled]="saving()">{{ 'common.cancel' | translate }}</button>
   <button
     mat-flat-button
     color="primary"
@@ -54,7 +54,7 @@
     @if (saving()) {
       <mat-progress-spinner mode="indeterminate" diameter="20" />
     } @else {
-      Crea
+      {{ 'common.create' | translate }}
     }
   </button>
 </mat-dialog-actions>

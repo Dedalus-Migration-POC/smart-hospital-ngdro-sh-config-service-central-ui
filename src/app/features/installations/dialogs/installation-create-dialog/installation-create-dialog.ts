@@ -14,6 +14,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import { Installation, INSTALLATION_BASE_URL_PATTERN } from '../../models';
 import { InstallationService } from '../../services/installations';
@@ -45,6 +47,7 @@ export interface InstallationCreateDialogResult {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './installation-create-dialog.html',
   styleUrl: './installation-create-dialog.scss',
@@ -53,6 +56,7 @@ export class InstallationCreateDialog {
   readonly data = inject<InstallationCreateDialogData>(MAT_DIALOG_DATA);
   private readonly fb = inject(FormBuilder);
   private readonly installations = inject(InstallationService);
+  private readonly translate = inject(TranslateService);
   private readonly ref = inject<
     MatDialogRef<InstallationCreateDialog, InstallationCreateDialogResult | undefined>
   >(MatDialogRef);
@@ -121,7 +125,7 @@ export class InstallationCreateDialog {
       },
       error: (err: unknown) => {
         this.saving.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile creare la installation.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('installation.createError')));
       },
     });
   }

@@ -15,6 +15,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import { InstallationService } from '../../services/installations';
 
@@ -38,6 +40,7 @@ export interface RotatePayloadMasterKeyDialogData {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './rotate-payload-master-key-dialog.html',
   styleUrl: './rotate-payload-master-key-dialog.scss',
@@ -47,6 +50,7 @@ export class RotatePayloadMasterKeyDialog {
   private readonly fb = inject(FormBuilder);
   private readonly installations = inject(InstallationService);
   private readonly snackbar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
   /** Risultato: true se è avvenuta una rotazione (il chiamante ricarica l'installation). */
   private readonly ref = inject<MatDialogRef<RotatePayloadMasterKeyDialog, boolean>>(MatDialogRef);
 
@@ -73,7 +77,7 @@ export class RotatePayloadMasterKeyDialog {
       error: (err: unknown) => {
         this.saving.set(false);
         this.errorMessage.set(
-          toUserMessage(err, 'Impossibile ruotare la payload master key.'),
+          toUserMessage(err, this.translate.instant('installation.rotateMasterKeyError')),
         );
       },
     });
@@ -84,11 +88,9 @@ export class RotatePayloadMasterKeyDialog {
     if (!key) return;
     try {
       await navigator.clipboard.writeText(key);
-      this.snackbar.open('Chiave copiata negli appunti.', 'OK', { duration: 2500 });
+      this.snackbar.open(this.translate.instant('common.copySuccess'), 'OK', { duration: 2500 });
     } catch {
-      this.snackbar.open('Copia non riuscita: copia manualmente il valore.', 'OK', {
-        duration: 4000,
-      });
+      this.snackbar.open(this.translate.instant('common.copyError'), 'OK', { duration: 4000 });
     }
   }
 

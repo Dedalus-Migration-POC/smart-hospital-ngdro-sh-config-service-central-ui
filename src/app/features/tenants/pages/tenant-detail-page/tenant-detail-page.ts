@@ -21,6 +21,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
   ConfirmDialog,
@@ -47,6 +49,7 @@ import { TenantService } from '../../services/tenants';
     MatProgressSpinnerModule,
     MatTabsModule,
     ConfigChannelSection,
+    TranslatePipe,
   ],
   templateUrl: './tenant-detail-page.html',
   styleUrl: './tenant-detail-page.scss',
@@ -59,6 +62,7 @@ export class TenantDetailPage {
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -92,7 +96,7 @@ export class TenantDetailPage {
       error: (err: unknown) => {
         this.tenant.set(null);
         this.loading.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile caricare il tenant.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('product.loadDetailError')));
       },
     });
   }
@@ -119,12 +123,12 @@ export class TenantDetailPage {
         this.tenant.set(updated);
         this.form.reset({ name: updated.name, active: updated.active });
         this.saving.set(false);
-        this.snackbar.open('Modifiche salvate.', 'OK', { duration: 3000 });
+        this.snackbar.open(this.translate.instant('common.saveSuccess'), 'OK', { duration: 3000 });
       },
       error: (err: unknown) => {
         this.saving.set(false);
         this.snackbar.open(
-          toUserMessage(err, 'Impossibile salvare le modifiche.'),
+          toUserMessage(err, this.translate.instant('common.saveError')),
           'OK',
           { duration: 6000 },
         );
@@ -136,10 +140,9 @@ export class TenantDetailPage {
     const t = this.tenant();
     if (!t) return;
     const data: ConfirmDialogData = {
-      title: `Eliminare il tenant "${t.name}"?`,
-      message:
-        'Il tenant verrà disattivato (soft delete). Le configurazioni restano in archivio. Continuare?',
-      confirmLabel: 'Elimina',
+      title: this.translate.instant('product.deleteConfirmTitle', { name: t.name }),
+      message: this.translate.instant('product.deleteConfirmMessage'),
+      confirmLabel: this.translate.instant('product.deleteConfirmButton'),
       destructive: true,
     };
     const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, {
@@ -155,13 +158,13 @@ export class TenantDetailPage {
     this.tenants.delete(t.id).subscribe({
       next: () => {
         this.deleting.set(false);
-        this.snackbar.open(`Tenant "${t.name}" disattivato.`, 'OK', { duration: 4000 });
+        this.snackbar.open(this.translate.instant('product.deleteSuccess', { name: t.name }), 'OK', { duration: 4000 });
         void this.router.navigate(['/installations', t.installationId]);
       },
       error: (err: unknown) => {
         this.deleting.set(false);
         this.snackbar.open(
-          toUserMessage(err, 'Impossibile eliminare il tenant.'),
+          toUserMessage(err, this.translate.instant('product.deleteError')),
           'OK',
           { duration: 6000 },
         );
@@ -170,8 +173,12 @@ export class TenantDetailPage {
   }
 
   channelLabel(ch: ChannelId): string {
-    const labels: Record<ChannelId, string> = { mobile: 'Mobile', web: 'Web', totem: 'Totem' };
-    return labels[ch];
+    const keys: Record<ChannelId, string> = {
+      mobile: 'product.channelMobile',
+      web: 'product.channelWeb',
+      totem: 'product.channelTotem',
+    };
+    return this.translate.instant(keys[ch]);
   }
 
   channelIcon(ch: ChannelId): string {

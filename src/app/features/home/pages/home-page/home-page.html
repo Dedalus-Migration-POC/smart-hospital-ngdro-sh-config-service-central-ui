@@ -1,21 +1,18 @@
 <section class="home">
   <mat-card appearance="outlined" class="home__card">
     <mat-card-header>
-      <mat-card-title>Benvenuto</mat-card-title>
+      <mat-card-title>{{ 'home.welcome' | translate }}</mat-card-title>
       @if (currentUser(); as user) {
         <mat-card-subtitle>
-          Sei collegato come <strong>{{ user.username }}</strong>
+          {{ 'home.connectedAs' | translate }} <strong>{{ user.username }}</strong>
           @if (user.role) {
-            con ruolo <strong>{{ user.role }}</strong>
+            {{ 'home.withRole' | translate }} <strong>{{ user.role }}</strong>
           }
         </mat-card-subtitle>
       }
     </mat-card-header>
     <mat-card-content>
-      <p class="home__hint">
-        Usa il menu a sinistra per navigare tra le sezioni del configuratore.
-        Le voci marcate <em>prossimamente</em> verranno aggiunte nei prossimi step.
-      </p>
+      <p class="home__hint">{{ 'home.hint' | translate }}</p>
     </mat-card-content>
   </mat-card>
 </section>

@@ -22,6 +22,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
@@ -52,6 +54,7 @@ import { UserService } from '../../services/users';
     MatSlideToggleModule,
     MatProgressBarModule,
     MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './user-detail-page.html',
   styleUrl: './user-detail-page.scss',
@@ -64,6 +67,7 @@ export class UserDetailPage {
   private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -103,7 +107,7 @@ export class UserDetailPage {
       error: (err: unknown) => {
         this.user.set(null);
         this.loading.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile caricare l\'utente.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('user.loadDetailError')));
       },
     });
   }
@@ -121,12 +125,12 @@ export class UserDetailPage {
         this.user.set(updated);
         this.form.reset({ role: updated.role, active: updated.active });
         this.saving.set(false);
-        this.snackbar.open('Modifiche salvate.', 'OK', { duration: 3000 });
+        this.snackbar.open(this.translate.instant('user.saveSuccess'), 'OK', { duration: 3000 });
       },
       error: (err: unknown) => {
         this.saving.set(false);
         this.snackbar.open(
-          toUserMessage(err, 'Impossibile salvare le modifiche.'),
+          toUserMessage(err, this.translate.instant('user.saveError')),
           'OK',
           { duration: 6000 },
         );
@@ -148,7 +152,7 @@ export class UserDetailPage {
     );
     ref.afterClosed().subscribe((changed) => {
       if (changed) {
-        this.snackbar.open('Password aggiornata.', 'OK', { duration: 3000 });
+        this.snackbar.open(this.translate.instant('user.changePasswordSuccess'), 'OK', { duration: 3000 });
       }
     });
   }
@@ -157,9 +161,9 @@ export class UserDetailPage {
     const u = this.user();
     if (!u) return;
     const data: ConfirmDialogData = {
-      title: `Eliminare l'utente "${u.username}"?`,
-      message: 'L\'utente verrà disattivato (soft delete). Continuare?',
-      confirmLabel: 'Elimina',
+      title: this.translate.instant('user.deleteConfirmTitle', { username: u.username }),
+      message: this.translate.instant('user.deleteConfirmMessage'),
+      confirmLabel: this.translate.instant('user.deleteConfirmButton'),
       destructive: true,
     };
     const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, {
@@ -175,14 +179,13 @@ export class UserDetailPage {
     this.userService.delete(u.id).subscribe({
       next: () => {
         this.deleting.set(false);
-        this.snackbar.open(`Utente "${u.username}" disattivato.`, 'OK', { duration: 4000 });
-        // ricarica per riflettere lo stato aggiornato
+        this.snackbar.open(this.translate.instant('user.deleteSuccess', { username: u.username }), 'OK', { duration: 4000 });
         this.load(u.id);
       },
       error: (err: unknown) => {
         this.deleting.set(false);
         this.snackbar.open(
-          toUserMessage(err, 'Impossibile eliminare l\'utente.'),
+          toUserMessage(err, this.translate.instant('user.deleteError')),
           'OK',
           { duration: 6000 },
         );

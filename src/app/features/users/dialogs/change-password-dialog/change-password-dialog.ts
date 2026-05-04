@@ -16,6 +16,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import { UserService } from '../../services/users';
 
@@ -38,6 +40,7 @@ export interface ChangePasswordDialogData {
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './change-password-dialog.html',
 })
@@ -46,6 +49,7 @@ export class ChangePasswordDialog {
   private readonly ref = inject(MatDialogRef<ChangePasswordDialog, boolean>);
   private readonly fb = inject(FormBuilder);
   private readonly userService = inject(UserService);
+  private readonly translate = inject(TranslateService);
 
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -61,7 +65,7 @@ export class ChangePasswordDialog {
     this.form.markAllAsTouched();
     if (this.form.invalid || this.saving()) return;
     if (this.data.isSelf && !this.form.controls.currentPassword.value) {
-      this.errorMessage.set('La password attuale è obbligatoria.');
+      this.errorMessage.set(this.translate.instant('user.currentPasswordRequired'));
       return;
     }
 
@@ -80,7 +84,7 @@ export class ChangePasswordDialog {
       },
       error: (err: unknown) => {
         this.saving.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile cambiare la password.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('user.changePasswordError')));
       },
     });
   }

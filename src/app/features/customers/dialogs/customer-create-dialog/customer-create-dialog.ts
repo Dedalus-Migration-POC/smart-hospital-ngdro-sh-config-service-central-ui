@@ -12,6 +12,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import { Customer, CUSTOMER_SLUG_PATTERN } from '../../models';
 import { CustomerService } from '../../services/customers';
@@ -30,6 +32,7 @@ import { CustomerService } from '../../services/customers';
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './customer-create-dialog.html',
   styleUrl: './customer-create-dialog.scss',
@@ -38,6 +41,7 @@ export class CustomerCreateDialog {
   private readonly fb = inject(FormBuilder);
   private readonly customers = inject(CustomerService);
   private readonly ref = inject<MatDialogRef<CustomerCreateDialog, Customer | undefined>>(MatDialogRef);
+  private readonly translate = inject(TranslateService);
 
   readonly form = this.fb.nonNullable.group({
     slug: ['', [Validators.required, Validators.maxLength(100), Validators.pattern(CUSTOMER_SLUG_PATTERN)]],
@@ -62,7 +66,7 @@ export class CustomerCreateDialog {
       },
       error: (err: unknown) => {
         this.saving.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile creare il customer.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('customer.createError')));
       },
     });
   }

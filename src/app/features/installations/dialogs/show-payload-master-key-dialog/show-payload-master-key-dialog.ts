@@ -11,6 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import { InstallationService } from '../../services/installations';
 
@@ -31,6 +33,7 @@ export interface ShowPayloadMasterKeyDialogData {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './show-payload-master-key-dialog.html',
   styleUrl: './show-payload-master-key-dialog.scss',
@@ -39,6 +42,7 @@ export class ShowPayloadMasterKeyDialog implements OnInit {
   readonly data = inject<ShowPayloadMasterKeyDialogData>(MAT_DIALOG_DATA);
   private readonly installations = inject(InstallationService);
   private readonly snackbar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
@@ -53,7 +57,7 @@ export class ShowPayloadMasterKeyDialog implements OnInit {
       error: (err: unknown) => {
         this.loading.set(false);
         this.errorMessage.set(
-          toUserMessage(err, 'Impossibile recuperare la payload master key.'),
+          toUserMessage(err, this.translate.instant('installation.showMasterKeyError')),
         );
       },
     });
@@ -64,11 +68,9 @@ export class ShowPayloadMasterKeyDialog implements OnInit {
     if (!value) return;
     try {
       await navigator.clipboard.writeText(value);
-      this.snackbar.open('Chiave copiata negli appunti.', 'OK', { duration: 2500 });
+      this.snackbar.open(this.translate.instant('common.copySuccess'), 'OK', { duration: 2500 });
     } catch {
-      this.snackbar.open('Copia non riuscita: copia manualmente il valore.', 'OK', {
-        duration: 4000,
-      });
+      this.snackbar.open(this.translate.instant('common.copyError'), 'OK', { duration: 4000 });
     }
   }
 }

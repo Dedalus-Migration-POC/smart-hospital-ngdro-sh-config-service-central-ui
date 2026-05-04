@@ -1,25 +1,25 @@
-<h2 mat-dialog-title>Nuova installation</h2>
+<h2 mat-dialog-title>{{ 'installation.createTitle' | translate }}</h2>
 
 <mat-dialog-content>
   <p class="create-form__intro">
-    Aggiungi un'installation on-prem per il customer <strong>{{ data.customerName }}</strong>.
+    {{ 'installation.createIntro' | translate }} <strong>{{ data.customerName }}</strong>.
   </p>
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="create-form" id="installation-create-form">
     <mat-form-field appearance="outline">
-      <mat-label>Nome</mat-label>
+      <mat-label>{{ 'common.name' | translate }}</mat-label>
       <input matInput formControlName="name" required maxlength="255" />
       @if (form.controls.name.touched) {
         @if (form.controls.name.hasError('required')) {
-          <mat-error>Il nome è obbligatorio.</mat-error>
+          <mat-error>{{ 'installation.nameRequired' | translate }}</mat-error>
         } @else if (form.controls.name.hasError('maxlength')) {
-          <mat-error>Massimo 255 caratteri.</mat-error>
+          <mat-error>{{ 'installation.nameMax' | translate }}</mat-error>
         }
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>URL base on-prem</mat-label>
+      <mat-label>{{ 'installation.baseUrlLabel' | translate }}</mat-label>
       <input
         matInput
         formControlName="baseUrl"
@@ -29,20 +29,20 @@
         spellcheck="false"
         placeholder="https://onprem.cliente.local"
       />
-      <mat-hint>Deve iniziare con http:// o https://.</mat-hint>
+      <mat-hint>{{ 'installation.baseUrlHint' | translate }}</mat-hint>
       @if (form.controls.baseUrl.touched) {
         @if (form.controls.baseUrl.hasError('required')) {
-          <mat-error>L'URL base è obbligatorio.</mat-error>
+          <mat-error>{{ 'installation.baseUrlRequired' | translate }}</mat-error>
         } @else if (form.controls.baseUrl.hasError('pattern')) {
-          <mat-error>L'URL deve iniziare con http:// o https://.</mat-error>
+          <mat-error>{{ 'installation.baseUrlPattern' | translate }}</mat-error>
         } @else if (form.controls.baseUrl.hasError('maxlength')) {
-          <mat-error>Massimo 500 caratteri.</mat-error>
+          <mat-error>{{ 'installation.baseUrlMax' | translate }}</mat-error>
         }
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>API key di scrittura</mat-label>
+      <mat-label>{{ 'installation.createApiKeyLabel' | translate }}</mat-label>
       <input
         matInput
         formControlName="apiKey"
@@ -56,18 +56,18 @@
         matSuffix
         type="button"
         (click)="toggleApiKey()"
-        [attr.aria-label]="showApiKey() ? 'Nascondi' : 'Mostra'"
+        [attr.aria-label]="showApiKey() ? ('common.close' | translate) : ('installation.show' | translate)"
       >
         <mat-icon>{{ showApiKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
       </button>
-      <mat-hint>Cifrata a riposo lato central, non più recuperabile in chiaro.</mat-hint>
+      <mat-hint>{{ 'installation.createApiKeyHint' | translate }}</mat-hint>
       @if (form.controls.apiKey.hasError('required') && form.controls.apiKey.touched) {
-        <mat-error>La API key è obbligatoria.</mat-error>
+        <mat-error>{{ 'installation.createApiKeyRequired' | translate }}</mat-error>
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Payload master key (opzionale)</mat-label>
+      <mat-label>{{ 'installation.createMasterKeyLabel' | translate }}</mat-label>
       <input
         matInput
         formControlName="payloadMasterKey"
@@ -80,11 +80,11 @@
         matSuffix
         type="button"
         (click)="toggleMasterKey()"
-        [attr.aria-label]="showMasterKey() ? 'Nascondi' : 'Mostra'"
+        [attr.aria-label]="showMasterKey() ? ('common.close' | translate) : ('installation.show' | translate)"
       >
         <mat-icon>{{ showMasterKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
       </button>
-      <mat-hint>Lascia vuoto per generarne una random; potrai recuperarla subito dopo.</mat-hint>
+      <mat-hint>{{ 'installation.createMasterKeyHint' | translate }}</mat-hint>
     </mat-form-field>
 
     @if (errorMessage()) {
@@ -94,7 +94,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close type="button" [disabled]="saving()">Annulla</button>
+  <button mat-button mat-dialog-close type="button" [disabled]="saving()">{{ 'common.cancel' | translate }}</button>
   <button
     mat-flat-button
     color="primary"
@@ -105,7 +105,7 @@
     @if (saving()) {
       <mat-progress-spinner mode="indeterminate" diameter="20" />
     } @else {
-      Crea
+      {{ 'common.create' | translate }}
     }
   </button>
 </mat-dialog-actions>

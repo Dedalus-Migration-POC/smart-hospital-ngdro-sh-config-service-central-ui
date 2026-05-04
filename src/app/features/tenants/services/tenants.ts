@@ -42,38 +42,64 @@ export class TenantService {
     return this.http.delete<void>(`${this.baseUrl}/tenants/${id}`);
   }
 
-  getConfig(tenantId: string, channelId: string, source: 'local' | 'remote' = 'local'): Observable<AppConfigActive> {
-    const params = new HttpParams().set('source', source);
+  getEntities(tenantId: string, channelId: string): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}/entities`,
+    );
+  }
+
+  getConfig(
+    tenantId: string,
+    channelId: string,
+    source: 'local' | 'remote' = 'local',
+    entity = 'base',
+  ): Observable<AppConfigActive> {
+    const params = new HttpParams().set('source', source).set('entity', entity);
     return this.http.get<AppConfigActive>(
       `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}`,
       { params },
     );
   }
 
-  putConfig(tenantId: string, channelId: string, configJson: unknown): Observable<AppConfigVersion> {
+  putConfig(
+    tenantId: string,
+    channelId: string,
+    entity: string,
+    configJson: unknown,
+  ): Observable<AppConfigVersion> {
     return this.http.put<AppConfigVersion>(
       `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}`,
       { configJson },
+      { params: new HttpParams().set('entity', entity) },
     );
   }
 
-  getHistory(tenantId: string, channelId: string): Observable<AppConfigVersion[]> {
+  getHistory(tenantId: string, channelId: string, entity = 'base'): Observable<AppConfigVersion[]> {
+    const params = new HttpParams().set('entity', entity);
     return this.http.get<AppConfigVersion[]>(
       `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}/history`,
+      { params },
     );
   }
 
-  rollback(tenantId: string, channelId: string, version: number): Observable<AppConfigVersion> {
+  rollback(
+    tenantId: string,
+    channelId: string,
+    entity: string,
+    version: number,
+  ): Observable<AppConfigVersion> {
     return this.http.post<AppConfigVersion>(
       `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}/rollback/${version}`,
       {},
+      { params: new HttpParams().set('entity', entity) },
     );
   }
 
-  resync(tenantId: string, channelId: string): Observable<AppConfigVersion> {
+  resync(tenantId: string, channelId: string, entity = 'base'): Observable<AppConfigVersion> {
     return this.http.post<AppConfigVersion>(
       `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}/resync`,
       {},
+      { params: new HttpParams().set('entity', entity) },
     );
   }
 }

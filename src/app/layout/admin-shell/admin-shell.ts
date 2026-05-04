@@ -16,16 +16,15 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { map } from 'rxjs/operators';
 
 import { AuthService } from '../../core/auth/auth';
 
 interface NavItem {
   icon: string;
-  label: string;
-  /** Se assente, l'item è un placeholder non cliccabile (sezione non ancora implementata). */
+  labelKey: string;
   path?: string;
-  /** Se valorizzato, l'item è visibile solo agli utenti con quel ruolo. */
   requiredRole?: 'ADMIN';
 }
 
@@ -46,6 +45,7 @@ const MOBILE_QUERY = '(max-width: 959px)';
     MatListModule,
     MatMenuModule,
     MatDividerModule,
+    TranslatePipe,
   ],
   templateUrl: './admin-shell.html',
   styleUrl: './admin-shell.scss',
@@ -53,8 +53,10 @@ const MOBILE_QUERY = '(max-width: 959px)';
 export class AdminShell {
   private readonly auth = inject(AuthService);
   private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly translate = inject(TranslateService);
 
   readonly currentUser = this.auth.currentUser;
+  readonly currentLang = signal<string>(this.translate.currentLang ?? localStorage.getItem('sh.cs.lang') ?? 'it');
 
   readonly isMobile = toSignal(
     this.breakpointObserver.observe(MOBILE_QUERY).pipe(map((r) => r.matches)),
@@ -65,10 +67,10 @@ export class AdminShell {
   readonly sidenavOpened = signal(true);
 
   private readonly navItems: readonly NavItem[] = [
-    { icon: 'dashboard', label: 'Dashboard', path: '/' },
-    { icon: 'business', label: 'Customer', path: '/customers' },
-    { icon: 'people', label: 'Utenti', path: '/users', requiredRole: 'ADMIN' },
-    { icon: 'receipt_long', label: 'Audit log', path: '/audit', requiredRole: 'ADMIN' },
+    { icon: 'dashboard', labelKey: 'nav.dashboard', path: '/' },
+    { icon: 'business', labelKey: 'nav.customers', path: '/customers' },
+    { icon: 'people', labelKey: 'nav.users', path: '/users', requiredRole: 'ADMIN' },
+    { icon: 'receipt_long', labelKey: 'nav.auditLog', path: '/audit', requiredRole: 'ADMIN' },
   ];
 
   readonly visibleNavItems = computed(() => {
@@ -77,8 +79,6 @@ export class AdminShell {
   });
 
   constructor() {
-    // Sincronizza l'apertura della sidenav col viewport: chiusa su mobile, aperta su desktop.
-    // Resta sovrascrivibile dall'utente via hamburger / click su backdrop.
     effect(() => {
       this.sidenavOpened.set(!this.isMobile());
     });
@@ -96,5 +96,12 @@ export class AdminShell {
 
   logout(): void {
     this.auth.logout();
+  }
+
+  toggleLanguage(): void {
+    const next = this.currentLang() === 'it' ? 'en' : 'it';
+    this.translate.use(next);
+    this.currentLang.set(next);
+    localStorage.setItem('sh.cs.lang', next);
   }
 }

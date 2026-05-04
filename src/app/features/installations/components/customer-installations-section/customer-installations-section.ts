@@ -18,6 +18,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
   InstallationCreateDialog,
@@ -40,6 +42,7 @@ import { InstallationService } from '../../services/installations';
     MatProgressBarModule,
     MatSlideToggleModule,
     MatTooltipModule,
+    TranslatePipe,
   ],
   templateUrl: './customer-installations-section.html',
   styleUrl: './customer-installations-section.scss',
@@ -52,6 +55,7 @@ export class CustomerInstallationsSection {
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -88,7 +92,7 @@ export class CustomerInstallationsSection {
       },
       error: (err: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile caricare le installation.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('installation.loadError')));
       },
     });
   }
@@ -107,7 +111,7 @@ export class CustomerInstallationsSection {
     ref.afterClosed().subscribe((result) => {
       if (!result) return;
       this.snackbar.open(
-        `Installation "${result.installation.name}" creata.`,
+        this.translate.instant('installation.createSuccess', { name: result.installation.name }),
         'OK',
         { duration: 4000 },
       );
@@ -130,11 +134,9 @@ export class CustomerInstallationsSection {
     if (!alert) return;
     try {
       await navigator.clipboard.writeText(alert.key);
-      this.snackbar.open('Chiave copiata negli appunti.', 'OK', { duration: 2500 });
+      this.snackbar.open(this.translate.instant('common.copySuccess'), 'OK', { duration: 2500 });
     } catch {
-      this.snackbar.open('Copia non riuscita: copia manualmente il valore.', 'OK', {
-        duration: 4000,
-      });
+      this.snackbar.open(this.translate.instant('common.copyError'), 'OK', { duration: 4000 });
     }
   }
 

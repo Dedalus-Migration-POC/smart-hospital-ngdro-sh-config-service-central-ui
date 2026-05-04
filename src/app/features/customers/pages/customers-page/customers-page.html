@@ -1,26 +1,26 @@
 <section class="customers">
   <header class="customers__header">
     <div class="customers__title">
-      <h1>Customer</h1>
-      <p class="customers__subtitle">Clienti gestiti dal configuratore centrale.</p>
+      <h1>{{ 'customer.title' | translate }}</h1>
+      <p class="customers__subtitle">{{ 'customer.subtitle' | translate }}</p>
     </div>
     <button mat-flat-button color="primary" type="button" (click)="openCreate()">
       <mat-icon>add</mat-icon>
-      Nuovo customer
+      {{ 'customer.new' | translate }}
     </button>
   </header>
 
   <div class="customers__toolbar">
     <mat-form-field appearance="outline" class="customers__search">
-      <mat-label>Cerca</mat-label>
+      <mat-label>{{ 'customer.search' | translate }}</mat-label>
       <mat-icon matPrefix>search</mat-icon>
-      <input matInput #searchInput (input)="applyFilter(searchInput.value)" placeholder="slug o nome" />
+      <input matInput #searchInput (input)="applyFilter(searchInput.value)" [placeholder]="'customer.searchPlaceholder' | translate" />
     </mat-form-field>
 
     <mat-slide-toggle
       [checked]="showInactive()"
       (change)="toggleInactive($event.checked)"
-    >Mostra anche inattivi</mat-slide-toggle>
+    >{{ 'common.showInactive' | translate }}</mat-slide-toggle>
 
     <span class="customers__spacer"></span>
 
@@ -28,7 +28,7 @@
       mat-icon-button
       type="button"
       (click)="reload()"
-      matTooltip="Ricarica la lista"
+      [matTooltip]="'customer.reloadList' | translate"
       [disabled]="loading()"
     >
       <mat-icon>refresh</mat-icon>
@@ -46,28 +46,28 @@
   <div class="customers__table-wrap mat-elevation-z1">
     <table mat-table [dataSource]="dataSource" matSort matSortActive="createdAt" matSortDirection="desc">
       <ng-container matColumnDef="slug">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Slug</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'customer.colSlug' | translate }}</th>
         <td mat-cell *matCellDef="let row"><code>{{ row.slug }}</code></td>
       </ng-container>
 
       <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Nome</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'customer.colName' | translate }}</th>
         <td mat-cell *matCellDef="let row">{{ row.name }}</td>
       </ng-container>
 
       <ng-container matColumnDef="active">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Stato</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'customer.colStatus' | translate }}</th>
         <td mat-cell *matCellDef="let row">
           @if (row.active) {
-            <span class="chip chip--ok">Attivo</span>
+            <span class="chip chip--ok">{{ 'common.active' | translate }}</span>
           } @else {
-            <span class="chip chip--off">Inattivo</span>
+            <span class="chip chip--off">{{ 'common.inactive' | translate }}</span>
           }
         </td>
       </ng-container>
 
       <ng-container matColumnDef="createdAt">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Creato il</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'customer.colCreatedAt' | translate }}</th>
         <td mat-cell *matCellDef="let row">{{ row.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
       </ng-container>
 
@@ -78,7 +78,7 @@
             mat-icon-button
             type="button"
             (click)="openDetail(row); $event.stopPropagation()"
-            matTooltip="Apri dettaglio"
+            [matTooltip]="'common.openDetail' | translate"
           >
             <mat-icon>chevron_right</mat-icon>
           </button>
@@ -96,11 +96,11 @@
       <tr *matNoDataRow class="customers__no-data">
         <td [attr.colspan]="displayedColumns.length">
           @if (loading()) {
-            Caricamento in corso…
+            {{ 'common.loadingInProgress' | translate }}
           } @else if (errorMessage()) {
-            Impossibile caricare i dati.
+            {{ 'customer.loadErrorTable' | translate }}
           } @else {
-            Nessun customer da mostrare.
+            {{ 'customer.noData' | translate }}
           }
         </td>
       </tr>

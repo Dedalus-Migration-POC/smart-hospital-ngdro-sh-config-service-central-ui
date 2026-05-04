@@ -33,7 +33,7 @@ export const routes: Routes = [
           import('./features/installations/installations.routes').then((m) => m.installationsRoutes),
       },
       {
-        path: 'tenants',
+        path: 'prodotti',
         loadChildren: () =>
           import('./features/tenants/tenants.routes').then((m) => m.tenantsRoutes),
       },

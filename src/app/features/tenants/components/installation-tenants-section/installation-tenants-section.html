@@ -1,11 +1,11 @@
 <mat-card appearance="outlined" class="tenants">
   <mat-card-header>
-    <mat-card-title>Tenant</mat-card-title>
-    <mat-card-subtitle>Tenant associati a questa installation.</mat-card-subtitle>
+    <mat-card-title>{{ 'product.title' | translate }}</mat-card-title>
+    <mat-card-subtitle>{{ 'product.subtitle' | translate }}</mat-card-subtitle>
     <div class="tenants__header-actions">
       <button mat-flat-button color="primary" type="button" (click)="openCreate()">
         <mat-icon>add</mat-icon>
-        Nuovo tenant
+        {{ 'product.new' | translate }}
       </button>
     </div>
   </mat-card-header>
@@ -15,13 +15,13 @@
       <mat-slide-toggle
         [checked]="showInactive()"
         (change)="toggleInactive($event.checked)"
-      >Mostra anche inattivi</mat-slide-toggle>
+      >{{ 'common.showInactive' | translate }}</mat-slide-toggle>
       <span class="tenants__spacer"></span>
       <button
         mat-icon-button
         type="button"
         (click)="reload()"
-        matTooltip="Ricarica"
+        [matTooltip]="'common.refresh' | translate"
         [disabled]="loading()"
       >
         <mat-icon>refresh</mat-icon>
@@ -39,28 +39,28 @@
     <div class="tenants__table-wrap">
       <table mat-table [dataSource]="rows()">
         <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef>Nome</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'product.colName' | translate }}</th>
           <td mat-cell *matCellDef="let row">{{ row.name }}</td>
         </ng-container>
 
         <ng-container matColumnDef="slug">
-          <th mat-header-cell *matHeaderCellDef>Slug</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'product.colSlug' | translate }}</th>
           <td mat-cell *matCellDef="let row"><code>{{ row.slug }}</code></td>
         </ng-container>
 
         <ng-container matColumnDef="active">
-          <th mat-header-cell *matHeaderCellDef>Stato</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'product.colStatus' | translate }}</th>
           <td mat-cell *matCellDef="let row">
             @if (row.active) {
-              <span class="chip chip--ok">Attivo</span>
+              <span class="chip chip--ok">{{ 'product.active' | translate }}</span>
             } @else {
-              <span class="chip chip--off">Inattivo</span>
+              <span class="chip chip--off">{{ 'product.inactive' | translate }}</span>
             }
           </td>
         </ng-container>
 
         <ng-container matColumnDef="createdAt">
-          <th mat-header-cell *matHeaderCellDef>Creato il</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'product.colCreatedAt' | translate }}</th>
           <td mat-cell *matCellDef="let row">{{ row.createdAt | date:'dd/MM/yyyy' }}</td>
         </ng-container>
 
@@ -71,7 +71,7 @@
               mat-icon-button
               type="button"
               (click)="openTenant(row); $event.stopPropagation()"
-              matTooltip="Apri dettaglio"
+              [matTooltip]="'common.openDetail' | translate"
             >
               <mat-icon>chevron_right</mat-icon>
             </button>
@@ -89,11 +89,11 @@
         <tr *matNoDataRow class="tenants__no-data">
           <td [attr.colspan]="displayedColumns.length">
             @if (loading()) {
-              Caricamento in corso…
+              {{ 'common.loadingInProgress' | translate }}
             } @else if (errorMessage()) {
-              Impossibile caricare i tenant.
+              {{ 'product.loadErrorTable' | translate }}
             } @else {
-              Nessun tenant per questa installation.
+              {{ 'product.noData' | translate }}
             }
           </td>
         </tr>

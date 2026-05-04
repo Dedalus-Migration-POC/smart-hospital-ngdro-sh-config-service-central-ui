@@ -14,6 +14,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import { Installation } from '../../models';
 import { InstallationService } from '../../services/installations';
@@ -38,6 +40,7 @@ export interface RotateApiKeyDialogData {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './rotate-api-key-dialog.html',
   styleUrl: './rotate-api-key-dialog.scss',
@@ -46,6 +49,7 @@ export class RotateApiKeyDialog {
   readonly data = inject<RotateApiKeyDialogData>(MAT_DIALOG_DATA);
   private readonly fb = inject(FormBuilder);
   private readonly installations = inject(InstallationService);
+  private readonly translate = inject(TranslateService);
   private readonly ref = inject<MatDialogRef<RotateApiKeyDialog, Installation | undefined>>(MatDialogRef);
 
   readonly form = this.fb.nonNullable.group({
@@ -76,7 +80,7 @@ export class RotateApiKeyDialog {
         },
         error: (err: unknown) => {
           this.saving.set(false);
-          this.errorMessage.set(toUserMessage(err, 'Impossibile ruotare la API key.'));
+          this.errorMessage.set(toUserMessage(err, this.translate.instant('installation.rotateApiKeyError')));
         },
       });
   }

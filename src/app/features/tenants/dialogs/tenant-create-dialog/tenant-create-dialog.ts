@@ -15,6 +15,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import { Tenant, TENANT_SLUG_PATTERN } from '../../models';
 import { TenantService } from '../../services/tenants';
@@ -35,6 +37,7 @@ export interface TenantCreateDialogData {
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './tenant-create-dialog.html',
 })
@@ -43,6 +46,7 @@ export class TenantCreateDialog {
   private readonly ref = inject(MatDialogRef<TenantCreateDialog, Tenant>);
   private readonly fb = inject(FormBuilder);
   private readonly tenants = inject(TenantService);
+  private readonly translate = inject(TranslateService);
 
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -74,7 +78,7 @@ export class TenantCreateDialog {
       },
       error: (err: unknown) => {
         this.saving.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile creare il tenant.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('product.createError')));
       },
     });
   }

@@ -1,6 +1,6 @@
 <section class="detail">
   <header class="detail__header">
-    <a mat-icon-button routerLink="/users" aria-label="Torna alla lista utenti">
+    <a mat-icon-button routerLink="/users" [attr.aria-label]="'common.close' | translate">
       <mat-icon>arrow_back</mat-icon>
     </a>
     <div class="detail__title">
@@ -8,9 +8,9 @@
         @if (user(); as u) {
           {{ u.username }}
         } @else if (loading()) {
-          Caricamento…
+          {{ 'common.loading' | translate }}
         } @else {
-          Utente
+          {{ 'user.fallbackTitle' | translate }}
         }
       </h1>
       @if (user(); as u) {
@@ -33,21 +33,21 @@
   @if (user(); as u) {
     <mat-card appearance="outlined">
       <mat-card-header>
-        <mat-card-title>Dati utente</mat-card-title>
+        <mat-card-title>{{ 'user.baseData' | translate }}</mat-card-title>
         @if (isSelf()) {
-          <mat-card-subtitle>Stai modificando il tuo account.</mat-card-subtitle>
+          <mat-card-subtitle>{{ 'user.selfSubtitle' | translate }}</mat-card-subtitle>
         }
       </mat-card-header>
       <mat-card-content>
         <form [formGroup]="form" (ngSubmit)="save()" class="detail__form" id="user-edit-form">
           <mat-form-field appearance="outline">
-            <mat-label>Username</mat-label>
+            <mat-label>{{ 'user.usernameLabel' | translate }}</mat-label>
             <input matInput [value]="u.username" disabled />
-            <mat-hint>Lo username non è modificabile.</mat-hint>
+            <mat-hint>{{ 'user.usernameHint' | translate }}</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Ruolo</mat-label>
+            <mat-label>{{ 'user.roleLabel' | translate }}</mat-label>
             <mat-select formControlName="role" required>
               @for (r of availableRoles; track r) {
                 <mat-option [value]="r">{{ r }}</mat-option>
@@ -55,11 +55,11 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-slide-toggle formControlName="active">Attivo</mat-slide-toggle>
+          <mat-slide-toggle formControlName="active">{{ 'user.activeToggle' | translate }}</mat-slide-toggle>
 
           <div class="detail__meta">
-            Creato il {{ u.createdAt | date:'dd/MM/yyyy HH:mm' }} ·
-            Aggiornato il {{ u.updatedAt | date:'dd/MM/yyyy HH:mm' }}
+            {{ 'common.createdAt' | translate }} {{ u.createdAt | date:'dd/MM/yyyy HH:mm' }} ·
+            {{ u.updatedAt | date:'dd/MM/yyyy HH:mm' }}
           </div>
         </form>
       </mat-card-content>
@@ -73,7 +73,7 @@
             [disabled]="deleting() || saving()"
           >
             <mat-icon>delete_outline</mat-icon>
-            Elimina
+            {{ 'user.delete' | translate }}
           </button>
         }
         <button
@@ -86,7 +86,7 @@
           @if (saving()) {
             <mat-progress-spinner mode="indeterminate" diameter="20" />
           } @else {
-            Salva
+            {{ 'common.save' | translate }}
           }
         </button>
       </mat-card-actions>
@@ -94,12 +94,12 @@
 
     <mat-card appearance="outlined">
       <mat-card-header>
-        <mat-card-title>Sicurezza</mat-card-title>
+        <mat-card-title>{{ 'user.security' | translate }}</mat-card-title>
         <mat-card-subtitle>
           @if (isSelf()) {
-            Cambia la tua password.
+            {{ 'user.securitySelf' | translate }}
           } @else {
-            Reset password (admin). Non è richiesta la password attuale.
+            {{ 'user.securityAdmin' | translate }}
           }
         </mat-card-subtitle>
       </mat-card-header>
@@ -107,9 +107,9 @@
         <button mat-stroked-button type="button" (click)="openChangePassword()">
           <mat-icon>lock_reset</mat-icon>
           @if (isSelf()) {
-            Cambia password
+            {{ 'user.changePassword' | translate }}
           } @else {
-            Reset password
+            {{ 'user.resetPassword' | translate }}
           }
         </button>
       </mat-card-actions>

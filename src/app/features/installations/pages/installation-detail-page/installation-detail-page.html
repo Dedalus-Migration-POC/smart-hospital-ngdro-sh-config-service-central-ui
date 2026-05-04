@@ -1,6 +1,6 @@
 <section class="detail">
   <header class="detail__header">
-    <button mat-icon-button type="button" (click)="goToCustomer()" aria-label="Torna al customer">
+    <button mat-icon-button type="button" (click)="goToCustomer()" [attr.aria-label]="'common.close' | translate">
       <mat-icon>arrow_back</mat-icon>
     </button>
     <div class="detail__title">
@@ -8,9 +8,9 @@
         @if (installation(); as i) {
           {{ i.name }}
         } @else if (loading()) {
-          Caricamento…
+          {{ 'common.loading' | translate }}
         } @else {
-          Installation
+          {{ 'installation.fallbackTitle' | translate }}
         }
       </h1>
       @if (installation(); as i) {
@@ -35,39 +35,39 @@
   @if (installation(); as i) {
     <mat-card appearance="outlined" class="detail__card">
       <mat-card-header>
-        <mat-card-title>Dati base</mat-card-title>
+        <mat-card-title>{{ 'installation.baseData' | translate }}</mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <form [formGroup]="form" (ngSubmit)="save()" class="detail__form" id="installation-edit-form">
           <mat-form-field appearance="outline">
-            <mat-label>Nome</mat-label>
+            <mat-label>{{ 'common.name' | translate }}</mat-label>
             <input matInput formControlName="name" required maxlength="255" />
             @if (form.controls.name.touched) {
               @if (form.controls.name.hasError('required')) {
-                <mat-error>Il nome è obbligatorio.</mat-error>
+                <mat-error>{{ 'installation.nameRequired' | translate }}</mat-error>
               } @else if (form.controls.name.hasError('maxlength')) {
-                <mat-error>Massimo 255 caratteri.</mat-error>
+                <mat-error>{{ 'installation.nameMax' | translate }}</mat-error>
               }
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>URL base on-prem</mat-label>
+            <mat-label>{{ 'installation.baseUrlLabel' | translate }}</mat-label>
             <input matInput formControlName="baseUrl" required maxlength="500" />
             @if (form.controls.baseUrl.touched) {
               @if (form.controls.baseUrl.hasError('required')) {
-                <mat-error>L'URL base è obbligatorio.</mat-error>
+                <mat-error>{{ 'installation.baseUrlRequired' | translate }}</mat-error>
               } @else if (form.controls.baseUrl.hasError('pattern')) {
-                <mat-error>L'URL deve iniziare con http:// o https://.</mat-error>
+                <mat-error>{{ 'installation.baseUrlPattern' | translate }}</mat-error>
               } @else if (form.controls.baseUrl.hasError('maxlength')) {
-                <mat-error>Massimo 500 caratteri.</mat-error>
+                <mat-error>{{ 'installation.baseUrlMax' | translate }}</mat-error>
               }
             }
           </mat-form-field>
 
-          <mat-slide-toggle formControlName="active">Attiva</mat-slide-toggle>
+          <mat-slide-toggle formControlName="active">{{ 'installation.activeToggle' | translate }}</mat-slide-toggle>
 
-          <div class="detail__meta">Creata il {{ i.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
+          <div class="detail__meta">{{ 'installation.createdAt' | translate }} {{ i.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
         </form>
       </mat-card-content>
       <mat-card-actions align="end" class="detail__actions">
@@ -79,7 +79,7 @@
           [disabled]="deleting() || saving()"
         >
           <mat-icon>delete_outline</mat-icon>
-          Elimina
+          {{ 'installation.delete' | translate }}
         </button>
         <button
           mat-flat-button
@@ -91,7 +91,7 @@
           @if (saving()) {
             <mat-progress-spinner mode="indeterminate" diameter="20" />
           } @else {
-            Salva
+            {{ 'common.save' | translate }}
           }
         </button>
       </mat-card-actions>
@@ -99,22 +99,22 @@
 
     <mat-card appearance="outlined" class="detail__card">
       <mat-card-header>
-        <mat-card-title>Sicurezza</mat-card-title>
-        <mat-card-subtitle>Credenziali del canale central → on-prem.</mat-card-subtitle>
+        <mat-card-title>{{ 'installation.security' | translate }}</mat-card-title>
+        <mat-card-subtitle>{{ 'installation.securitySubtitle' | translate }}</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content class="detail__security">
         <div class="security__row">
           <div class="security__label">
             <mat-icon>vpn_key</mat-icon>
             <div>
-              <div class="security__title">API key di scrittura</div>
+              <div class="security__title">{{ 'installation.apiKeyLabel' | translate }}</div>
               <div class="security__hint">
                 @if (i.apiKeyConfigured) {
-                  <span class="chip chip--ok">Configurata</span>
-                  Cifrata a riposo, non recuperabile in chiaro.
+                  <span class="chip chip--ok">{{ 'installation.apiKeyConfigured' | translate }}</span>
+                  {{ 'installation.apiKeyConfiguredHint' | translate }}
                 } @else {
-                  <span class="chip chip--off">Mancante</span>
-                  L'on-prem non potrà autenticare le scritture finché non viene impostata.
+                  <span class="chip chip--off">{{ 'installation.apiKeyMissing' | translate }}</span>
+                  {{ 'installation.apiKeyMissingHint' | translate }}
                 }
               </div>
             </div>
@@ -122,7 +122,7 @@
           <div class="security__actions">
             <button mat-stroked-button type="button" (click)="rotateApiKey()">
               <mat-icon>autorenew</mat-icon>
-              Ruota
+              {{ 'installation.rotate' | translate }}
             </button>
           </div>
         </div>
@@ -133,14 +133,14 @@
           <div class="security__label">
             <mat-icon>enhanced_encryption</mat-icon>
             <div>
-              <div class="security__title">Payload master key</div>
+              <div class="security__title">{{ 'installation.payloadMasterKey' | translate }}</div>
               <div class="security__hint">
                 @if (i.payloadMasterKeyConfigured) {
-                  <span class="chip chip--ok">Configurata</span>
-                  Recuperabile in chiaro per copiarla nell'on-prem.
+                  <span class="chip chip--ok">{{ 'installation.payloadKeyConfigured' | translate }}</span>
+                  {{ 'installation.payloadKeyConfiguredHint' | translate }}
                 } @else {
-                  <span class="chip chip--off">Mancante</span>
-                  Il push delle config fallirà finché on-prem e central non condividono la stessa chiave.
+                  <span class="chip chip--off">{{ 'installation.payloadKeyMissing' | translate }}</span>
+                  {{ 'installation.payloadKeyMissingHint' | translate }}
                 }
               </div>
             </div>
@@ -153,11 +153,11 @@
               [disabled]="!i.payloadMasterKeyConfigured"
             >
               <mat-icon>visibility</mat-icon>
-              Mostra
+              {{ 'installation.show' | translate }}
             </button>
             <button mat-stroked-button type="button" (click)="rotatePayloadMasterKey()">
               <mat-icon>autorenew</mat-icon>
-              Ruota
+              {{ 'installation.rotate' | translate }}
             </button>
           </div>
         </div>
@@ -166,16 +166,16 @@
 
     <mat-card appearance="outlined" class="detail__card">
       <mat-card-header>
-        <mat-card-title>Stato sync</mat-card-title>
-        <mat-card-subtitle>Ultimo push delle config verso questa on-prem.</mat-card-subtitle>
+        <mat-card-title>{{ 'installation.syncStatus' | translate }}</mat-card-title>
+        <mat-card-subtitle>{{ 'installation.syncSubtitle' | translate }}</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
         @if (!i.lastSyncAt) {
-          <p class="detail__meta">Nessun push effettuato finora.</p>
+          <p class="detail__meta">{{ 'installation.syncNone' | translate }}</p>
         } @else {
           <div class="sync">
             <div class="sync__row">
-              <span class="sync__label">Stato</span>
+              <span class="sync__label">{{ 'installation.syncStateLabel' | translate }}</span>
               @switch (i.lastSyncStatus) {
                 @case ('SYNCED') { <span class="chip chip--ok">SYNCED</span> }
                 @case ('DRAFT') { <span class="chip chip--warn">DRAFT</span> }
@@ -183,7 +183,7 @@
               }
             </div>
             <div class="sync__row">
-              <span class="sync__label">Quando</span>
+              <span class="sync__label">{{ 'installation.syncWhen' | translate }}</span>
               <span>{{ i.lastSyncAt | date:'dd/MM/yyyy HH:mm:ss' }}</span>
             </div>
             @if (i.lastSyncError) {

@@ -1,6 +1,6 @@
 <section class="detail">
   <header class="detail__header">
-    <button mat-icon-button type="button" (click)="goToInstallation()" aria-label="Torna alla installation">
+    <button mat-icon-button type="button" (click)="goToInstallation()" [attr.aria-label]="'common.close' | translate">
       <mat-icon>arrow_back</mat-icon>
     </button>
     <div class="detail__title">
@@ -8,9 +8,9 @@
         @if (tenant(); as t) {
           {{ t.name }}
         } @else if (loading()) {
-          Caricamento…
+          {{ 'common.loading' | translate }}
         } @else {
-          Tenant
+          {{ 'product.fallbackTitle' | translate }}
         }
       </h1>
       @if (tenant(); as t) {
@@ -33,32 +33,32 @@
   @if (tenant(); as t) {
     <mat-card appearance="outlined">
       <mat-card-header>
-        <mat-card-title>Dati base</mat-card-title>
+        <mat-card-title>{{ 'product.baseData' | translate }}</mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <form [formGroup]="form" (ngSubmit)="save()" class="detail__form" id="tenant-edit-form">
           <mat-form-field appearance="outline">
-            <mat-label>Slug</mat-label>
+            <mat-label>{{ 'common.slug' | translate }}</mat-label>
             <input matInput [value]="t.slug" disabled />
-            <mat-hint>Lo slug non è modificabile dopo la creazione.</mat-hint>
+            <mat-hint>{{ 'product.slugHint' | translate }}</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Nome</mat-label>
+            <mat-label>{{ 'common.name' | translate }}</mat-label>
             <input matInput formControlName="name" required maxlength="255" />
             @if (form.controls.name.touched) {
               @if (form.controls.name.hasError('required')) {
-                <mat-error>Il nome è obbligatorio.</mat-error>
+                <mat-error>{{ 'product.nameRequired' | translate }}</mat-error>
               } @else if (form.controls.name.hasError('maxlength')) {
-                <mat-error>Massimo 255 caratteri.</mat-error>
+                <mat-error>{{ 'product.nameMax' | translate }}</mat-error>
               }
             }
           </mat-form-field>
 
-          <mat-slide-toggle formControlName="active">Attivo</mat-slide-toggle>
+          <mat-slide-toggle formControlName="active">{{ 'common.active' | translate }}</mat-slide-toggle>
 
           <div class="detail__meta">
-            Creato il {{ t.createdAt | date:'dd/MM/yyyy HH:mm' }}
+            {{ 'common.createdAt' | translate }} {{ t.createdAt | date:'dd/MM/yyyy HH:mm' }}
           </div>
         </form>
       </mat-card-content>
@@ -71,7 +71,7 @@
           [disabled]="deleting() || saving()"
         >
           <mat-icon>delete_outline</mat-icon>
-          Elimina
+          {{ 'product.delete' | translate }}
         </button>
         <button
           mat-flat-button
@@ -83,7 +83,7 @@
           @if (saving()) {
             <mat-progress-spinner mode="indeterminate" diameter="20" />
           } @else {
-            Salva
+            {{ 'common.save' | translate }}
           }
         </button>
       </mat-card-actions>
@@ -91,8 +91,8 @@
 
     <mat-card appearance="outlined">
       <mat-card-header>
-        <mat-card-title>Configurazioni</mat-card-title>
-        <mat-card-subtitle>Configura ogni canale e pusha all'on-prem.</mat-card-subtitle>
+        <mat-card-title>{{ 'product.configs' | translate }}</mat-card-title>
+        <mat-card-subtitle>{{ 'product.configsSubtitle' | translate }}</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content class="detail__configs">
         <mat-tab-group animationDuration="150ms" class="detail__tabs">

@@ -7,6 +7,7 @@ import {
   MatDialogContent,
   MatDialogTitle,
 } from '@angular/material/dialog';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 export interface ConfirmDialogData {
   title: string;
@@ -21,21 +22,22 @@ export interface ConfirmDialogData {
   selector: 'app-confirm-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButtonModule],
+  imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButtonModule, TranslatePipe],
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>{{ data.message }}</mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close type="button">{{ data.cancelLabel ?? 'Annulla' }}</button>
+      <button mat-button mat-dialog-close type="button">{{ data.cancelLabel ?? translate.instant('common.cancel') }}</button>
       <button
         mat-flat-button
         type="button"
         [color]="data.destructive ? 'warn' : 'primary'"
         [mat-dialog-close]="true"
-      >{{ data.confirmLabel ?? 'Conferma' }}</button>
+      >{{ data.confirmLabel ?? translate.instant('common.confirm') }}</button>
     </mat-dialog-actions>
   `,
 })
 export class ConfirmDialog {
   readonly data = inject<ConfirmDialogData>(MAT_DIALOG_DATA);
+  readonly translate = inject(TranslateService);
 }

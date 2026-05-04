@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { AuthService } from '../../../../core/auth/auth';
 
@@ -7,7 +8,7 @@ import { AuthService } from '../../../../core/auth/auth';
   selector: 'app-home-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatCardModule],
+  imports: [MatCardModule, TranslatePipe],
   templateUrl: './home-page.html',
   styleUrl: './home-page.scss',
 })

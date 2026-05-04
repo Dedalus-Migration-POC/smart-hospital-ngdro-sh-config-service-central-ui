@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Nuovo utente</h2>
+<h2 mat-dialog-title>{{ 'user.createTitle' | translate }}</h2>
 
 <mat-dialog-content>
   @if (errorMessage(); as err) {
@@ -7,22 +7,22 @@
 
   <form [formGroup]="form" (ngSubmit)="submit()" id="user-create-form" class="dialog-form">
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Username</mat-label>
+      <mat-label>{{ 'user.usernameLabel' | translate }}</mat-label>
       <input matInput formControlName="username" required maxlength="100" autocomplete="off" />
-      <mat-hint>Lettere, cifre, '.', '_', '-'. Non modificabile dopo la creazione.</mat-hint>
+      <mat-hint>{{ 'user.usernameCreateHint' | translate }}</mat-hint>
       @if (form.controls.username.touched) {
         @if (form.controls.username.hasError('required')) {
-          <mat-error>Lo username è obbligatorio.</mat-error>
+          <mat-error>{{ 'user.usernameRequired' | translate }}</mat-error>
         } @else if (form.controls.username.hasError('maxlength')) {
-          <mat-error>Massimo 100 caratteri.</mat-error>
+          <mat-error>{{ 'user.usernameMax' | translate }}</mat-error>
         } @else if (form.controls.username.hasError('pattern')) {
-          <mat-error>Solo lettere, cifre, '.', '_', '-'.</mat-error>
+          <mat-error>{{ 'user.usernamePattern' | translate }}</mat-error>
         }
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Password</mat-label>
+      <mat-label>{{ 'user.passwordLabel' | translate }}</mat-label>
       <input
         matInput
         formControlName="password"
@@ -36,17 +36,17 @@
       </button>
       @if (form.controls.password.touched) {
         @if (form.controls.password.hasError('required')) {
-          <mat-error>La password è obbligatoria.</mat-error>
+          <mat-error>{{ 'user.passwordRequired' | translate }}</mat-error>
         } @else if (form.controls.password.hasError('minlength')) {
-          <mat-error>Almeno 8 caratteri.</mat-error>
+          <mat-error>{{ 'user.passwordMin' | translate }}</mat-error>
         } @else if (form.controls.password.hasError('maxlength')) {
-          <mat-error>Massimo 128 caratteri.</mat-error>
+          <mat-error>{{ 'user.passwordMax' | translate }}</mat-error>
         }
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Ruolo</mat-label>
+      <mat-label>{{ 'user.roleLabel' | translate }}</mat-label>
       <mat-select formControlName="role" required>
         @for (r of availableRoles; track r) {
           <mat-option [value]="r">{{ r }}</mat-option>
@@ -57,7 +57,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button type="button" (click)="cancel()" [disabled]="saving()">Annulla</button>
+  <button mat-button type="button" (click)="cancel()" [disabled]="saving()">{{ 'common.cancel' | translate }}</button>
   <button
     mat-flat-button
     color="primary"
@@ -68,7 +68,7 @@
     @if (saving()) {
       <mat-progress-spinner mode="indeterminate" diameter="20" />
     } @else {
-      Crea
+      {{ 'common.create' | translate }}
     }
   </button>
 </mat-dialog-actions>

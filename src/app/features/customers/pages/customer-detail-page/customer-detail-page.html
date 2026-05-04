@@ -1,6 +1,6 @@
 <section class="detail">
   <header class="detail__header">
-    <a mat-icon-button routerLink="/customers" aria-label="Torna alla lista">
+    <a mat-icon-button routerLink="/customers" [attr.aria-label]="'common.close' | translate">
       <mat-icon>arrow_back</mat-icon>
     </a>
     <div class="detail__title">
@@ -8,9 +8,9 @@
         @if (customer(); as c) {
           {{ c.name }}
         } @else if (loading()) {
-          Caricamento…
+          {{ 'common.loading' | translate }}
         } @else {
-          Customer
+          {{ 'customer.fallbackTitle' | translate }}
         }
       </h1>
       @if (customer(); as c) {
@@ -33,35 +33,35 @@
   @if (customer(); as c) {
     <mat-card appearance="outlined" class="detail__card">
       <mat-card-header>
-        <mat-card-title>Dati base</mat-card-title>
+        <mat-card-title>{{ 'customer.baseData' | translate }}</mat-card-title>
       </mat-card-header>
 
       <mat-card-content>
         <form [formGroup]="form" (ngSubmit)="save()" class="detail__form" id="customer-edit-form">
           <mat-form-field appearance="outline">
-            <mat-label>Slug</mat-label>
+            <mat-label>{{ 'common.slug' | translate }}</mat-label>
             <input matInput [value]="c.slug" disabled />
-            <mat-hint>Lo slug non è modificabile dopo la creazione.</mat-hint>
+            <mat-hint>{{ 'customer.slugHint' | translate }}</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Nome</mat-label>
+            <mat-label>{{ 'common.name' | translate }}</mat-label>
             <input matInput formControlName="name" required maxlength="255" />
             @if (form.controls.name.touched) {
               @if (form.controls.name.hasError('required')) {
-                <mat-error>Il nome è obbligatorio.</mat-error>
+                <mat-error>{{ 'customer.nameRequiredError' | translate }}</mat-error>
               } @else if (form.controls.name.hasError('maxlength')) {
-                <mat-error>Massimo 255 caratteri.</mat-error>
+                <mat-error>{{ 'customer.nameMaxError' | translate }}</mat-error>
               }
             }
           </mat-form-field>
 
           <mat-slide-toggle formControlName="active">
-            Attivo
+            {{ 'common.active' | translate }}
           </mat-slide-toggle>
 
           <div class="detail__meta">
-            Creato il {{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}
+            {{ 'common.createdAt' | translate }} {{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}
           </div>
         </form>
       </mat-card-content>
@@ -75,7 +75,7 @@
           [disabled]="deleting() || saving()"
         >
           <mat-icon>delete_outline</mat-icon>
-          Elimina
+          {{ 'customer.delete' | translate }}
         </button>
         <button
           mat-flat-button
@@ -87,7 +87,7 @@
           @if (saving()) {
             <mat-progress-spinner mode="indeterminate" diameter="20" />
           } @else {
-            Salva
+            {{ 'common.save' | translate }}
           }
         </button>
       </mat-card-actions>

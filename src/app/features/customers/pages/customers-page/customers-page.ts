@@ -23,6 +23,8 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import { CustomerCreateDialog } from '../../dialogs/customer-create-dialog/customer-create-dialog';
 import { Customer } from '../../models';
@@ -45,6 +47,7 @@ import { CustomerService } from '../../services/customers';
     MatProgressBarModule,
     MatSlideToggleModule,
     MatTooltipModule,
+    TranslatePipe,
   ],
   templateUrl: './customers-page.html',
   styleUrl: './customers-page.scss',
@@ -54,6 +57,7 @@ export class CustomersPage implements OnInit, AfterViewInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -89,7 +93,7 @@ export class CustomersPage implements OnInit, AfterViewInit {
       },
       error: (err: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile caricare i customer.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('customer.loadDetailError')));
       },
     });
   }
@@ -110,7 +114,7 @@ export class CustomersPage implements OnInit, AfterViewInit {
     );
     ref.afterClosed().subscribe((created) => {
       if (created) {
-        this.snackbar.open(`Customer "${created.name}" creato.`, 'OK', { duration: 4000 });
+        this.snackbar.open(this.translate.instant('customer.createSuccess', { name: created.name }), 'OK', { duration: 4000 });
         this.reload();
       }
     });

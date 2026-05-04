@@ -17,6 +17,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import { AVAILABLE_ROLES, User, USERNAME_PATTERN } from '../../models';
 import { UserService } from '../../services/users';
@@ -36,6 +38,7 @@ export type UserCreateDialogData = Record<string, never>;
     MatSelectModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './user-create-dialog.html',
 })
@@ -44,6 +47,7 @@ export class UserCreateDialog {
   private readonly ref = inject(MatDialogRef<UserCreateDialog, User>);
   private readonly fb = inject(FormBuilder);
   private readonly userService = inject(UserService);
+  private readonly translate = inject(TranslateService);
 
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -78,7 +82,7 @@ export class UserCreateDialog {
       },
       error: (err: unknown) => {
         this.saving.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile creare l\'utente.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('user.createError')));
       },
     });
   }

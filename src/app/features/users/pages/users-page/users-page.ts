@@ -22,6 +22,8 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
   UserCreateDialog,
@@ -47,6 +49,7 @@ import { UserService } from '../../services/users';
     MatProgressBarModule,
     MatSlideToggleModule,
     MatTooltipModule,
+    TranslatePipe,
   ],
   templateUrl: './users-page.html',
   styleUrl: './users-page.scss',
@@ -59,6 +62,7 @@ export class UsersPage implements AfterViewInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -101,7 +105,7 @@ export class UsersPage implements AfterViewInit {
       },
       error: (err: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile caricare gli utenti.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('user.loadError')));
       },
     });
   }
@@ -114,7 +118,7 @@ export class UsersPage implements AfterViewInit {
     );
     ref.afterClosed().subscribe((user) => {
       if (!user) return;
-      this.snackbar.open(`Utente "${user.username}" creato.`, 'OK', { duration: 3000 });
+      this.snackbar.open(this.translate.instant('user.createSuccess', { username: user.username }), 'OK', { duration: 3000 });
       this.reload();
     });
   }

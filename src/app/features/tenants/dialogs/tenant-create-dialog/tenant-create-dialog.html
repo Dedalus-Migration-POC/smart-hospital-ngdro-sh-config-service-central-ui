@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Nuovo tenant — {{ data.installationName }}</h2>
+<h2 mat-dialog-title>{{ 'product.createTitle' | translate: { installationName: data.installationName } }}</h2>
 
 <mat-dialog-content>
   @if (errorMessage(); as err) {
@@ -7,28 +7,28 @@
 
   <form [formGroup]="form" (ngSubmit)="submit()" id="tenant-create-form" class="dialog-form">
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Slug</mat-label>
+      <mat-label>{{ 'common.slug' | translate }}</mat-label>
       <input matInput formControlName="slug" required maxlength="100" autocomplete="off" />
-      <mat-hint>Solo lettere minuscole, cifre e trattini. Non modificabile dopo la creazione.</mat-hint>
+      <mat-hint>{{ 'common.slugHint' | translate }}</mat-hint>
       @if (form.controls.slug.touched) {
         @if (form.controls.slug.hasError('required')) {
-          <mat-error>Lo slug è obbligatorio.</mat-error>
+          <mat-error>{{ 'product.slugRequired' | translate }}</mat-error>
         } @else if (form.controls.slug.hasError('maxlength')) {
-          <mat-error>Massimo 100 caratteri.</mat-error>
+          <mat-error>{{ 'product.slugMax' | translate }}</mat-error>
         } @else if (form.controls.slug.hasError('pattern')) {
-          <mat-error>Solo lettere minuscole, cifre e trattini.</mat-error>
+          <mat-error>{{ 'product.slugPattern' | translate }}</mat-error>
         }
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Nome</mat-label>
+      <mat-label>{{ 'common.name' | translate }}</mat-label>
       <input matInput formControlName="name" required maxlength="255" />
       @if (form.controls.name.touched) {
         @if (form.controls.name.hasError('required')) {
-          <mat-error>Il nome è obbligatorio.</mat-error>
+          <mat-error>{{ 'product.nameRequired' | translate }}</mat-error>
         } @else if (form.controls.name.hasError('maxlength')) {
-          <mat-error>Massimo 255 caratteri.</mat-error>
+          <mat-error>{{ 'product.nameMax' | translate }}</mat-error>
         }
       }
     </mat-form-field>
@@ -36,7 +36,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button type="button" (click)="cancel()" [disabled]="saving()">Annulla</button>
+  <button mat-button type="button" (click)="cancel()" [disabled]="saving()">{{ 'common.cancel' | translate }}</button>
   <button
     mat-flat-button
     color="primary"
@@ -47,7 +47,7 @@
     @if (saving()) {
       <mat-progress-spinner mode="indeterminate" diameter="20" />
     } @else {
-      Crea
+      {{ 'common.create' | translate }}
     }
   </button>
 </mat-dialog-actions>

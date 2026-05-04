@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
@@ -21,6 +22,7 @@ import { toUserMessage } from '../../../../core/http/api-error';
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './login-page.html',
   styleUrl: './login-page.scss',
@@ -30,6 +32,7 @@ export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly translate = inject(TranslateService);
 
   readonly form = this.fb.nonNullable.group({
     username: ['', [Validators.required]],
@@ -55,7 +58,7 @@ export class LoginPage {
       },
       error: (err: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Errore inatteso durante il login.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('auth.loginError')));
       },
     });
   }

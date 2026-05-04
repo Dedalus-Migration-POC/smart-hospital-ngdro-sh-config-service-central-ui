@@ -1,44 +1,44 @@
 <section class="audit">
-  <h1 class="audit__title">Audit log</h1>
+  <h1 class="audit__title">{{ 'audit.title' | translate }}</h1>
 
   <mat-card appearance="outlined" class="audit__filters">
     <mat-card-header>
-      <mat-card-title>Filtri</mat-card-title>
+      <mat-card-title>{{ 'audit.filtersTitle' | translate }}</mat-card-title>
     </mat-card-header>
     <mat-card-content>
       <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="audit__filter-form">
         <mat-form-field appearance="outline">
-          <mat-label>Attore</mat-label>
+          <mat-label>{{ 'audit.filterActor' | translate }}</mat-label>
           <input matInput formControlName="actor" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Azione</mat-label>
+          <mat-label>{{ 'audit.filterAction' | translate }}</mat-label>
           <input matInput formControlName="action" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Tipo entità</mat-label>
+          <mat-label>{{ 'audit.filterEntityType' | translate }}</mat-label>
           <input matInput formControlName="entityType" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>ID entità</mat-label>
+          <mat-label>{{ 'audit.filterEntityId' | translate }}</mat-label>
           <input matInput formControlName="entityId" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Esito</mat-label>
+          <mat-label>{{ 'audit.filterOutcome' | translate }}</mat-label>
           <input matInput formControlName="outcome" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Dal</mat-label>
+          <mat-label>{{ 'audit.filterFrom' | translate }}</mat-label>
           <input matInput formControlName="from" type="date" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Al</mat-label>
+          <mat-label>{{ 'audit.filterTo' | translate }}</mat-label>
           <input matInput formControlName="to" type="date" />
         </mat-form-field>
       </form>
@@ -46,11 +46,11 @@
     <mat-card-actions align="end">
       <button mat-button type="button" (click)="resetFilters()">
         <mat-icon>clear</mat-icon>
-        Azzera
+        {{ 'audit.reset' | translate }}
       </button>
       <button mat-flat-button color="primary" type="button" (click)="applyFilters()">
         <mat-icon>search</mat-icon>
-        Cerca
+        {{ 'audit.search' | translate }}
       </button>
     </mat-card-actions>
   </mat-card>
@@ -71,26 +71,26 @@
       <table mat-table [dataSource]="page.content" class="audit__table">
 
         <ng-container matColumnDef="at">
-          <th mat-header-cell *matHeaderCellDef>Data / ora</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'audit.colAt' | translate }}</th>
           <td mat-cell *matCellDef="let row" class="audit__cell-mono">
             {{ row.at | date:'dd/MM/yyyy HH:mm:ss' }}
           </td>
         </ng-container>
 
         <ng-container matColumnDef="actor">
-          <th mat-header-cell *matHeaderCellDef>Attore</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'audit.colActor' | translate }}</th>
           <td mat-cell *matCellDef="let row"><strong>{{ row.actorUsername }}</strong></td>
         </ng-container>
 
         <ng-container matColumnDef="action">
-          <th mat-header-cell *matHeaderCellDef>Azione</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'audit.colAction' | translate }}</th>
           <td mat-cell *matCellDef="let row">
             <code class="audit__code">{{ row.action }}</code>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="entityType">
-          <th mat-header-cell *matHeaderCellDef>Entità</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'audit.colEntityType' | translate }}</th>
           <td mat-cell *matCellDef="let row">
             <code class="audit__code">{{ row.entityType }}</code>
             @if (row.entityId) {
@@ -102,7 +102,7 @@
         </ng-container>
 
         <ng-container matColumnDef="outcome">
-          <th mat-header-cell *matHeaderCellDef>Esito</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'audit.colOutcome' | translate }}</th>
           <td mat-cell *matCellDef="let row">
             @switch (row.outcome) {
               @case ('SUCCESS') { <span class="chip chip--ok">SUCCESS</span> }
@@ -119,7 +119,7 @@
               mat-icon-button
               type="button"
               (click)="openDetail(row); $event.stopPropagation()"
-              matTooltip="Dettagli"
+              [matTooltip]="'audit.detailTitle' | translate"
             >
               <mat-icon>open_in_new</mat-icon>
             </button>
@@ -137,9 +137,9 @@
         <tr *matNoDataRow>
           <td [attr.colspan]="displayedColumns.length" class="audit__empty">
             @if (loading()) {
-              Caricamento in corso…
+              {{ 'common.loadingInProgress' | translate }}
             } @else {
-              Nessun evento trovato per i filtri selezionati.
+              {{ 'audit.noData' | translate }}
             }
           </td>
         </tr>

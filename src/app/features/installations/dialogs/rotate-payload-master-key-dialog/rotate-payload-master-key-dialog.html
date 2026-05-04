@@ -1,47 +1,43 @@
-<h2 mat-dialog-title>Ruota payload master key</h2>
+<h2 mat-dialog-title>{{ 'installation.rotateMasterKeyTitle' | translate }}</h2>
 
 <mat-dialog-content>
   @if (resultKey(); as key) {
     <div class="rotate-result">
       <p>
-        Nuova payload master key per <strong>{{ data.installationName }}</strong>.
+        {{ 'installation.rotateMasterKeyResultPre' | translate }} <strong>{{ data.installationName }}</strong>.
         <span class="rotate-result__hint">
-          Copiala subito nell'on-prem (variabile <code>app.crypto.master-key</code> /
-          env <code>CRYPTO_MASTER_KEY</code>) — è la <em>stessa</em> chiave salvata
-          cifrata sul central, ma vederla in chiaro qui è l'unica occasione comoda.
+          {{ 'installation.rotateMasterKeyResultHint' | translate }}
         </span>
       </p>
 
       <div class="rotate-result__key">
         <code>{{ key }}</code>
-        <button mat-icon-button type="button" (click)="copyKey()" aria-label="Copia">
+        <button mat-icon-button type="button" (click)="copyKey()" [attr.aria-label]="'common.copy' | translate">
           <mat-icon>content_copy</mat-icon>
         </button>
       </div>
 
       <p class="rotate-result__warn" role="alert">
-        Senza questa chiave nell'on-prem, i payload pushati dal central non saranno più
-        decifrabili e il push fallirà con DRAFT.
+        {{ 'installation.rotateMasterKeyWarn' | translate }}
       </p>
     </div>
   } @else {
     <p>
-      Genera una nuova payload master key per <strong>{{ data.installationName }}</strong>.
-      Lascia vuoto per farne generare una random dal central, oppure incolla una chiave
-      AES Base64 da 32 byte già pronta.
+      {{ 'installation.rotateMasterKeyFormPre' | translate }} <strong>{{ data.installationName }}</strong>.
+      {{ 'installation.rotateMasterKeyFormHint' | translate }}
     </p>
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="rotate-form" id="rotate-master-key-form">
       <mat-form-field appearance="outline">
-        <mat-label>Chiave (opzionale, Base64 32 byte)</mat-label>
+        <mat-label>{{ 'installation.rotateMasterKeyLabel' | translate }}</mat-label>
         <input
           matInput
           formControlName="payloadMasterKey"
           autocomplete="off"
           spellcheck="false"
-          placeholder="es. cE3v7G…="
+          [placeholder]="'installation.rotateMasterKeyPlaceholder' | translate"
         />
-        <mat-hint>Se vuota, il central genera una chiave random.</mat-hint>
+        <mat-hint>{{ 'installation.rotateMasterKeyFieldHint' | translate }}</mat-hint>
       </mat-form-field>
 
       @if (errorMessage()) {
@@ -53,9 +49,9 @@
 
 <mat-dialog-actions align="end">
   @if (resultKey()) {
-    <button mat-flat-button color="primary" type="button" (click)="close()">Ho copiato la chiave</button>
+    <button mat-flat-button color="primary" type="button" (click)="close()">{{ 'installation.rotateMasterKeyCopied' | translate }}</button>
   } @else {
-    <button mat-button mat-dialog-close type="button" [disabled]="saving()">Annulla</button>
+    <button mat-button mat-dialog-close type="button" [disabled]="saving()">{{ 'common.cancel' | translate }}</button>
     <button
       mat-flat-button
       color="primary"
@@ -66,7 +62,7 @@
       @if (saving()) {
         <mat-progress-spinner mode="indeterminate" diameter="20" />
       } @else {
-        Ruota
+        {{ 'installation.rotateButton' | translate }}
       }
     </button>
   }

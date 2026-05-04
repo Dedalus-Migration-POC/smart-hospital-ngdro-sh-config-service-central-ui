@@ -18,6 +18,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
   TenantCreateDialog,
@@ -39,6 +41,7 @@ import { TenantService } from '../../services/tenants';
     MatProgressBarModule,
     MatSlideToggleModule,
     MatTooltipModule,
+    TranslatePipe,
   ],
   templateUrl: './installation-tenants-section.html',
   styleUrl: './installation-tenants-section.scss',
@@ -51,6 +54,7 @@ export class InstallationTenantsSection {
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -85,7 +89,7 @@ export class InstallationTenantsSection {
       },
       error: (err: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile caricare i tenant.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('product.loadError')));
       },
     });
   }
@@ -101,12 +105,12 @@ export class InstallationTenantsSection {
     );
     ref.afterClosed().subscribe((tenant) => {
       if (!tenant) return;
-      this.snackbar.open(`Tenant "${tenant.name}" creato.`, 'OK', { duration: 3000 });
+      this.snackbar.open(this.translate.instant('product.createSuccess', { name: tenant.name }), 'OK', { duration: 3000 });
       this.reload();
     });
   }
 
   openTenant(tenant: Tenant): void {
-    void this.router.navigate(['/tenants', tenant.id]);
+    void this.router.navigate(['/prodotti', tenant.id]);
   }
 }

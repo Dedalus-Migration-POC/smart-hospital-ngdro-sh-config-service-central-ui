@@ -21,6 +21,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
   ConfirmDialog,
@@ -59,6 +61,7 @@ import { InstallationService } from '../../services/installations';
     MatProgressSpinnerModule,
     MatDividerModule,
     InstallationTenantsSection,
+    TranslatePipe,
   ],
   templateUrl: './installation-detail-page.html',
   styleUrl: './installation-detail-page.scss',
@@ -71,6 +74,7 @@ export class InstallationDetailPage {
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -106,7 +110,7 @@ export class InstallationDetailPage {
       error: (err: unknown) => {
         this.installation.set(null);
         this.loading.set(false);
-        this.errorMessage.set(toUserMessage(err, 'Impossibile caricare la installation.'));
+        this.errorMessage.set(toUserMessage(err, this.translate.instant('installation.loadDetailError')));
       },
     });
   }
@@ -139,12 +143,12 @@ export class InstallationDetailPage {
             active: updated.active,
           });
           this.saving.set(false);
-          this.snackbar.open('Modifiche salvate.', 'OK', { duration: 3000 });
+          this.snackbar.open(this.translate.instant('installation.saveSuccess'), 'OK', { duration: 3000 });
         },
         error: (err: unknown) => {
           this.saving.set(false);
           this.snackbar.open(
-            toUserMessage(err, 'Impossibile salvare le modifiche.'),
+            toUserMessage(err, this.translate.instant('installation.saveError')),
             'OK',
             { duration: 6000 },
           );
@@ -166,7 +170,7 @@ export class InstallationDetailPage {
     ref.afterClosed().subscribe((updated) => {
       if (updated) {
         this.installation.set(updated);
-        this.snackbar.open('API key ruotata.', 'OK', { duration: 3000 });
+        this.snackbar.open(this.translate.instant('installation.rotateApiKeySuccess'), 'OK', { duration: 3000 });
       }
     });
   }
@@ -184,7 +188,7 @@ export class InstallationDetailPage {
     );
     ref.afterClosed().subscribe((rotated) => {
       if (rotated) {
-        this.snackbar.open('Payload master key ruotata.', 'OK', { duration: 3000 });
+        this.snackbar.open(this.translate.instant('installation.rotateMasterKeySuccess'), 'OK', { duration: 3000 });
         this.load(inst.id);
       }
     });
@@ -207,10 +211,9 @@ export class InstallationDetailPage {
     const inst = this.installation();
     if (!inst) return;
     const data: ConfirmDialogData = {
-      title: `Eliminare l'installation "${inst.name}"?`,
-      message:
-        'L\'installation verrà disattivata (soft delete). I tenant collegati restano in archivio. Continuare?',
-      confirmLabel: 'Elimina',
+      title: this.translate.instant('installation.deleteConfirmTitle', { name: inst.name }),
+      message: this.translate.instant('installation.deleteConfirmMessage'),
+      confirmLabel: this.translate.instant('installation.deleteConfirmButton'),
       destructive: true,
     };
     const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, {
@@ -226,13 +229,13 @@ export class InstallationDetailPage {
     this.installations.delete(inst.id).subscribe({
       next: () => {
         this.deleting.set(false);
-        this.snackbar.open(`Installation "${inst.name}" disattivata.`, 'OK', { duration: 4000 });
+        this.snackbar.open(this.translate.instant('installation.deleteSuccess', { name: inst.name }), 'OK', { duration: 4000 });
         void this.router.navigate(['/customers', inst.customerId]);
       },
       error: (err: unknown) => {
         this.deleting.set(false);
         this.snackbar.open(
-          toUserMessage(err, 'Impossibile eliminare la installation.'),
+          toUserMessage(err, this.translate.instant('installation.deleteError')),
           'OK',
           { duration: 6000 },
         );

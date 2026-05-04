@@ -5,13 +5,15 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 
+import { TranslatePipe } from '@ngx-translate/core';
+
 import { AuditLog } from '../../models';
 
 @Component({
   selector: 'app-audit-detail-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, JsonPipe, MatDialogModule, MatButtonModule, MatIconModule, MatDividerModule],
+  imports: [DatePipe, JsonPipe, MatDialogModule, MatButtonModule, MatIconModule, MatDividerModule, TranslatePipe],
   templateUrl: './audit-detail-dialog.html',
   styleUrl: './audit-detail-dialog.scss',
 })

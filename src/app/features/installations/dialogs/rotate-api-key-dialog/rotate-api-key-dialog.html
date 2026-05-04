@@ -1,15 +1,15 @@
-<h2 mat-dialog-title>Ruota API key</h2>
+<h2 mat-dialog-title>{{ 'installation.rotateApiKeyTitle' | translate }}</h2>
 
 <mat-dialog-content>
   <p>
-    Imposta la nuova API key di scrittura per l'installation
-    <strong>{{ data.installationName }}</strong>. La chiave viene cifrata a riposo lato central
-    e non sarà più recuperabile in chiaro: copiala nell'on-prem prima di salvare.
+    {{ 'installation.rotateApiKeyBodyPre' | translate }}
+    <strong>{{ data.installationName }}</strong>.
+    {{ 'installation.rotateApiKeyBodyPost' | translate }}
   </p>
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="rotate-form" id="rotate-api-key-form">
     <mat-form-field appearance="outline">
-      <mat-label>Nuova API key</mat-label>
+      <mat-label>{{ 'installation.rotateApiKeyLabel' | translate }}</mat-label>
       <input
         matInput
         formControlName="apiKey"
@@ -23,12 +23,12 @@
         matSuffix
         type="button"
         (click)="toggleVisibility()"
-        [attr.aria-label]="showKey() ? 'Nascondi chiave' : 'Mostra chiave'"
+        [attr.aria-label]="showKey() ? ('common.close' | translate) : ('installation.show' | translate)"
       >
         <mat-icon>{{ showKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
       </button>
       @if (form.controls.apiKey.hasError('required') && form.controls.apiKey.touched) {
-        <mat-error>La nuova API key è obbligatoria.</mat-error>
+        <mat-error>{{ 'installation.rotateApiKeyRequired' | translate }}</mat-error>
       }
     </mat-form-field>
 
@@ -39,7 +39,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close type="button" [disabled]="saving()">Annulla</button>
+  <button mat-button mat-dialog-close type="button" [disabled]="saving()">{{ 'common.cancel' | translate }}</button>
   <button
     mat-flat-button
     color="primary"
@@ -50,7 +50,7 @@
     @if (saving()) {
       <mat-progress-spinner mode="indeterminate" diameter="20" />
     } @else {
-      Ruota
+      {{ 'installation.rotateButton' | translate }}
     }
   </button>
 </mat-dialog-actions>
