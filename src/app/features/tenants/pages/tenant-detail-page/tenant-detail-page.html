@@ -107,24 +107,26 @@
                 {{ channelLabel(ch) }}
               </ng-template>
               <div class="detail__tab-content">
-                <div class="detail__tab-actions">
-                  <button
-                    mat-stroked-button
-                    type="button"
-                    (click)="openEndpoints(t, ch)"
-                  >
-                    <mat-icon>list</mat-icon>
-                    {{ 'config.endpointsButton' | translate }}
-                  </button>
-                  <button
-                    mat-icon-button
-                    type="button"
-                    (click)="openApiDoc(t, ch)"
-                    [matTooltip]="'config.endpointsDocButton' | translate"
-                  >
-                    <mat-icon>help_outline</mat-icon>
-                  </button>
-                </div>
+                @if (isAdmin()) {
+                  <div class="detail__tab-actions">
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      (click)="openEndpoints(t, ch)"
+                    >
+                      <mat-icon>list</mat-icon>
+                      {{ 'config.endpointsButton' | translate }}
+                    </button>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      (click)="openApiDoc(t, ch)"
+                      [matTooltip]="'config.endpointsDocButton' | translate"
+                    >
+                      <mat-icon>help_outline</mat-icon>
+                    </button>
+                  </div>
+                }
                 <app-config-channel-section [tenantId]="t.id" [channelId]="ch" />
               </div>
             </mat-tab>
