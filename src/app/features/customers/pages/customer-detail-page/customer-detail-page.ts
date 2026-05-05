@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   effect,
   inject,
   input,
@@ -24,6 +25,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
   ConfirmDialog,
@@ -62,10 +64,13 @@ export class CustomerDetailPage implements OnInit {
 
   private readonly fb = inject(FormBuilder);
   private readonly customers = inject(CustomerService);
+  private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+
+  readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
 
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -98,6 +103,7 @@ export class CustomerDetailPage implements OnInit {
       next: (c) => {
         this.customer.set(c);
         this.form.reset({ name: c.name, active: c.active });
+        if (!this.isAdmin()) this.form.disable();
         this.loading.set(false);
       },
       error: (err: unknown) => {

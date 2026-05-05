@@ -2,12 +2,14 @@
   <mat-card-header>
     <mat-card-title>{{ 'product.title' | translate }}</mat-card-title>
     <mat-card-subtitle>{{ 'product.subtitle' | translate }}</mat-card-subtitle>
-    <div class="tenants__header-actions">
-      <button mat-flat-button color="primary" type="button" (click)="openCreate()">
-        <mat-icon>add</mat-icon>
-        {{ 'product.new' | translate }}
-      </button>
-    </div>
+    @if (isAdmin()) {
+      <div class="tenants__header-actions">
+        <button mat-flat-button color="primary" type="button" (click)="openCreate()">
+          <mat-icon>add</mat-icon>
+          {{ 'product.new' | translate }}
+        </button>
+      </div>
+    }
   </mat-card-header>
 
   <mat-card-content class="tenants__content">

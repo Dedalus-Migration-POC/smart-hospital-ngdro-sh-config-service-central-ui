@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   input,
@@ -20,6 +21,7 @@ import { Router } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
   InstallationCreateDialog,
@@ -52,10 +54,13 @@ export class CustomerInstallationsSection {
   readonly customerName = input.required<string>();
 
   private readonly installations = inject(InstallationService);
+  private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+
+  readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);

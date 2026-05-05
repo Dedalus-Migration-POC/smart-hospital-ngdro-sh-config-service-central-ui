@@ -2,12 +2,14 @@
   <mat-card-header>
     <mat-card-title>{{ 'installation.title' | translate }}</mat-card-title>
     <mat-card-subtitle>{{ 'installation.subtitle' | translate }}</mat-card-subtitle>
-    <div class="installations__header-actions">
-      <button mat-flat-button color="primary" type="button" (click)="openCreate()">
-        <mat-icon>add</mat-icon>
-        {{ 'installation.new' | translate }}
-      </button>
-    </div>
+    @if (isAdmin()) {
+      <div class="installations__header-actions">
+        <button mat-flat-button color="primary" type="button" (click)="openCreate()">
+          <mat-icon>add</mat-icon>
+          {{ 'installation.new' | translate }}
+        </button>
+      </div>
+    }
   </mat-card-header>
 
   <mat-card-content class="installations__content">

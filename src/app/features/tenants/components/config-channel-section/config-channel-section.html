@@ -24,7 +24,7 @@
           {{ e }}
         </button>
       }
-      @if (!addingEntity()) {
+      @if (isAdmin() && !addingEntity()) {
         <button
           type="button"
           class="entity-chip entity-chip--add"
@@ -37,7 +37,7 @@
       }
     </div>
 
-    @if (addingEntity()) {
+    @if (isAdmin() && addingEntity()) {
       <div class="channel__add-entity-form">
         <mat-form-field appearance="outline" class="channel__add-entity-field">
           <mat-label>{{ 'config.addEntityLabel' | translate }}</mat-label>

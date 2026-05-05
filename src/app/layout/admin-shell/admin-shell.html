@@ -35,6 +35,17 @@
         }
       }
     </mat-nav-list>
+
+    <div class="admin-shell__version">
+      <div class="admin-shell__version-row">
+        <span class="admin-shell__version-label">UI</span>
+        <code class="admin-shell__version-value">{{ feVersion }}</code>
+      </div>
+      <div class="admin-shell__version-row">
+        <span class="admin-shell__version-label">API</span>
+        <code class="admin-shell__version-value">{{ beVersion() }}</code>
+      </div>
+    </div>
   </mat-sidenav>
 
   <mat-sidenav-content class="admin-shell__content">

@@ -30,6 +30,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
   ConfirmDialog,
@@ -105,6 +106,7 @@ export class ConfigChannelSection {
   readonly channelId = input.required<ChannelId>();
 
   private readonly tenantService = inject(TenantService);
+  private readonly auth = inject(AuthService);
   private readonly snackbar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
   private readonly translate = inject(TranslateService);
@@ -343,6 +345,7 @@ export class ConfigChannelSection {
     });
   }
 
+  readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
   readonly isSmhUiRender = computed(() => this.entity() === 'smh_ui_render');
 
   openGraphicEditor(): void {

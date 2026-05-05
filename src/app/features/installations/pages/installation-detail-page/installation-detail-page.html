@@ -33,154 +33,156 @@
   }
 
   @if (installation(); as i) {
-    <mat-card appearance="outlined" class="detail__card">
-      <mat-card-header>
-        <mat-card-title>{{ 'installation.baseData' | translate }}</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="form" (ngSubmit)="save()" class="detail__form" id="installation-edit-form">
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'common.name' | translate }}</mat-label>
-            <input matInput formControlName="name" required maxlength="255" />
-            @if (form.controls.name.touched) {
-              @if (form.controls.name.hasError('required')) {
-                <mat-error>{{ 'installation.nameRequired' | translate }}</mat-error>
-              } @else if (form.controls.name.hasError('maxlength')) {
-                <mat-error>{{ 'installation.nameMax' | translate }}</mat-error>
-              }
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'installation.baseUrlLabel' | translate }}</mat-label>
-            <input matInput formControlName="baseUrl" required maxlength="500" />
-            @if (form.controls.baseUrl.touched) {
-              @if (form.controls.baseUrl.hasError('required')) {
-                <mat-error>{{ 'installation.baseUrlRequired' | translate }}</mat-error>
-              } @else if (form.controls.baseUrl.hasError('pattern')) {
-                <mat-error>{{ 'installation.baseUrlPattern' | translate }}</mat-error>
-              } @else if (form.controls.baseUrl.hasError('maxlength')) {
-                <mat-error>{{ 'installation.baseUrlMax' | translate }}</mat-error>
-              }
-            }
-          </mat-form-field>
-
-          <mat-slide-toggle formControlName="active">{{ 'installation.activeToggle' | translate }}</mat-slide-toggle>
-
-          <div class="detail__meta">{{ 'installation.createdAt' | translate }} {{ i.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
-        </form>
-      </mat-card-content>
-      <mat-card-actions align="end" class="detail__actions">
-        <button
-          mat-button
-          color="warn"
-          type="button"
-          (click)="confirmDelete()"
-          [disabled]="deleting() || saving()"
-        >
-          <mat-icon>delete_outline</mat-icon>
-          {{ 'installation.delete' | translate }}
-        </button>
-        <button
-          mat-flat-button
-          color="primary"
-          type="submit"
-          form="installation-edit-form"
-          [disabled]="saving() || form.invalid || form.pristine"
-        >
-          @if (saving()) {
-            <mat-progress-spinner mode="indeterminate" diameter="20" />
-          } @else {
-            {{ 'common.save' | translate }}
-          }
-        </button>
-      </mat-card-actions>
-    </mat-card>
-
-    <mat-card appearance="outlined" class="detail__card">
-      <mat-card-header>
-        <mat-card-title>{{ 'installation.security' | translate }}</mat-card-title>
-        <mat-card-subtitle>{{ 'installation.securitySubtitle' | translate }}</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content class="detail__security">
-        <div class="security__row">
-          <div class="security__label">
-            <mat-icon>vpn_key</mat-icon>
-            <div>
-              <div class="security__title">{{ 'installation.apiKeyLabel' | translate }}</div>
-              <div class="security__hint">
-                @if (i.apiKeyConfigured) {
-                  <span class="chip chip--ok">{{ 'installation.apiKeyConfigured' | translate }}</span>
-                  {{ 'installation.apiKeyConfiguredHint' | translate }}
-                } @else {
-                  <span class="chip chip--off">{{ 'installation.apiKeyMissing' | translate }}</span>
-                  {{ 'installation.apiKeyMissingHint' | translate }}
+    @if (isAdmin()) {
+      <mat-card appearance="outlined" class="detail__card">
+        <mat-card-header>
+          <mat-card-title>{{ 'installation.baseData' | translate }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="form" (ngSubmit)="save()" class="detail__form" id="installation-edit-form">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.name' | translate }}</mat-label>
+              <input matInput formControlName="name" required maxlength="255" />
+              @if (form.controls.name.touched) {
+                @if (form.controls.name.hasError('required')) {
+                  <mat-error>{{ 'installation.nameRequired' | translate }}</mat-error>
+                } @else if (form.controls.name.hasError('maxlength')) {
+                  <mat-error>{{ 'installation.nameMax' | translate }}</mat-error>
                 }
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'installation.baseUrlLabel' | translate }}</mat-label>
+              <input matInput formControlName="baseUrl" required maxlength="500" />
+              @if (form.controls.baseUrl.touched) {
+                @if (form.controls.baseUrl.hasError('required')) {
+                  <mat-error>{{ 'installation.baseUrlRequired' | translate }}</mat-error>
+                } @else if (form.controls.baseUrl.hasError('pattern')) {
+                  <mat-error>{{ 'installation.baseUrlPattern' | translate }}</mat-error>
+                } @else if (form.controls.baseUrl.hasError('maxlength')) {
+                  <mat-error>{{ 'installation.baseUrlMax' | translate }}</mat-error>
+                }
+              }
+            </mat-form-field>
+
+            <mat-slide-toggle formControlName="active">{{ 'installation.activeToggle' | translate }}</mat-slide-toggle>
+
+            <div class="detail__meta">{{ 'installation.createdAt' | translate }} {{ i.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
+          </form>
+        </mat-card-content>
+        <mat-card-actions align="end" class="detail__actions">
+          <button
+            mat-button
+            color="warn"
+            type="button"
+            (click)="confirmDelete()"
+            [disabled]="deleting() || saving()"
+          >
+            <mat-icon>delete_outline</mat-icon>
+            {{ 'installation.delete' | translate }}
+          </button>
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            form="installation-edit-form"
+            [disabled]="saving() || form.invalid || form.pristine"
+          >
+            @if (saving()) {
+              <mat-progress-spinner mode="indeterminate" diameter="20" />
+            } @else {
+              {{ 'common.save' | translate }}
+            }
+          </button>
+        </mat-card-actions>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="detail__card">
+        <mat-card-header>
+          <mat-card-title>{{ 'installation.security' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'installation.securitySubtitle' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="detail__security">
+          <div class="security__row">
+            <div class="security__label">
+              <mat-icon>vpn_key</mat-icon>
+              <div>
+                <div class="security__title">{{ 'installation.apiKeyLabel' | translate }}</div>
+                <div class="security__hint">
+                  @if (i.apiKeyConfigured) {
+                    <span class="chip chip--ok">{{ 'installation.apiKeyConfigured' | translate }}</span>
+                    {{ 'installation.apiKeyConfiguredHint' | translate }}
+                  } @else {
+                    <span class="chip chip--off">{{ 'installation.apiKeyMissing' | translate }}</span>
+                    {{ 'installation.apiKeyMissingHint' | translate }}
+                  }
+                </div>
               </div>
             </div>
-          </div>
-          <div class="security__actions">
-            <button
-              mat-icon-button
-              type="button"
-              [matTooltip]="'installation.rotateApiKeyInfo' | translate"
-              matTooltipPosition="above"
-              matTooltipShowDelay="200"
-            >
-              <mat-icon>info_outline</mat-icon>
-            </button>
-            <button mat-stroked-button type="button" (click)="rotateApiKey()">
-              <mat-icon>autorenew</mat-icon>
-              {{ 'installation.rotate' | translate }}
-            </button>
-          </div>
-        </div>
-
-        <mat-divider />
-
-        <div class="security__row">
-          <div class="security__label">
-            <mat-icon>enhanced_encryption</mat-icon>
-            <div>
-              <div class="security__title">{{ 'installation.payloadMasterKey' | translate }}</div>
-              <div class="security__hint">
-                @if (i.payloadMasterKeyConfigured) {
-                  <span class="chip chip--ok">{{ 'installation.payloadKeyConfigured' | translate }}</span>
-                  {{ 'installation.payloadKeyConfiguredHint' | translate }}
-                } @else {
-                  <span class="chip chip--off">{{ 'installation.payloadKeyMissing' | translate }}</span>
-                  {{ 'installation.payloadKeyMissingHint' | translate }}
-                }
-              </div>
+            <div class="security__actions">
+              <button
+                mat-icon-button
+                type="button"
+                [matTooltip]="'installation.rotateApiKeyInfo' | translate"
+                matTooltipPosition="above"
+                matTooltipShowDelay="200"
+              >
+                <mat-icon>info_outline</mat-icon>
+              </button>
+              <button mat-stroked-button type="button" (click)="rotateApiKey()">
+                <mat-icon>autorenew</mat-icon>
+                {{ 'installation.rotate' | translate }}
+              </button>
             </div>
           </div>
-          <div class="security__actions">
-            <button
-              mat-icon-button
-              type="button"
-              [matTooltip]="'installation.rotateMasterKeyInfo' | translate"
-              matTooltipPosition="above"
-              matTooltipShowDelay="200"
-            >
-              <mat-icon>info_outline</mat-icon>
-            </button>
-            <button
-              mat-button
-              type="button"
-              (click)="showPayloadMasterKey()"
-              [disabled]="!i.payloadMasterKeyConfigured"
-            >
-              <mat-icon>visibility</mat-icon>
-              {{ 'installation.show' | translate }}
-            </button>
-            <button mat-stroked-button type="button" (click)="rotatePayloadMasterKey()">
-              <mat-icon>autorenew</mat-icon>
-              {{ 'installation.rotate' | translate }}
-            </button>
+
+          <mat-divider />
+
+          <div class="security__row">
+            <div class="security__label">
+              <mat-icon>enhanced_encryption</mat-icon>
+              <div>
+                <div class="security__title">{{ 'installation.payloadMasterKey' | translate }}</div>
+                <div class="security__hint">
+                  @if (i.payloadMasterKeyConfigured) {
+                    <span class="chip chip--ok">{{ 'installation.payloadKeyConfigured' | translate }}</span>
+                    {{ 'installation.payloadKeyConfiguredHint' | translate }}
+                  } @else {
+                    <span class="chip chip--off">{{ 'installation.payloadKeyMissing' | translate }}</span>
+                    {{ 'installation.payloadKeyMissingHint' | translate }}
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="security__actions">
+              <button
+                mat-icon-button
+                type="button"
+                [matTooltip]="'installation.rotateMasterKeyInfo' | translate"
+                matTooltipPosition="above"
+                matTooltipShowDelay="200"
+              >
+                <mat-icon>info_outline</mat-icon>
+              </button>
+              <button
+                mat-button
+                type="button"
+                (click)="showPayloadMasterKey()"
+                [disabled]="!i.payloadMasterKeyConfigured"
+              >
+                <mat-icon>visibility</mat-icon>
+                {{ 'installation.show' | translate }}
+              </button>
+              <button mat-stroked-button type="button" (click)="rotatePayloadMasterKey()">
+                <mat-icon>autorenew</mat-icon>
+                {{ 'installation.rotate' | translate }}
+              </button>
+            </div>
           </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
+        </mat-card-content>
+      </mat-card>
+    }
 
     <mat-card appearance="outlined" class="detail__card">
       <mat-card-header>

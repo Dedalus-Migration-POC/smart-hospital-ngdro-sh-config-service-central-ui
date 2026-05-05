@@ -110,6 +110,35 @@ $nav-divider:     rgba(255, 255, 255, 0.10);
   letter-spacing: 0.06em;
 }
 
+// ── Version footer ────────────────────────────────────────────────────────────
+.admin-shell__version {
+  padding: 12px 16px;
+  border-top: 1px solid $nav-divider;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-shell__version-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-shell__version-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $nav-text-muted;
+  min-width: 24px;
+}
+
+.admin-shell__version-value {
+  font-size: 0.65rem;
+  color: $nav-text-muted;
+  font-family: 'Courier New', monospace;
+}
+
 // ── Content area ──────────────────────────────────────────────────────────────
 .admin-shell__content {
   display: flex;

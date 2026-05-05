@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   input,
@@ -24,6 +25,7 @@ import { Router } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
   ConfirmDialog,
@@ -69,10 +71,13 @@ export class TenantDetailPage {
 
   private readonly fb = inject(FormBuilder);
   private readonly tenants = inject(TenantService);
+  private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+
+  readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
 
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -101,6 +106,7 @@ export class TenantDetailPage {
       next: (tenant) => {
         this.tenant.set(tenant);
         this.form.reset({ name: tenant.name, active: tenant.active });
+        if (!this.isAdmin()) this.form.disable();
         this.loading.set(false);
       },
       error: (err: unknown) => {

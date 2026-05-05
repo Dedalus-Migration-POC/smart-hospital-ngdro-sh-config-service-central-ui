@@ -55,38 +55,42 @@
             }
           </mat-form-field>
 
-          <mat-slide-toggle formControlName="active">{{ 'common.active' | translate }}</mat-slide-toggle>
+          @if (isAdmin()) {
+            <mat-slide-toggle formControlName="active">{{ 'common.active' | translate }}</mat-slide-toggle>
+          }
 
           <div class="detail__meta">
             {{ 'common.createdAt' | translate }} {{ t.createdAt | date:'dd/MM/yyyy HH:mm' }}
           </div>
         </form>
       </mat-card-content>
-      <mat-card-actions align="end" class="detail__actions">
-        <button
-          mat-button
-          color="warn"
-          type="button"
-          (click)="confirmDelete()"
-          [disabled]="deleting() || saving()"
-        >
-          <mat-icon>delete_outline</mat-icon>
-          {{ 'product.delete' | translate }}
-        </button>
-        <button
-          mat-flat-button
-          color="primary"
-          type="submit"
-          form="tenant-edit-form"
-          [disabled]="saving() || form.invalid || form.pristine"
-        >
-          @if (saving()) {
-            <mat-progress-spinner mode="indeterminate" diameter="20" />
-          } @else {
-            {{ 'common.save' | translate }}
-          }
-        </button>
-      </mat-card-actions>
+      @if (isAdmin()) {
+        <mat-card-actions align="end" class="detail__actions">
+          <button
+            mat-button
+            color="warn"
+            type="button"
+            (click)="confirmDelete()"
+            [disabled]="deleting() || saving()"
+          >
+            <mat-icon>delete_outline</mat-icon>
+            {{ 'product.delete' | translate }}
+          </button>
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            form="tenant-edit-form"
+            [disabled]="saving() || form.invalid || form.pristine"
+          >
+            @if (saving()) {
+              <mat-progress-spinner mode="indeterminate" diameter="20" />
+            } @else {
+              {{ 'common.save' | translate }}
+            }
+          </button>
+        </mat-card-actions>
+      }
     </mat-card>
 
     <mat-card appearance="outlined">

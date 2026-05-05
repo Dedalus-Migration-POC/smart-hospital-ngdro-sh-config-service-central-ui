@@ -1,8 +1,10 @@
 <section class="detail">
   <header class="detail__header">
-    <a mat-icon-button routerLink="/customers" [attr.aria-label]="'common.close' | translate">
-      <mat-icon>arrow_back</mat-icon>
-    </a>
+    @if (isAdmin()) {
+      <a mat-icon-button routerLink="/customers" [attr.aria-label]="'common.close' | translate">
+        <mat-icon>arrow_back</mat-icon>
+      </a>
+    }
     <div class="detail__title">
       <h1>
         @if (customer(); as c) {
@@ -56,9 +58,11 @@
             }
           </mat-form-field>
 
-          <mat-slide-toggle formControlName="active">
-            {{ 'common.active' | translate }}
-          </mat-slide-toggle>
+          @if (isAdmin()) {
+            <mat-slide-toggle formControlName="active">
+              {{ 'common.active' | translate }}
+            </mat-slide-toggle>
+          }
 
           <div class="detail__meta">
             {{ 'common.createdAt' | translate }} {{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}
@@ -66,31 +70,33 @@
         </form>
       </mat-card-content>
 
-      <mat-card-actions align="end" class="detail__actions">
-        <button
-          mat-button
-          color="warn"
-          type="button"
-          (click)="confirmDelete()"
-          [disabled]="deleting() || saving()"
-        >
-          <mat-icon>delete_outline</mat-icon>
-          {{ 'customer.delete' | translate }}
-        </button>
-        <button
-          mat-flat-button
-          color="primary"
-          type="submit"
-          form="customer-edit-form"
-          [disabled]="saving() || form.invalid || form.pristine"
-        >
-          @if (saving()) {
-            <mat-progress-spinner mode="indeterminate" diameter="20" />
-          } @else {
-            {{ 'common.save' | translate }}
-          }
-        </button>
-      </mat-card-actions>
+      @if (isAdmin()) {
+        <mat-card-actions align="end" class="detail__actions">
+          <button
+            mat-button
+            color="warn"
+            type="button"
+            (click)="confirmDelete()"
+            [disabled]="deleting() || saving()"
+          >
+            <mat-icon>delete_outline</mat-icon>
+            {{ 'customer.delete' | translate }}
+          </button>
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            form="customer-edit-form"
+            [disabled]="saving() || form.invalid || form.pristine"
+          >
+            @if (saving()) {
+              <mat-progress-spinner mode="indeterminate" diameter="20" />
+            } @else {
+              {{ 'common.save' | translate }}
+            }
+          </button>
+        </mat-card-actions>
+      }
     </mat-card>
 
     <app-customer-installations-section [customerId]="c.id" [customerName]="c.name" />
