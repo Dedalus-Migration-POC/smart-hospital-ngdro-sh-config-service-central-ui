@@ -20,9 +20,6 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 
-import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
-
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AuthService } from '../../../../core/auth/auth';
@@ -116,15 +113,17 @@ export class CustomerInstallationsSection {
   }
 
   private fireHealthChecks(rows: Installation[]): void {
+    const active = rows.filter((r) => r.active && r.baseUrl);
     const initial: Record<string, 'checking' | 'up' | 'down'> = {};
-    rows.forEach((r) => (initial[r.id] = 'checking'));
+    active.forEach((r) => (initial[r.id] = 'checking'));
     this.healthStatus.set(initial);
-    rows.forEach((r) => {
-      this.installations.checkHealth(r.id)
-        .pipe(catchError(() => of({ installationId: r.id, reachable: false })))
-        .subscribe((res) => {
-          this.healthStatus.update((m) => ({ ...m, [r.id]: res.reachable ? 'up' : 'down' }));
-        });
+    active.forEach((r) => {
+      fetch(`${r.baseUrl}/actuator/health`, {
+        mode: 'no-cors',
+        signal: AbortSignal.timeout(5000),
+      })
+        .then(() => this.healthStatus.update((m) => ({ ...m, [r.id]: 'up' })))
+        .catch(() => this.healthStatus.update((m) => ({ ...m, [r.id]: 'down' })));
     });
   }
 

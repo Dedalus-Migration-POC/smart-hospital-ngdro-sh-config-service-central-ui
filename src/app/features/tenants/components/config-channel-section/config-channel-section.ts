@@ -60,7 +60,7 @@ import {
   SmhUiRenderEditorDialogData,
   SmhUiRenderJson,
 } from '../../dialogs/smh-ui-render-editor-dialog/smh-ui-render-editor-dialog';
-import { AppConfigVersion, ChannelId } from '../../models';
+import { AppConfigVersion, ChannelId, PushPackage } from '../../models';
 import { TenantService } from '../../services/tenants';
 
 interface JsonError {
@@ -343,12 +343,6 @@ export class ConfigChannelSection {
         this.activeVersion.set(version);
         const pretty = JSON.stringify(version.configJson, null, 2);
         this.configControl.reset(pretty);
-        this.snackbar.open(
-          this.translate.instant(version.syncStatus === 'SYNCED' ? 'config.saveSynced' : 'config.saveDraftWarning'),
-          'OK',
-          { duration: version.syncStatus === 'SYNCED' ? 3000 : 6000 },
-        );
-        // Mantieni l'entity corrente nella lista (può essere nuova, appena creata)
         this.entities.update((list) => {
           if (list.includes(entity)) return list;
           return [...list, entity].sort((a, b) =>
@@ -357,6 +351,15 @@ export class ConfigChannelSection {
         });
         this.loadHistory(tenantId, channelId, entity);
         this.loadEntities(tenantId, channelId);
+        if (version.pushPackage) {
+          void this.handleBrowserPush(version, tenantId, channelId, entity);
+        } else {
+          this.snackbar.open(
+            this.translate.instant(version.syncStatus === 'SYNCED' ? 'config.saveSynced' : 'config.saveDraftWarning'),
+            'OK',
+            { duration: version.syncStatus === 'SYNCED' ? 3000 : 6000 },
+          );
+        }
       },
       error: (err: unknown) => {
         this.saving.set(false);
@@ -379,12 +382,16 @@ export class ConfigChannelSection {
       next: (version) => {
         this.resyncing.set(false);
         this.activeVersion.set(version);
-        this.snackbar.open(
-          this.translate.instant(version.syncStatus === 'SYNCED' ? 'config.resyncSynced' : 'config.resyncDraft'),
-          'OK',
-          { duration: version.syncStatus === 'SYNCED' ? 3000 : 6000 },
-        );
-        this.loadHistory(tenantId, channelId, entity);
+        if (version.pushPackage) {
+          void this.handleBrowserPush(version, tenantId, channelId, entity);
+        } else {
+          this.snackbar.open(
+            this.translate.instant(version.syncStatus === 'SYNCED' ? 'config.resyncSynced' : 'config.resyncDraft'),
+            'OK',
+            { duration: version.syncStatus === 'SYNCED' ? 3000 : 6000 },
+          );
+          this.loadHistory(tenantId, channelId, entity);
+        }
       },
       error: (err: unknown) => {
         this.resyncing.set(false);
@@ -393,6 +400,87 @@ export class ConfigChannelSection {
           'OK',
           { duration: 6000 },
         );
+      },
+    });
+  }
+
+  /**
+   * Flusso browser-assisted push: il server centrale non ha raggiunto l'on-prem
+   * (tipicamente behind VPN), ma il browser dell'admin potrebbe riuscirci.
+   * 1. Health check diretto browser → on-prem
+   * 2. Se raggiungibile → dialog di conferma
+   * 3. Se confermato → PUT diretto browser → on-prem con il push package pre-cifrato
+   * 4. Notifica esito al central (push-confirm)
+   */
+  private async handleBrowserPush(
+    version: AppConfigVersion,
+    tenantId: string,
+    channelId: string,
+    entity: string,
+  ): Promise<void> {
+    const pkg = version.pushPackage!;
+
+    this.snackbar.open(this.translate.instant('config.browserPushChecking'), 'OK', { duration: 4000 });
+
+    const reachable = await fetch(`${pkg.baseUrl}/actuator/health`, {
+      mode: 'no-cors',
+      signal: AbortSignal.timeout(5000),
+    }).then(() => true).catch(() => false);
+
+    if (!reachable) {
+      this.snackbar.open(this.translate.instant('config.browserPushUnreachable'), 'OK', { duration: 8000 });
+      return;
+    }
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const data: ConfirmDialogData = {
+        title: this.translate.instant('config.browserPushConfirmTitle'),
+        message: this.translate.instant('config.browserPushConfirmMessage'),
+        confirmLabel: this.translate.instant('config.browserPushConfirmButton'),
+        destructive: false,
+      };
+      const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data });
+      ref.afterClosed().subscribe((result) => resolve(result === true));
+    });
+
+    if (!confirmed) return;
+
+    this.snackbar.open(this.translate.instant('config.browserPushInProgress'), undefined, { duration: 0 });
+
+    let remoteVersion: number | null = null;
+    let pushError: string | null = null;
+    let pushOk = false;
+
+    try {
+      const res = await fetch(pkg.targetUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': pkg.apiKey },
+        body: JSON.stringify({ payload: pkg.encryptedPayload }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (res.ok) {
+        const data = await res.json() as { version?: number };
+        remoteVersion = data.version ?? null;
+        pushOk = true;
+      } else {
+        pushError = `On-prem ha risposto ${res.status}`;
+      }
+    } catch (e) {
+      pushError = e instanceof Error ? e.message : 'Errore rete';
+    }
+
+    this.tenantService.pushConfirm(tenantId, channelId, entity, pushOk, remoteVersion, pushError).subscribe({
+      next: (confirmed) => {
+        this.activeVersion.set(confirmed);
+        this.loadHistory(tenantId, channelId, entity);
+        this.snackbar.open(
+          this.translate.instant(pushOk ? 'config.browserPushSynced' : 'config.browserPushFailed'),
+          'OK',
+          { duration: pushOk ? 3000 : 6000 },
+        );
+      },
+      error: () => {
+        this.snackbar.open(this.translate.instant('config.browserPushConfirmError'), 'OK', { duration: 6000 });
       },
     });
   }
@@ -554,15 +642,19 @@ export class ConfigChannelSection {
         this.activeVersion.set(newVersion);
         const pretty = JSON.stringify(newVersion.configJson, null, 2);
         this.configControl.reset(pretty);
-        this.snackbar.open(
-          this.translate.instant(
-            newVersion.syncStatus === 'SYNCED' ? 'config.rollbackSynced' : 'config.rollbackDraft',
-            { version },
-          ),
-          'OK',
-          { duration: newVersion.syncStatus === 'SYNCED' ? 3000 : 6000 },
-        );
-        this.loadHistory(tenantId, channelId, entity);
+        if (newVersion.pushPackage) {
+          void this.handleBrowserPush(newVersion, tenantId, channelId, entity);
+        } else {
+          this.snackbar.open(
+            this.translate.instant(
+              newVersion.syncStatus === 'SYNCED' ? 'config.rollbackSynced' : 'config.rollbackDraft',
+              { version },
+            ),
+            'OK',
+            { duration: newVersion.syncStatus === 'SYNCED' ? 3000 : 6000 },
+          );
+          this.loadHistory(tenantId, channelId, entity);
+        }
       },
       error: (err: unknown) => {
         this.rollingBack.set(null);

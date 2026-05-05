@@ -326,7 +326,16 @@
     "docDecryptTitle": "Decifratura",
     "docDecryptBody": "Per decifrare il payload è necessaria la Payload Master Key dell'installation, visibile (e ruotabile) nella sezione Sicurezza della pagina dell'installation.",
     "docCurlTitle": "Esempio curl",
-    "docClose": "Chiudi"
+    "docClose": "Chiudi",
+    "browserPushChecking": "On-prem non raggiungibile dal server. Verifico se è raggiungibile dalla tua rete…",
+    "browserPushUnreachable": "On-prem non raggiungibile né dal server né dalla tua sessione. Configurazione salvata come bozza.",
+    "browserPushConfirmTitle": "Push diretto via browser",
+    "browserPushConfirmMessage": "Il server centrale non riesce a raggiungere l'on-prem, ma è raggiungibile dalla tua sessione (probabilmente via VPN). Vuoi effettuare il push direttamente dal tuo browser?",
+    "browserPushConfirmButton": "Procedi con il push",
+    "browserPushInProgress": "Push in corso via browser…",
+    "browserPushSynced": "Push diretto completato. Configurazione sincronizzata.",
+    "browserPushFailed": "Push diretto fallito. Configurazione rimasta come bozza.",
+    "browserPushConfirmError": "Push completato ma impossibile aggiornare lo stato sul server."
   },
   "user": {
     "title": "Utenti",

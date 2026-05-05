@@ -27,7 +27,7 @@ npm install
 npm start
 ```
 
-Apre `http://localhost:4200/` con hot reload. Le chiamate API andranno a `http://localhost:8081/api` (vedi `src/environments/environment.ts` quando verrà creato).
+Apre `http://localhost:4200/` con hot reload. Le chiamate API andranno a `http://localhost:8081/api`.
 
 Credenziali admin di default sul backend locale:
 
@@ -65,26 +65,86 @@ src/
     ├── layout/
     │   └── admin-shell/           # sidenav + toolbar, parent delle route protette
     ├── features/
-    │   ├── auth/pages/login-page/ # form Material (route bare /login)
-    │   ├── home/pages/home-page/  # contenuto home dentro la shell
-    │   ├── customers/             # feature di dominio: lista + dettaglio + create dialog
+    │   ├── auth/pages/login-page/
+    │   ├── home/pages/home-page/  # dashboard KPI + grafici (solo ADMIN)
+    │   ├── customers/             # lista + dettaglio + create dialog
     │   │   ├── customers.routes.ts
     │   │   ├── models.ts
     │   │   ├── services/customers.ts
     │   │   ├── pages/{customers-page,customer-detail-page}/
     │   │   └── dialogs/customer-create-dialog/
-    │   └── installations/         # dettaglio /installations/:id + sezione embedded in CustomerDetail
-    │       ├── installations.routes.ts
+    │   ├── installations/         # dettaglio /installations/:id + sezione embedded in CustomerDetail
+    │   │   ├── installations.routes.ts
+    │   │   ├── models.ts
+    │   │   ├── services/installations.ts
+    │   │   ├── pages/installation-detail-page/
+    │   │   ├── components/customer-installations-section/
+    │   │   └── dialogs/{installation-create,rotate-api-key,rotate-payload-master-key,show-payload-master-key}-dialog/
+    │   └── tenants/               # configurazioni per tenant/canale/entity
     │       ├── models.ts
-    │       ├── services/installations.ts
-    │       ├── pages/installation-detail-page/
-    │       ├── components/customer-installations-section/
-    │       └── dialogs/{installation-create,rotate-api-key,rotate-payload-master-key,show-payload-master-key}-dialog/
+    │       ├── services/tenants.ts
+    │       ├── components/
+    │       │   ├── config-channel-section/     # editor JSON + history + resync
+    │       │   ├── installation-tenants-section/
+    │       │   └── smh-phone-preview/          # mockup telefono live
+    │       └── dialogs/
+    │           ├── smh-ui-render-editor-dialog/    # editor grafico home screen mobile
+    │           ├── smh-spid-provider-editor-dialog/ # editor grafico provider SPID
+    │           ├── smh-faq-editor-dialog/           # editor grafico FAQ
+    │           ├── config-version-diff-dialog/
+    │           └── _smh-editor-base.scss            # mixin SCSS condiviso dagli editor SMH
     └── shared/
-        └── dialogs/confirm-dialog/  # dialog di conferma OK/Annulla riusabile
+        ├── components/svg-upload-field/ # campo upload SVG con anteprima
+        └── dialogs/confirm-dialog/
 ```
 
-Le feature di dominio future (customers, installations, tenants, configs, users, audit) andranno come **children** della route che monta `AdminShell`, così ereditano sidenav e toolbar. Tipi TS allineati ai DTO Java del backend (records → interfaces).
+## Funzionalità principali
+
+### Dashboard admin
+
+Visibile solo agli utenti ADMIN. Mostra:
+
+- **5 KPI card**: clienti attivi, on-prem online, utenti attivi, azioni di oggi, tasso di successo
+- **KPI on-prem online**: caricamento progressivo — per ogni installation attiva lancia un health check verso il backend gemello e aggiorna il contatore in tempo reale
+- **Grafici Chart.js**: attività giornaliera (ultimi 30 giorni, line chart), stato clienti (doughnut), top 10 azioni per tipo (bar orizzontale)
+
+### Gestione configurazioni
+
+- Editor JSON con syntax validation, history delle versioni, rollback con confronto diff
+- **Entity obbligatorie per canale mobile**: `smh_ui_render`, `smh_spid_provider`, `smh_faq`, `smh_link_service_config`, `smh_service_config` compaiono sempre nella barra entity (anche senza config salvata), con default strutturati invece di `{}`
+- Sezione JSON collassata di default per le entity che hanno un editor grafico
+
+### Editor grafici SMH (canale mobile)
+
+| Entity | Cosa gestisce |
+|--------|---------------|
+| `smh_ui_render` | Home screen dell'app: app bar, banner, categorie + servizi (griglia 2 colonne), navigation bar |
+| `smh_spid_provider` | Lista provider SPID (id, nome, icona SVG) con drag-and-drop |
+| `smh_faq` | Domande frequenti (id, domanda, risposta) con drag-and-drop |
+
+Caratteristiche comuni:
+- Drag-and-drop per riordinare gli elementi
+- Upload SVG con anteprima inline (decodifica sia raw SVG che base64)
+- ID servizi con autocomplete filtrato (esclude ID già in uso per evitare duplicati)
+
+### Preview mobile live
+
+Visibile a destra dell'editor quando si modifica `smh_ui_render` sul canale mobile. Aggiorna in tempo reale mentre si edita il JSON. Mostra:
+- App bar con logo (dimensione naturale) e barra di stato
+- Banner header (se `show_card: true`)
+- Griglia categorie/servizi con icone, badge link (🔗) e lucchetto (🔒) dove applicabile
+- Navigation bar con icone
+
+Il badge link compare solo se l'ID del servizio è presente in `smh_link_service_config`.
+
+### Health check on-prem (solo ADMIN)
+
+Nella lista installation del dettaglio customer: colonna **"Stato on-prem"** con:
+- Spinner durante il controllo
+- Pallino verde = on-prem raggiungibile (qualsiasi risposta HTTP)
+- Pallino rosso = timeout o connection refused
+
+I controlli partono in parallelo al caricamento della lista e si aggiornano progressivamente.
 
 ## Auth
 
@@ -92,22 +152,18 @@ Le feature di dominio future (customers, installations, tenants, configs, users,
 - Identità: `GET /api/auth/me` chiamato dopo il login e dal route guard quando il token è in storage ma il signal è vuoto (caso refresh).
 - Interceptor: attacca `Authorization: Bearer <token>` a tutte le chiamate verso `apiBaseUrl` eccetto `/auth/login`. Su `401` pulisce lo stato e redirige a `/login?returnUrl=...`.
 - Guard: `authGuard` (functional `CanActivateFn`) protegge le route che richiedono utente loggato.
-- Logout: dal menu utente nella toolbar dell'`AdminShell` → `AuthService.logout()` → clear + redirect.
 
 ## Layout admin
 
-- `AdminShell` (`src/app/layout/admin-shell/`) è la shell per tutte le route protette.
-- Sidenav responsive: `mode="side"` e aperta su desktop (≥960px), `mode="over"` e chiusa su mobile, toggle dall'hamburger nella toolbar.
-- Toolbar in alto con titolo, username + ruolo (badge) e menu utente con logout.
-- Voci di navigazione definite in `AdminShell.navItems`: ogni voce ha `icon`, `label`, opzionale `path` (se mancante è un placeholder "prossimamente") e opzionale `requiredRole` (oggi filtra per `ADMIN`).
-- Per aggiungere una nuova sezione: 1) crea la feature in `src/app/features/<nome>/`, 2) aggiungi una child route in `app.routes.ts` sotto la route che monta `AdminShell`, 3) imposta il `path` corrispondente sulla voce di `navItems`.
+- `AdminShell` è la shell per tutte le route protette: sidenav responsive (side su desktop, over su mobile) + toolbar con utente/ruolo/logout.
+- Voci di navigazione in `AdminShell.navItems`: `icon`, `label`, `path` opzionale, `requiredRole` opzionale.
 
 ## Convenzioni
 
 - Errori utente in **italiano**, log misti.
 - Niente `any` se evitabile.
-- Commit message in italiano, descrittivi (vedi `git log` del backend per esempi).
-- README e CLAUDE.md vanno aggiornati nello stesso commit che cambia script/setup/struttura, mai in commit separato.
+- Commit message in italiano, descrittivi.
+- README e CLAUDE.md vanno aggiornati nello stesso commit che cambia script/setup/struttura.
 
 ## Contesto architetturale
 

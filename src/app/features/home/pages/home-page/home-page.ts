@@ -143,16 +143,16 @@ export class HomePage implements AfterViewInit, OnDestroy {
           .pipe(catchError(() => of([] as Installation[])))
       )
     ).subscribe(results => {
-      const installations = results.flat();
-      this.onPremTotal.set(installations.length);
-      if (!installations.length) return;
-      installations.forEach(inst => {
-        this.installationService.checkHealth(inst.id)
-          .pipe(catchError(() => of({ installationId: inst.id, reachable: false })))
-          .subscribe(res => {
-            if (res.reachable) this.onPremOnline.update(n => n + 1);
-            this.onPremChecked.update(n => n + 1);
-          });
+      const active = results.flat().filter(i => i.active && i.baseUrl);
+      this.onPremTotal.set(active.length);
+      if (!active.length) return;
+      active.forEach(inst => {
+        fetch(`${inst.baseUrl}/actuator/health`, {
+          mode: 'no-cors',
+          signal: AbortSignal.timeout(5000),
+        })
+          .then(() => { this.onPremOnline.update(n => n + 1); this.onPremChecked.update(n => n + 1); })
+          .catch(() => { this.onPremChecked.update(n => n + 1); });
       });
     });
   }

@@ -102,4 +102,19 @@ export class TenantService {
       { params: new HttpParams().set('entity', entity) },
     );
   }
+
+  pushConfirm(
+    tenantId: string,
+    channelId: string,
+    entity: string,
+    success: boolean,
+    remoteVersion: number | null,
+    errorMessage: string | null,
+  ): Observable<AppConfigVersion> {
+    return this.http.post<AppConfigVersion>(
+      `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}/push-confirm`,
+      { success, remoteVersion, errorMessage },
+      { params: new HttpParams().set('entity', entity) },
+    );
+  }
 }
