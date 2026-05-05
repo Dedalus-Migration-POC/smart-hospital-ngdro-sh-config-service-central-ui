@@ -166,6 +166,28 @@
       </div>
     }
 
+    @if (isSmhServiceConfig()) {
+      <div class="channel__graphic-editor-bar">
+        <mat-icon class="channel__graphic-editor-icon">settings_applications</mat-icon>
+        <span class="channel__graphic-editor-hint">{{ 'smhServiceConfig.editorHint' | translate }}</span>
+        <button mat-stroked-button type="button" (click)="openServiceConfigEditor()">
+          <mat-icon>edit</mat-icon>
+          {{ 'smhServiceConfig.openEditor' | translate }}
+        </button>
+      </div>
+    }
+
+    @if (isSmhLinkServiceConfig()) {
+      <div class="channel__graphic-editor-bar">
+        <mat-icon class="channel__graphic-editor-icon">link</mat-icon>
+        <span class="channel__graphic-editor-hint">{{ 'smhLinkServiceConfig.editorHint' | translate }}</span>
+        <button mat-stroked-button type="button" (click)="openLinkServiceConfigEditor()">
+          <mat-icon>edit</mat-icon>
+          {{ 'smhLinkServiceConfig.openEditor' | translate }}
+        </button>
+      </div>
+    }
+
     <mat-expansion-panel class="channel__json-panel" [expanded]="!hasGraphicEditor(entity())">
       <mat-expansion-panel-header>
         <mat-panel-title>

@@ -51,6 +51,16 @@ import {
   SmhFaqJson,
 } from '../../dialogs/smh-faq-editor-dialog/smh-faq-editor-dialog';
 import {
+  SmhLinkServiceConfigEditorDialog,
+  SmhLinkServiceConfigEditorDialogData,
+  SmhLinkServiceConfigJson,
+} from '../../dialogs/smh-link-service-config-editor-dialog/smh-link-service-config-editor-dialog';
+import {
+  SmhServiceConfigEditorDialog,
+  SmhServiceConfigEditorDialogData,
+  SmhServiceConfigJson,
+} from '../../dialogs/smh-service-config-editor-dialog/smh-service-config-editor-dialog';
+import {
   SmhSpidProviderEditorDialog,
   SmhSpidProviderEditorDialogData,
   SmhSpidProviderJson,
@@ -489,8 +499,13 @@ export class ConfigChannelSection {
   readonly isSmhUiRender = computed(() => this.entity() === 'smh_ui_render');
   readonly isSmhSpidProvider = computed(() => this.entity() === 'smh_spid_provider');
   readonly isSmhFaq = computed(() => this.entity() === 'smh_faq');
+  readonly isSmhServiceConfig = computed(() => this.entity() === 'smh_service_config');
+  readonly isSmhLinkServiceConfig = computed(() => this.entity() === 'smh_link_service_config');
 
-  private static readonly GRAPHIC_EDITOR_ENTITIES = new Set(['smh_ui_render', 'smh_spid_provider', 'smh_faq']);
+  private static readonly GRAPHIC_EDITOR_ENTITIES = new Set([
+    'smh_ui_render', 'smh_spid_provider', 'smh_faq',
+    'smh_service_config', 'smh_link_service_config',
+  ]);
 
   private static readonly MOBILE_MANDATORY_ENTITIES = [
     'smh_ui_render',
@@ -595,6 +610,42 @@ export class ConfigChannelSection {
     const ref = this.dialog.open<SmhFaqEditorDialog, SmhFaqEditorDialogData, SmhFaqJson>(
       SmhFaqEditorDialog,
       { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === undefined) return;
+      this.configControl.setValue(JSON.stringify(result, null, 2));
+      this.configControl.markAsDirty();
+    });
+  }
+
+  openServiceConfigEditor(): void {
+    const raw = this.configControl.value ?? '';
+    let parsed: SmhServiceConfigJson = { services: [] };
+    if (raw.trim()) {
+      try { parsed = JSON.parse(raw) as SmhServiceConfigJson; } catch { /* usa vuoto */ }
+    }
+    const data: SmhServiceConfigEditorDialogData = { value: parsed };
+    const ref = this.dialog.open<SmhServiceConfigEditorDialog, SmhServiceConfigEditorDialogData, SmhServiceConfigJson>(
+      SmhServiceConfigEditorDialog,
+      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === undefined) return;
+      this.configControl.setValue(JSON.stringify(result, null, 2));
+      this.configControl.markAsDirty();
+    });
+  }
+
+  openLinkServiceConfigEditor(): void {
+    const raw = this.configControl.value ?? '';
+    let parsed: SmhLinkServiceConfigJson = { services: [] };
+    if (raw.trim()) {
+      try { parsed = JSON.parse(raw) as SmhLinkServiceConfigJson; } catch { /* usa vuoto */ }
+    }
+    const data: SmhLinkServiceConfigEditorDialogData = { value: parsed };
+    const ref = this.dialog.open<SmhLinkServiceConfigEditorDialog, SmhLinkServiceConfigEditorDialogData, SmhLinkServiceConfigJson>(
+      SmhLinkServiceConfigEditorDialog,
+      { data, autoFocus: 'first-tabbable', maxWidth: '800px', width: '800px' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;

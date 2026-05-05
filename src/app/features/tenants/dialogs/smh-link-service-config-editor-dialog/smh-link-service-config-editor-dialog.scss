@@ -1,0 +1,33 @@
+@use '../_smh-editor-base' as base;
+
+:host { @include base.smh-editor-styles; }
+
+.lsvc__toggles {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.lsvc__svg-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.lsvc__svg-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.lsvc__svg-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

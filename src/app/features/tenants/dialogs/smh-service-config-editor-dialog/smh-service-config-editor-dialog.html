@@ -1,0 +1,83 @@
+<h2 mat-dialog-title>{{ 'smhServiceConfig.dialogTitle' | translate }}</h2>
+
+<mat-dialog-content class="smh-editor">
+  <div class="smh-editor__content">
+    <p class="smh-editor__desc">{{ 'smhServiceConfig.desc' | translate }}</p>
+
+    <div class="smh-editor__section-header">
+      <h3 class="smh-editor__section-title">{{ 'smhServiceConfig.services' | translate }}</h3>
+      <button mat-stroked-button type="button" (click)="add()">
+        <mat-icon>add</mat-icon>
+        {{ 'smhServiceConfig.addService' | translate }}
+      </button>
+    </div>
+
+    <div cdkDropList (cdkDropListDropped)="drop($event)" class="smh-editor__drag-list">
+      @for (ctrl of servicesArray.controls; track ctrl; let i = $index) {
+        <div cdkDrag class="smh-editor__drag-item" [formGroup]="asFormGroup(ctrl)">
+          <mat-icon cdkDragHandle class="smh-editor__drag-handle">drag_indicator</mat-icon>
+
+          <div class="smh-editor__drag-body">
+            <!-- ID -->
+            <div class="smh-editor__inline-row">
+              <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--sm">
+                <mat-label>ID</mat-label>
+                <input matInput formControlName="id" required />
+                @if (asFormGroup(ctrl).controls['id'].touched && asFormGroup(ctrl).controls['id'].hasError('required')) {
+                  <mat-error>{{ 'smhServiceConfig.fieldRequired' | translate }}</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                <mat-label>{{ 'smhServiceConfig.routeName' | translate }}</mat-label>
+                <input matInput formControlName="routeName" [placeholder]="'smhServiceConfig.routeNamePlaceholder' | translate" />
+                <mat-hint>{{ 'smhServiceConfig.routeNameHint' | translate }}</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <!-- Link -->
+            <mat-form-field appearance="outline" class="smh-editor__text-field">
+              <mat-label>{{ 'smhServiceConfig.link' | translate }}</mat-label>
+              <input matInput formControlName="link" type="url" placeholder="https://..." />
+              <mat-hint>{{ 'smhServiceConfig.linkHint' | translate }}</mat-hint>
+            </mat-form-field>
+
+            <!-- Toggles -->
+            <div class="svc__toggles">
+              <mat-slide-toggle formControlName="hidden" color="warn">
+                {{ 'smhServiceConfig.hidden' | translate }}
+              </mat-slide-toggle>
+              <mat-slide-toggle formControlName="disabled" color="warn">
+                {{ 'smhServiceConfig.disabled' | translate }}
+              </mat-slide-toggle>
+            </div>
+          </div>
+
+          <button
+            mat-icon-button
+            type="button"
+            [matTooltip]="'smhServiceConfig.removeService' | translate"
+            (click)="remove(i)"
+            class="smh-editor__remove-btn"
+          >
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      }
+
+      @if (servicesArray.length === 0) {
+        <div class="smh-editor__empty">
+          <mat-icon>settings_applications</mat-icon>
+          <span>{{ 'smhServiceConfig.empty' | translate }}</span>
+        </div>
+      }
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close()">{{ 'common.cancel' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="confirm()">
+    {{ 'smhServiceConfig.apply' | translate }}
+  </button>
+</mat-dialog-actions>

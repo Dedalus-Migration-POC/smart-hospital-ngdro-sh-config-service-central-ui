@@ -1,0 +1,11 @@
+@use '../_smh-editor-base' as base;
+
+:host { @include base.smh-editor-styles; }
+
+.svc__toggles {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 2px 0;
+}
