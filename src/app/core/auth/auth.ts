@@ -52,7 +52,7 @@ export class AuthService {
    */
   fetchMe(): Observable<CurrentUser> {
     return this.http.get<MeResponse>(`${environment.apiBaseUrl}/auth/me`).pipe(
-      tap((me) => this._currentUser.set({ username: me.username, role: me.role })),
+      tap((me) => this._currentUser.set({ username: me.username, role: me.role, customerId: me.customerId })),
     );
   }
 

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   inject,
   signal,
 } from '@angular/core';
@@ -19,6 +20,8 @@ import { MatSelectModule } from '@angular/material/select';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+import { Customer } from '../../../customers/models';
+import { CustomerService } from '../../../customers/services/customers';
 import { toUserMessage } from '../../../../core/http/api-error';
 import { AVAILABLE_ROLES, User, USERNAME_PATTERN } from '../../models';
 import { UserService } from '../../services/users';
@@ -42,16 +45,18 @@ export type UserCreateDialogData = Record<string, never>;
   ],
   templateUrl: './user-create-dialog.html',
 })
-export class UserCreateDialog {
+export class UserCreateDialog implements OnInit {
   readonly data = inject<UserCreateDialogData>(MAT_DIALOG_DATA);
   private readonly ref = inject(MatDialogRef<UserCreateDialog, User>);
   private readonly fb = inject(FormBuilder);
   private readonly userService = inject(UserService);
+  private readonly customerService = inject(CustomerService);
   private readonly translate = inject(TranslateService);
 
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly showPassword = signal(false);
+  readonly customers = signal<Customer[]>([]);
   readonly availableRoles = AVAILABLE_ROLES;
 
   readonly form = this.fb.nonNullable.group({
@@ -61,7 +66,30 @@ export class UserCreateDialog {
     ],
     password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]],
     role: ['ADMIN', [Validators.required]],
+    customerId: [null as string | null],
   });
+
+  ngOnInit(): void {
+    this.customerService.list(true).subscribe({
+      next: (list) => this.customers.set(list),
+      error: () => {},
+    });
+
+    this.form.controls.role.valueChanges.subscribe((role) => {
+      const ctrl = this.form.controls.customerId;
+      if (role === 'CUSTOMER') {
+        ctrl.setValidators([Validators.required]);
+      } else {
+        ctrl.clearValidators();
+        ctrl.setValue(null);
+      }
+      ctrl.updateValueAndValidity();
+    });
+  }
+
+  get isCustomerRole(): boolean {
+    return this.form.controls.role.value === 'CUSTOMER';
+  }
 
   togglePasswordVisibility(): void {
     this.showPassword.update((v) => !v);
@@ -75,7 +103,12 @@ export class UserCreateDialog {
     this.errorMessage.set(null);
     const v = this.form.getRawValue();
 
-    this.userService.create({ username: v.username, password: v.password, role: v.role }).subscribe({
+    this.userService.create({
+      username: v.username,
+      password: v.password,
+      role: v.role,
+      customerId: v.role === 'CUSTOMER' ? v.customerId : null,
+    }).subscribe({
       next: (user) => {
         this.saving.set(false);
         this.ref.close(user);

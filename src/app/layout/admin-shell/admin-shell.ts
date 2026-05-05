@@ -15,7 +15,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { map } from 'rxjs/operators';
 
@@ -26,6 +26,7 @@ interface NavItem {
   labelKey: string;
   path?: string;
   requiredRole?: 'ADMIN';
+  customerOnly?: boolean;
 }
 
 const MOBILE_QUERY = '(max-width: 959px)';
@@ -52,6 +53,7 @@ const MOBILE_QUERY = '(max-width: 959px)';
 })
 export class AdminShell {
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly translate = inject(TranslateService);
 
@@ -74,13 +76,32 @@ export class AdminShell {
   ];
 
   readonly visibleNavItems = computed(() => {
-    const role = this.currentUser()?.role ?? null;
+    const user = this.currentUser();
+    const role = user?.role ?? null;
+
+    if (role === 'CUSTOMER') {
+      const customerPath = user?.customerId ? `/customers/${user.customerId}` : undefined;
+      return [
+        { icon: 'business', labelKey: 'nav.myCustomer', path: customerPath } as NavItem,
+      ];
+    }
+
     return this.navItems.filter((item) => !item.requiredRole || item.requiredRole === role);
   });
 
   constructor() {
     effect(() => {
       this.sidenavOpened.set(!this.isMobile());
+    });
+
+    effect(() => {
+      const user = this.currentUser();
+      if (user?.role === 'CUSTOMER' && user.customerId) {
+        const url = this.router.url;
+        if (url === '/' || url === '') {
+          void this.router.navigateByUrl(`/customers/${user.customerId}`);
+        }
+      }
     });
   }
 

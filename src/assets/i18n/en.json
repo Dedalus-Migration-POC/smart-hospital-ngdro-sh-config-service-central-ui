@@ -11,7 +11,8 @@
     "dashboard": "Dashboard",
     "customers": "Customers",
     "users": "Users",
-    "auditLog": "Audit log"
+    "auditLog": "Audit log",
+    "myCustomer": "My customer"
   },
   "common": {
     "save": "Save",
@@ -356,7 +357,11 @@
     "newPasswordRequired": "New password is required.",
     "newPasswordMin": "At least 8 characters.",
     "changePasswordSuccess": "Password updated.",
-    "changePasswordError": "Unable to update the password."
+    "changePasswordError": "Unable to update the password.",
+    "role_ADMIN": "Administrator",
+    "role_CUSTOMER": "Customer",
+    "customerLabel": "Associated customer",
+    "customerRequired": "Please select a customer for the Customer role."
   },
   "audit": {
     "title": "Audit log",

@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
   effect,
   inject,
@@ -34,6 +35,8 @@ import {
   ChangePasswordDialog,
   ChangePasswordDialogData,
 } from '../../dialogs/change-password-dialog/change-password-dialog';
+import { Customer } from '../../../customers/models';
+import { CustomerService } from '../../../customers/services/customers';
 import { AVAILABLE_ROLES, User } from '../../models';
 import { UserService } from '../../services/users';
 
@@ -59,11 +62,12 @@ import { UserService } from '../../services/users';
   templateUrl: './user-detail-page.html',
   styleUrl: './user-detail-page.scss',
 })
-export class UserDetailPage {
+export class UserDetailPage implements OnInit {
   readonly id = input.required<string>();
 
   private readonly fb = inject(FormBuilder);
   private readonly userService = inject(UserService);
+  private readonly customerService = inject(CustomerService);
   private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
@@ -74,6 +78,7 @@ export class UserDetailPage {
   readonly deleting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly user = signal<User | null>(null);
+  readonly customers = signal<Customer[]>([]);
 
   readonly availableRoles = AVAILABLE_ROLES;
 
@@ -83,9 +88,12 @@ export class UserDetailPage {
     return !!u && !!current && u.username === current.username;
   });
 
+  readonly isCustomerRole = computed(() => this.form.controls.role.value === 'CUSTOMER');
+
   readonly form = this.fb.nonNullable.group({
     role: ['ADMIN', [Validators.required]],
     active: [true],
+    customerId: [null as string | null],
   });
 
   constructor() {
@@ -95,13 +103,40 @@ export class UserDetailPage {
     });
   }
 
+  ngOnInit(): void {
+    this.customerService.list(true).subscribe({
+      next: (list) => this.customers.set(list),
+      error: () => {},
+    });
+
+    this.form.controls.role.valueChanges.subscribe((role) => {
+      const ctrl = this.form.controls.customerId;
+      if (role === 'CUSTOMER') {
+        ctrl.setValidators([Validators.required]);
+      } else {
+        ctrl.clearValidators();
+        ctrl.setValue(null);
+      }
+      ctrl.updateValueAndValidity();
+    });
+  }
+
   private load(id: string): void {
     this.loading.set(true);
     this.errorMessage.set(null);
     this.userService.get(id).subscribe({
       next: (user) => {
         this.user.set(user);
-        this.form.reset({ role: user.role, active: user.active });
+        this.form.reset({
+          role: user.role,
+          active: user.active,
+          customerId: user.customerId ?? null,
+        });
+        // imposta validator customerId in base al ruolo caricato
+        if (user.role === 'CUSTOMER') {
+          this.form.controls.customerId.setValidators([Validators.required]);
+          this.form.controls.customerId.updateValueAndValidity();
+        }
         this.loading.set(false);
       },
       error: (err: unknown) => {
@@ -120,10 +155,18 @@ export class UserDetailPage {
     }
     this.saving.set(true);
     const v = this.form.getRawValue();
-    this.userService.update(u.id, { role: v.role, active: v.active }).subscribe({
+    this.userService.update(u.id, {
+      role: v.role,
+      active: v.active,
+      customerId: v.role === 'CUSTOMER' ? v.customerId : null,
+    }).subscribe({
       next: (updated) => {
         this.user.set(updated);
-        this.form.reset({ role: updated.role, active: updated.active });
+        this.form.reset({
+          role: updated.role,
+          active: updated.active,
+          customerId: updated.customerId ?? null,
+        });
         this.saving.set(false);
         this.snackbar.open(this.translate.instant('user.saveSuccess'), 'OK', { duration: 3000 });
       },

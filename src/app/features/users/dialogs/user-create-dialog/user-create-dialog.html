@@ -49,10 +49,24 @@
       <mat-label>{{ 'user.roleLabel' | translate }}</mat-label>
       <mat-select formControlName="role" required>
         @for (r of availableRoles; track r) {
-          <mat-option [value]="r">{{ r }}</mat-option>
+          <mat-option [value]="r">{{ 'user.role_' + r | translate }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
+
+    @if (isCustomerRole) {
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'user.customerLabel' | translate }}</mat-label>
+        <mat-select formControlName="customerId" required>
+          @for (c of customers(); track c.id) {
+            <mat-option [value]="c.id">{{ c.name }} <span class="customer-slug">({{ c.slug }})</span></mat-option>
+          }
+        </mat-select>
+        @if (form.controls.customerId.touched && form.controls.customerId.hasError('required')) {
+          <mat-error>{{ 'user.customerRequired' | translate }}</mat-error>
+        }
+      </mat-form-field>
+    }
   </form>
 </mat-dialog-content>
 

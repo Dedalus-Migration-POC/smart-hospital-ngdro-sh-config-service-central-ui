@@ -11,7 +11,8 @@
     "dashboard": "Dashboard",
     "customers": "Customer",
     "users": "Utenti",
-    "auditLog": "Audit log"
+    "auditLog": "Audit log",
+    "myCustomer": "Il mio cliente"
   },
   "common": {
     "save": "Salva",
@@ -356,7 +357,11 @@
     "newPasswordMin": "Almeno 8 caratteri.",
     "currentPasswordRequired": "La password attuale è obbligatoria.",
     "changePasswordSuccess": "Password aggiornata.",
-    "changePasswordError": "Impossibile aggiornare la password."
+    "changePasswordError": "Impossibile aggiornare la password.",
+    "role_ADMIN": "Amministratore",
+    "role_CUSTOMER": "Cliente",
+    "customerLabel": "Customer associato",
+    "customerRequired": "Selezionare un customer per il ruolo Cliente."
   },
   "audit": {
     "title": "Audit log",

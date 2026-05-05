@@ -11,11 +11,13 @@ export interface LoginResponse {
 export interface MeResponse {
   username: string;
   role: string | null;
+  customerId?: string | null;
 }
 
 export interface CurrentUser {
   username: string;
   role: string | null;
+  customerId?: string | null;
 }
 
 export const AUTH_TOKEN_KEY = 'sh.cs.authToken';
