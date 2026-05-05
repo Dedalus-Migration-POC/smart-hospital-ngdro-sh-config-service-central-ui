@@ -8,6 +8,7 @@ import {
   input,
   signal,
 } from '@angular/core';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -18,6 +19,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
+
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -42,6 +46,7 @@ import { InstallationService } from '../../services/installations';
     MatButtonModule,
     MatIconModule,
     MatProgressBarModule,
+    MatProgressSpinnerModule,
     MatSlideToggleModule,
     MatTooltipModule,
     TranslatePipe,
@@ -69,7 +74,13 @@ export class CustomerInstallationsSection {
   /** Card di alert temporanea con la master key generata dal central per una nuova installation. */
   readonly newKeyAlert = signal<{ installationName: string; key: string } | null>(null);
 
-  readonly displayedColumns = ['name', 'baseUrl', 'security', 'sync', 'active', 'actions'] as const;
+  readonly healthStatus = signal<Record<string, 'checking' | 'up' | 'down'>>({});
+
+  readonly displayedColumns = computed(() =>
+    this.isAdmin()
+      ? ['name', 'baseUrl', 'security', 'sync', 'health', 'active', 'actions']
+      : ['name', 'baseUrl', 'security', 'sync', 'active', 'actions'],
+  );
 
   constructor() {
     effect(() => {
@@ -90,15 +101,30 @@ export class CustomerInstallationsSection {
   private load(customerId: string, showInactive: boolean): void {
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.healthStatus.set({});
     this.installations.listByCustomer(customerId, !showInactive).subscribe({
       next: (rows) => {
         this.rows.set(rows);
         this.loading.set(false);
+        if (this.isAdmin()) this.fireHealthChecks(rows);
       },
       error: (err: unknown) => {
         this.loading.set(false);
         this.errorMessage.set(toUserMessage(err, this.translate.instant('installation.loadError')));
       },
+    });
+  }
+
+  private fireHealthChecks(rows: Installation[]): void {
+    const initial: Record<string, 'checking' | 'up' | 'down'> = {};
+    rows.forEach((r) => (initial[r.id] = 'checking'));
+    this.healthStatus.set(initial);
+    rows.forEach((r) => {
+      this.installations.checkHealth(r.id)
+        .pipe(catchError(() => of({ installationId: r.id, reachable: false })))
+        .subscribe((res) => {
+          this.healthStatus.update((m) => ({ ...m, [r.id]: res.reachable ? 'up' : 'down' }));
+        });
     });
   }
 

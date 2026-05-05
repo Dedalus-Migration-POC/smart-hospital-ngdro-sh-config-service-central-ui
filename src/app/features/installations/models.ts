@@ -47,5 +47,10 @@ export interface InstallationPayloadMasterKeyResponse {
   payloadMasterKey: string;
 }
 
+export interface InstallationHealth {
+  installationId: string;
+  reachable: boolean;
+}
+
 /** Regex baseUrl come Pattern lato backend. */
 export const INSTALLATION_BASE_URL_PATTERN = /^https?:\/\/.+/;

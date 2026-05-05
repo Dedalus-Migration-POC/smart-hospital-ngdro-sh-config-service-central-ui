@@ -116,6 +116,23 @@
           </td>
         </ng-container>
 
+        <ng-container matColumnDef="health">
+          <th mat-header-cell *matHeaderCellDef>{{ 'installation.colHealth' | translate }}</th>
+          <td mat-cell *matCellDef="let row">
+            @switch (healthStatus()[row.id]) {
+              @case ('checking') {
+                <mat-progress-spinner mode="indeterminate" diameter="14" />
+              }
+              @case ('up') {
+                <span class="health-dot health-dot--up" [matTooltip]="'installation.healthUp' | translate"></span>
+              }
+              @case ('down') {
+                <span class="health-dot health-dot--down" [matTooltip]="'installation.healthDown' | translate"></span>
+              }
+            }
+          </td>
+        </ng-container>
+
         <ng-container matColumnDef="active">
           <th mat-header-cell *matHeaderCellDef>{{ 'installation.colStatus' | translate }}</th>
           <td mat-cell *matCellDef="let row">
@@ -141,16 +158,16 @@
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
         <tr
           mat-row
-          *matRowDef="let row; columns: displayedColumns"
+          *matRowDef="let row; columns: displayedColumns()"
           class="installations__row"
           (click)="openInstallation(row)"
         ></tr>
 
         <tr *matNoDataRow class="installations__no-data">
-          <td [attr.colspan]="displayedColumns.length">
+          <td [attr.colspan]="displayedColumns().length">
             @if (loading()) {
               {{ 'common.loadingInProgress' | translate }}
             } @else if (errorMessage()) {

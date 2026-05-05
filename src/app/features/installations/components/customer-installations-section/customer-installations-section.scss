@@ -147,3 +147,13 @@ code {
   background: var(--mat-sys-surface-container-high);
   color: var(--mat-sys-on-surface-variant);
 }
+
+.health-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+
+  &--up   { background: #2e7d32; }
+  &--down { background: var(--mat-sys-error); }
+}

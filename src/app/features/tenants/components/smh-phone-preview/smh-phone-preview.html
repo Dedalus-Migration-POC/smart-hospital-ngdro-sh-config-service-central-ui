@@ -1,0 +1,111 @@
+<div class="phone">
+  <!-- Status bar -->
+  <div class="phone__status-bar">
+    <span>4:27</span>
+    <span>5G ▲</span>
+  </div>
+
+  <!-- App bar -->
+  <div class="phone__app-bar">
+    @if (svgUri(renderData()?.home?.app_bar?.svg_icon); as uri) {
+      <img class="phone__app-bar-logo" [src]="uri" alt="" />
+    } @else {
+      <div class="phone__app-bar-logo--empty"></div>
+    }
+  </div>
+
+  <!-- Scrollable content -->
+  <div class="phone__scroll">
+
+    <!-- Search bar -->
+    <div class="phone__search">
+      <svg class="phone__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <span>{{ renderData()?.home?.search_bar?.hint_label || 'Cerca...' }}</span>
+    </div>
+
+    <!-- Header banners -->
+    @for (banner of renderData()?.home?.header ?? []; track banner.title) {
+      @if (banner.show_card) {
+        <div class="phone__banner">
+          <div class="phone__banner-content">
+            @if (svgUri(banner.svg_icon); as uri) {
+              <img class="phone__banner-icon" [src]="uri" alt="" />
+            }
+            <div>
+              @if (banner.title) { <div class="phone__banner-title">{{ banner.title }}</div> }
+              @if (banner.subtitle) { <div class="phone__banner-sub">{{ banner.subtitle }}</div> }
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Body categories -->
+    @for (cat of bodyCategories(); track cat.name) {
+      @if (cat.name) {
+        <div class="phone__section-title">{{ cat.name }}</div>
+      }
+      <div class="phone__grid">
+        @for (item of cat.items; track item.id) {
+          <div class="phone__card">
+            @if (item.show_lock || isLinkedService(item.id)) {
+              <div class="phone__card-badges">
+                @if (isLinkedService(item.id)) {
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="9" height="9">
+                    <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+                  </svg>
+                }
+                @if (item.show_lock) {
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="9" height="9">
+                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                  </svg>
+                }
+              </div>
+            }
+            <div class="phone__card-inner">
+              @if (svgUri(item.svg_icon); as uri) {
+                <div class="phone__card-icon-wrap">
+                  <img class="phone__card-icon" [src]="uri" alt="" />
+                </div>
+              } @else {
+                <div class="phone__card-icon-wrap phone__card-icon-wrap--empty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                  </svg>
+                </div>
+              }
+              <div class="phone__card-text">
+                <div class="phone__card-title">{{ item.title || '…' }}</div>
+                @if (item.subtitle) {
+                  <div class="phone__card-sub">{{ item.subtitle }}</div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+
+  <!-- Navigation bar -->
+  @if ((renderData()?.navigation_bar?.services ?? []).length > 0) {
+    <div class="phone__nav-bar">
+      @for (svc of renderData()!.navigation_bar!.services!; track svc.id; let first = $first) {
+        <div class="phone__nav-item" [class.phone__nav-item--active]="first">
+          @if (svgUri(svc.svg_icon); as uri) {
+            <img class="phone__nav-icon" [src]="uri" alt="" />
+          } @else {
+            <svg class="phone__nav-icon phone__nav-icon--placeholder" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+          }
+          <span class="phone__nav-label">{{ svc.title }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>

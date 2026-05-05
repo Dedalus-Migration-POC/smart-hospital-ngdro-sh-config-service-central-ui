@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -43,6 +44,7 @@ export interface SmhUiRenderJson {
 
 export interface SmhUiRenderEditorDialogData {
   value: SmhUiRenderJson;
+  availableServiceIds?: string[];
 }
 
 @Component({
@@ -59,6 +61,7 @@ export interface SmhUiRenderEditorDialogData {
     MatTabsModule,
     MatTooltipModule,
     MatCheckboxModule,
+    MatAutocompleteModule,
     DragDropModule,
     TranslatePipe,
     SvgUploadField,
@@ -72,6 +75,29 @@ export class SmhUiRenderEditorDialog {
   readonly data = inject<SmhUiRenderEditorDialogData>(MAT_DIALOG_DATA);
 
   readonly form = this.buildForm(this.data.value);
+  readonly availableServiceIds: string[] = this.data.availableServiceIds ?? [];
+
+  private allUsedIds(): Set<string> {
+    const ids = new Set<string>();
+    for (let ci = 0; ci < this.bodyArray.length; ci++) {
+      const items = this.getCategoryItemsArray(ci);
+      for (let ii = 0; ii < items.length; ii++) {
+        const id = ((items.at(ii) as FormGroup).get('id')?.value ?? '') as string;
+        if (id) ids.add(id);
+      }
+    }
+    for (let i = 0; i < this.navServicesArray.length; i++) {
+      const id = ((this.navServicesArray.at(i) as FormGroup).get('id')?.value ?? '') as string;
+      if (id) ids.add(id);
+    }
+    return ids;
+  }
+
+  // IDs disponibili per un campo specifico: esclude gli altri già usati
+  getAvailableIds(currentId: string): string[] {
+    const used = this.allUsedIds();
+    return this.availableServiceIds.filter((id) => !used.has(id) || id === currentId);
+  }
 
   get loginGroup(): FormGroup { return this.form.get('login') as FormGroup; }
   get splashGroup(): FormGroup { return this.form.get('splash') as FormGroup; }

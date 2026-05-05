@@ -1,0 +1,5 @@
+@use '../smh-editor-base' as base;
+
+:host {
+  @include base.smh-editor-styles;
+}

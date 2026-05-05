@@ -9,6 +9,7 @@ import {
   linkedSignal,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormControl,
@@ -28,6 +29,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+import { forkJoin, of } from 'rxjs';
+import { catchError, startWith } from 'rxjs/operators';
+
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AuthService } from '../../../../core/auth/auth';
@@ -40,6 +44,17 @@ import {
   ConfigVersionDiffDialog,
   ConfigVersionDiffDialogData,
 } from '../../dialogs/config-version-diff-dialog/config-version-diff-dialog';
+import { SmhPhonePreview } from '../smh-phone-preview/smh-phone-preview';
+import {
+  SmhFaqEditorDialog,
+  SmhFaqEditorDialogData,
+  SmhFaqJson,
+} from '../../dialogs/smh-faq-editor-dialog/smh-faq-editor-dialog';
+import {
+  SmhSpidProviderEditorDialog,
+  SmhSpidProviderEditorDialogData,
+  SmhSpidProviderJson,
+} from '../../dialogs/smh-spid-provider-editor-dialog/smh-spid-provider-editor-dialog';
 import {
   SmhUiRenderEditorDialog,
   SmhUiRenderEditorDialogData,
@@ -80,6 +95,25 @@ function jsonValidator(): ValidatorFn {
 
 const ENTITY_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 
+function extractServiceIds(config: unknown): string[] {
+  const pickIds = (arr: unknown[]): string[] =>
+    arr.flatMap((item) =>
+      item && typeof item === 'object' && 'id' in item && typeof (item as Record<string, unknown>)['id'] === 'string'
+        ? [(item as Record<string, unknown>)['id'] as string]
+        : [],
+    );
+  if (Array.isArray(config)) return pickIds(config);
+  if (config && typeof config === 'object') {
+    for (const val of Object.values(config as Record<string, unknown>)) {
+      if (Array.isArray(val)) {
+        const ids = pickIds(val);
+        if (ids.length > 0) return ids;
+      }
+    }
+  }
+  return [];
+}
+
 @Component({
   selector: 'app-config-channel-section',
   standalone: true,
@@ -97,6 +131,7 @@ const ENTITY_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
     MatExpansionModule,
     MatTooltipModule,
     TranslatePipe,
+    SmhPhonePreview,
   ],
   templateUrl: './config-channel-section.html',
   styleUrl: './config-channel-section.scss',
@@ -156,6 +191,16 @@ export class ConfigChannelSection {
       const entity = this.entity();
       this.loadConfig(tenantId, channelId, entity);
     });
+
+    // Load link service IDs for preview badge (solo quando la preview è attiva)
+    effect(() => {
+      if (!this.showPreview()) return;
+      const tenantId = this.tenantId();
+      const channelId = this.channelId();
+      this.tenantService.getConfig(tenantId, channelId, 'local', 'smh_link_service_config')
+        .pipe(catchError(() => of({ source: 'local' as const, configJson: [] as unknown })))
+        .subscribe((cfg) => this.linkServiceIds.set(extractServiceIds(cfg.configJson)));
+    });
   }
 
   private loadEntities(tenantId: string, channelId: string): void {
@@ -163,6 +208,9 @@ export class ConfigChannelSection {
       next: (list) => {
         const merged = new Set([...this.entities(), ...list]);
         merged.add('base');
+        if (channelId === 'mobile') {
+          ConfigChannelSection.MOBILE_MANDATORY_ENTITIES.forEach((e) => merged.add(e));
+        }
         const sorted = [...merged].sort((a, b) => {
           if (a === 'base') return -1;
           if (b === 'base') return 1;
@@ -171,10 +219,14 @@ export class ConfigChannelSection {
         this.entities.set(sorted);
       },
       error: () => {
-        // API non disponibile — mantieni la lista corrente, assicura solo 'base'
-        this.entities.update((list) =>
-          list.includes('base') ? list : ['base', ...list],
-        );
+        const base = new Set<string>(['base']);
+        if (channelId === 'mobile') {
+          ConfigChannelSection.MOBILE_MANDATORY_ENTITIES.forEach((e) => base.add(e));
+        }
+        this.entities.update((list) => {
+          const merged = new Set([...list, ...base]);
+          return [...merged].sort((a, b) => (a === 'base' ? -1 : b === 'base' ? 1 : a.localeCompare(b)));
+        });
       },
     });
   }
@@ -230,13 +282,13 @@ export class ConfigChannelSection {
       },
       error: (err: unknown) => {
         this.loading.set(false);
-        const msg = toUserMessage(err, this.translate.instant('config.loadError'));
         if ((err as { status?: number })?.status === 404) {
-          this.configControl.reset('{}');
+          const def = ConfigChannelSection.ENTITY_DEFAULTS[entity];
+          this.configControl.reset(def !== undefined ? JSON.stringify(def, null, 2) : '{}');
           this.activeVersion.set(null);
           this.loadHistory(tenantId, channelId, entity);
         } else {
-          this.errorMessage.set(msg);
+          this.errorMessage.set(toUserMessage(err, this.translate.instant('config.loadError')));
         }
       },
     });
@@ -347,6 +399,54 @@ export class ConfigChannelSection {
 
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
   readonly isSmhUiRender = computed(() => this.entity() === 'smh_ui_render');
+  readonly isSmhSpidProvider = computed(() => this.entity() === 'smh_spid_provider');
+  readonly isSmhFaq = computed(() => this.entity() === 'smh_faq');
+
+  private static readonly GRAPHIC_EDITOR_ENTITIES = new Set(['smh_ui_render', 'smh_spid_provider', 'smh_faq']);
+
+  private static readonly MOBILE_MANDATORY_ENTITIES = [
+    'smh_ui_render',
+    'smh_spid_provider',
+    'smh_faq',
+    'smh_link_service_config',
+    'smh_service_config',
+  ];
+
+  private static readonly ENTITY_DEFAULTS: Record<string, unknown> = {
+    smh_ui_render: {
+      home: {
+        app_bar: { title: '', svg_icon: null },
+        search_bar: { hint_label: 'Cerca servizi...' },
+        header: [],
+        body: {},
+      },
+      navigation_bar: { services: [] },
+    },
+    smh_spid_provider: { providers: [] },
+    smh_faq: [],
+    smh_link_service_config: [],
+    smh_service_config: [],
+  };
+
+  hasGraphicEditor(entity: string): boolean {
+    return ConfigChannelSection.GRAPHIC_EDITOR_ENTITIES.has(entity);
+  }
+
+  private readonly configValue = toSignal(
+    this.configControl.valueChanges.pipe(startWith(this.configControl.value)),
+    { initialValue: this.configControl.value },
+  );
+
+  readonly showPreview = computed(() => this.isSmhUiRender() && this.channelId() === 'mobile');
+
+  readonly previewJson = computed((): SmhUiRenderJson | null => {
+    if (!this.showPreview()) return null;
+    const raw = this.configValue();
+    if (!raw?.trim()) return null;
+    try { return JSON.parse(raw) as SmhUiRenderJson; } catch { return null; }
+  });
+
+  readonly linkServiceIds = signal<string[]>([]);
 
   openGraphicEditor(): void {
     let parsed: SmhUiRenderJson = {};
@@ -354,15 +454,63 @@ export class ConfigChannelSection {
     if (raw.trim()) {
       try { parsed = JSON.parse(raw) as SmhUiRenderJson; } catch { /* usa vuoto */ }
     }
-    const data: SmhUiRenderEditorDialogData = { value: parsed };
-    const ref = this.dialog.open<SmhUiRenderEditorDialog, SmhUiRenderEditorDialogData, SmhUiRenderJson>(
-      SmhUiRenderEditorDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '960px', width: '960px' },
+    const tenantId = this.tenantId();
+    const channelId = this.channelId();
+    const emptyConfig = { source: 'local' as const, configJson: [] as unknown };
+    forkJoin([
+      this.tenantService.getConfig(tenantId, channelId, 'local', 'smh_link_service_config').pipe(catchError(() => of(emptyConfig))),
+      this.tenantService.getConfig(tenantId, channelId, 'local', 'smh_service_config').pipe(catchError(() => of(emptyConfig))),
+    ]).subscribe(([linkCfg, svcCfg]) => {
+      const availableServiceIds = [
+        ...extractServiceIds(linkCfg.configJson),
+        ...extractServiceIds(svcCfg.configJson),
+      ];
+      const data: SmhUiRenderEditorDialogData = { value: parsed, availableServiceIds };
+      const ref = this.dialog.open<SmhUiRenderEditorDialog, SmhUiRenderEditorDialogData, SmhUiRenderJson>(
+        SmhUiRenderEditorDialog,
+        { data, autoFocus: 'first-tabbable', maxWidth: '960px', width: '960px' },
+      );
+      ref.afterClosed().subscribe((result) => {
+        if (result === undefined) return;
+        const pretty = JSON.stringify(result, null, 2);
+        this.configControl.setValue(pretty);
+        this.configControl.markAsDirty();
+      });
+    });
+  }
+
+  openSpidProviderEditor(): void {
+    let parsed: SmhSpidProviderJson = { providers: [] };
+    const raw = this.configControl.value ?? '';
+    if (raw.trim()) {
+      try { parsed = JSON.parse(raw) as SmhSpidProviderJson; } catch { /* usa vuoto */ }
+    }
+    const data: SmhSpidProviderEditorDialogData = { value: parsed };
+    const ref = this.dialog.open<SmhSpidProviderEditorDialog, SmhSpidProviderEditorDialogData, SmhSpidProviderJson>(
+      SmhSpidProviderEditorDialog,
+      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;
-      const pretty = JSON.stringify(result, null, 2);
-      this.configControl.setValue(pretty);
+      this.configControl.setValue(JSON.stringify(result, null, 2));
+      this.configControl.markAsDirty();
+    });
+  }
+
+  openFaqEditor(): void {
+    let parsed: SmhFaqJson = [];
+    const raw = this.configControl.value ?? '';
+    if (raw.trim()) {
+      try { parsed = JSON.parse(raw) as SmhFaqJson; } catch { /* usa vuoto */ }
+    }
+    const data: SmhFaqEditorDialogData = { value: parsed };
+    const ref = this.dialog.open<SmhFaqEditorDialog, SmhFaqEditorDialogData, SmhFaqJson>(
+      SmhFaqEditorDialog,
+      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === undefined) return;
+      this.configControl.setValue(JSON.stringify(result, null, 2));
       this.configControl.markAsDirty();
     });
   }

@@ -1,18 +1,153 @@
 <section class="home">
-  <mat-card appearance="outlined" class="home__card">
-    <mat-card-header>
-      <mat-card-title>{{ 'home.welcome' | translate }}</mat-card-title>
-      @if (currentUser(); as user) {
-        <mat-card-subtitle>
-          {{ 'home.connectedAs' | translate }} <strong>{{ user.username }}</strong>
-          @if (user.role) {
-            {{ 'home.withRole' | translate }} <strong>{{ user.role }}</strong>
-          }
-        </mat-card-subtitle>
-      }
-    </mat-card-header>
-    <mat-card-content>
-      <p class="home__hint">{{ 'home.hint' | translate }}</p>
-    </mat-card-content>
-  </mat-card>
+
+  <!-- Intestazione -->
+  <div class="home__header">
+    <div>
+      <h1 class="home__title">{{ 'home.welcome' | translate }}, {{ currentUser()?.username }}</h1>
+      <p class="home__subtitle">{{ today | date:'EEEE d MMMM yyyy' }}</p>
+    </div>
+  </div>
+
+  @if (!isAdmin()) {
+    <!-- Vista non-admin: messaggio semplice -->
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <p class="home__hint">{{ 'home.hint' | translate }}</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+
+    @if (loading()) {
+      <div class="home__loading">
+        <mat-progress-spinner mode="indeterminate" diameter="40" />
+      </div>
+    } @else {
+
+      <!-- KPI Cards -->
+      <div class="home__kpi-row">
+
+        <mat-card appearance="outlined" class="home__kpi-card">
+          <mat-card-content>
+            <div class="kpi">
+              <mat-icon class="kpi__icon kpi__icon--primary">business</mat-icon>
+              <div class="kpi__body">
+                <span class="kpi__value">{{ activeCustomers() }}</span>
+                <span class="kpi__label">{{ 'home.kpiActiveCustomers' | translate }}</span>
+                @if (inactiveCustomers() > 0) {
+                  <span class="kpi__sub">{{ inactiveCustomers() }} {{ 'home.kpiInactive' | translate }}</span>
+                }
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card appearance="outlined" class="home__kpi-card">
+          <mat-card-content>
+            <div class="kpi">
+              <mat-icon class="kpi__icon" [class.kpi__icon--ok]="!onPremHealthLoading() && onPremOnline() === onPremTotal() && onPremTotal() > 0" [class.kpi__icon--warn]="!onPremHealthLoading() && onPremOnline() < onPremTotal()">
+                dns
+              </mat-icon>
+              <div class="kpi__body">
+                @if (onPremHealthLoading()) {
+                  <mat-progress-spinner mode="indeterminate" diameter="24" class="kpi__spinner" />
+                } @else {
+                  <span class="kpi__value" [class.kpi__value--warn]="onPremOnline() < onPremTotal()">
+                    {{ onPremOnline() }}<span class="kpi__value-total">/{{ onPremTotal() }}</span>
+                  </span>
+                }
+                <span class="kpi__label">{{ 'home.kpiOnPremOnline' | translate }}</span>
+                @if (!onPremHealthLoading() && onPremTotal() > 0) {
+                  <span class="kpi__sub">
+                    {{ onPremTotal() - onPremOnline() }} {{ 'home.kpiOnPremOffline' | translate }}
+                  </span>
+                }
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card appearance="outlined" class="home__kpi-card">
+          <mat-card-content>
+            <div class="kpi">
+              <mat-icon class="kpi__icon kpi__icon--secondary">people</mat-icon>
+              <div class="kpi__body">
+                <span class="kpi__value">{{ activeUsers() }}</span>
+                <span class="kpi__label">{{ 'home.kpiActiveUsers' | translate }}</span>
+                <span class="kpi__sub">{{ totalUsers() }} {{ 'home.kpiTotal' | translate }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card appearance="outlined" class="home__kpi-card">
+          <mat-card-content>
+            <div class="kpi">
+              <mat-icon class="kpi__icon kpi__icon--tertiary">receipt_long</mat-icon>
+              <div class="kpi__body">
+                <span class="kpi__value">{{ todayActions() }}</span>
+                <span class="kpi__label">{{ 'home.kpiTodayActions' | translate }}</span>
+                <span class="kpi__sub">{{ auditTotal() }} {{ 'home.kpiTotalAudit' | translate }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card appearance="outlined" class="home__kpi-card">
+          <mat-card-content>
+            <div class="kpi">
+              <mat-icon class="kpi__icon" [class.kpi__icon--ok]="successRate() >= 95" [class.kpi__icon--warn]="successRate() < 95">
+                {{ successRate() >= 95 ? 'check_circle' : 'warning_amber' }}
+              </mat-icon>
+              <div class="kpi__body">
+                <span class="kpi__value">{{ successRate() }}%</span>
+                <span class="kpi__label">{{ 'home.kpiSuccessRate' | translate }}</span>
+                <span class="kpi__sub">{{ 'home.kpiLast30d' | translate }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+
+      <!-- Charts row -->
+      <div class="home__charts-row">
+
+        <!-- Line: attività giornaliera -->
+        <mat-card appearance="outlined" class="home__chart-card home__chart-card--wide">
+          <mat-card-header>
+            <mat-card-title>{{ 'home.chartActivityTitle' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'home.chartActivitySub' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content class="home__chart-content">
+            <canvas #activityChart></canvas>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Doughnut: stato clienti -->
+        <mat-card appearance="outlined" class="home__chart-card">
+          <mat-card-header>
+            <mat-card-title>{{ 'home.chartStatusTitle' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ totalCustomers() }} {{ 'home.kpiTotal' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content class="home__chart-content">
+            <canvas #statusChart></canvas>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+
+      <!-- Bar: azioni per tipo -->
+      <mat-card appearance="outlined" class="home__chart-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'home.chartActionTitle' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'home.chartActionSub' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="home__chart-content home__chart-content--tall">
+          <canvas #actionChart></canvas>
+        </mat-card-content>
+      </mat-card>
+
+    }
+  }
+
 </section>

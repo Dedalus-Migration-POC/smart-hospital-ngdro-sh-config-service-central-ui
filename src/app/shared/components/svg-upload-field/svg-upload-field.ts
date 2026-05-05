@@ -24,7 +24,14 @@ export class SvgUploadField implements ControlValueAccessor {
 
   get previewSrc(): string {
     const v = this.value();
-    return v ? `data:image/svg+xml;base64,${v}` : '';
+    if (!v) return '';
+    const trimmed = v.trimStart();
+    // Raw SVG markup (from JSON or paste) → URL-encode as data URI
+    if (trimmed.startsWith('<') || trimmed.startsWith('<?xml')) {
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(v)}`;
+    }
+    // Legacy base64
+    return `data:image/svg+xml;base64,${v}`;
   }
 
   writeValue(v: string | null): void { this.value.set(v ?? ''); }
@@ -38,13 +45,12 @@ export class SvgUploadField implements ControlValueAccessor {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const base64 = dataUrl.split(',')[1] ?? '';
-      this.value.set(base64);
-      this.onChange(base64);
+      const svgText = reader.result as string;
+      this.value.set(svgText);
+      this.onChange(svgText);
       this.onTouched();
     };
-    reader.readAsDataURL(file);
+    reader.readAsText(file);
     input.value = '';
   }
 

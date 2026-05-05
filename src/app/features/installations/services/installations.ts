@@ -7,6 +7,7 @@ import {
   Installation,
   InstallationApiKeyUpdateRequest,
   InstallationCreateRequest,
+  InstallationHealth,
   InstallationPayloadMasterKeyResponse,
   InstallationPayloadMasterKeyUpdateRequest,
   InstallationUpdateRequest,
@@ -68,6 +69,11 @@ export class InstallationService {
     return this.http.get<InstallationPayloadMasterKeyResponse>(
       `${this.baseUrl}/installations/${id}/payload-master-key`,
     );
+  }
+
+  /** GET /installations/{id}/health — ADMIN only. */
+  checkHealth(id: string): Observable<InstallationHealth> {
+    return this.http.get<InstallationHealth>(`${this.baseUrl}/installations/${id}/health`);
   }
 
   /** DELETE /installations/{id} — soft-delete (active=false). */

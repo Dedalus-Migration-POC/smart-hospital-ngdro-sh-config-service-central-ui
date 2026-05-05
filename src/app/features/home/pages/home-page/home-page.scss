@@ -1,14 +1,150 @@
 .home {
-  display: grid;
-  gap: 16px;
-  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1400px;
 }
 
-.home__card {
-  width: 100%;
+.home__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.home__title {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--mat-sys-on-surface);
+}
+
+.home__subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-transform: capitalize;
 }
 
 .home__hint {
   color: var(--mat-sys-on-surface-variant);
   margin: 0;
+}
+
+.home__loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+// KPI cards
+.home__kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.home__kpi-card {
+  ::ng-deep mat-card-content {
+    padding: 16px !important;
+  }
+}
+
+.kpi {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.kpi__icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  opacity: 0.85;
+
+  &--primary  { color: var(--mat-sys-primary); }
+  &--secondary { color: var(--mat-sys-secondary); }
+  &--tertiary { color: var(--mat-sys-tertiary); }
+  &--ok       { color: #2E7D32; }
+  &--warn     { color: var(--mat-sys-error); }
+}
+
+.kpi__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.kpi__value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--mat-sys-on-surface);
+
+  &--warn { color: var(--mat-sys-error); }
+}
+
+.kpi__value-total {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.kpi__spinner {
+  margin: 4px 0;
+}
+
+.kpi__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi__sub {
+  font-size: 0.75rem;
+  color: var(--mat-sys-outline);
+}
+
+// Charts
+.home__charts-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.home__chart-card {
+  &--wide { // used in charts-row only
+  }
+}
+
+.home__chart-content {
+  padding: 8px 16px 16px !important;
+  height: 220px;
+  position: relative;
+
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  &--tall {
+    height: 280px;
+  }
 }

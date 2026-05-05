@@ -1,0 +1,74 @@
+<h2 mat-dialog-title>{{ 'smhSpidProvider.dialogTitle' | translate }}</h2>
+
+<mat-dialog-content class="smh-editor">
+  <div class="smh-editor__content">
+    <p class="smh-editor__desc">{{ 'smhSpidProvider.desc' | translate }}</p>
+
+    <div class="smh-editor__section-header">
+      <h3 class="smh-editor__section-title">{{ 'smhSpidProvider.providers' | translate }}</h3>
+      <button mat-stroked-button type="button" (click)="add()">
+        <mat-icon>add</mat-icon>
+        {{ 'smhSpidProvider.addProvider' | translate }}
+      </button>
+    </div>
+
+    <div
+      cdkDropList
+      (cdkDropListDropped)="drop($event)"
+      class="smh-editor__drag-list"
+    >
+      @for (ctrl of providersArray.controls; track ctrl; let i = $index) {
+        <div cdkDrag class="smh-editor__drag-item" [formGroup]="asFormGroup(ctrl)">
+          <mat-icon cdkDragHandle class="smh-editor__drag-handle">drag_indicator</mat-icon>
+
+          <div class="smh-editor__drag-body">
+            <div class="smh-editor__inline-row">
+              <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--sm">
+                <mat-label>ID</mat-label>
+                <input matInput formControlName="id" required />
+                @if (asFormGroup(ctrl).controls['id'].touched && asFormGroup(ctrl).controls['id'].hasError('required')) {
+                  <mat-error>{{ 'smhSpidProvider.fieldRequired' | translate }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                <mat-label>{{ 'smhSpidProvider.providerName' | translate }}</mat-label>
+                <input matInput formControlName="name" required />
+                @if (asFormGroup(ctrl).controls['name'].touched && asFormGroup(ctrl).controls['name'].hasError('required')) {
+                  <mat-error>{{ 'smhSpidProvider.fieldRequired' | translate }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+            <div class="smh-editor__field-row">
+              <span class="smh-editor__field-label">{{ 'smhSpidProvider.logo' | translate }}</span>
+              <app-svg-upload-field formControlName="svgCode" />
+            </div>
+          </div>
+
+          <button
+            mat-icon-button
+            type="button"
+            [matTooltip]="'smhSpidProvider.removeProvider' | translate"
+            (click)="remove(i)"
+            class="smh-editor__remove-btn"
+          >
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      }
+
+      @if (providersArray.length === 0) {
+        <div class="smh-editor__empty">
+          <mat-icon>account_balance</mat-icon>
+          <span>{{ 'smhSpidProvider.empty' | translate }}</span>
+        </div>
+      }
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close()">{{ 'common.cancel' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="confirm()">
+    {{ 'smhSpidProvider.apply' | translate }}
+  </button>
+</mat-dialog-actions>

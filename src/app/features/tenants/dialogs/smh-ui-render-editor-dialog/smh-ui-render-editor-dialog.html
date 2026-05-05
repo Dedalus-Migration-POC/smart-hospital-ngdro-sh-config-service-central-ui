@@ -158,7 +158,12 @@
                             <div class="smh-editor__inline-row">
                               <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--sm">
                                 <mat-label>ID</mat-label>
-                                <input matInput formControlName="id" />
+                                <input matInput formControlName="id" [matAutocomplete]="bodyItemIdAuto" />
+                                <mat-autocomplete #bodyItemIdAuto="matAutocomplete">
+                                  @for (sid of getAvailableIds(asFormGroup(itemCtrl).controls['id'].value); track sid) {
+                                    <mat-option [value]="sid">{{ sid }}</mat-option>
+                                  }
+                                </mat-autocomplete>
                               </mat-form-field>
                               <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
                                 <mat-label>{{ 'smhUiRender.itemTitle' | translate }}</mat-label>
@@ -239,7 +244,12 @@
                   <div class="smh-editor__inline-row">
                     <mat-form-field appearance="outline" class="smh-editor__text-field">
                       <mat-label>ID</mat-label>
-                      <input matInput formControlName="id" />
+                      <input matInput formControlName="id" [matAutocomplete]="navItemIdAuto" />
+                      <mat-autocomplete #navItemIdAuto="matAutocomplete">
+                        @for (sid of getAvailableIds(asFormGroup(ctrl).controls['id'].value); track sid) {
+                          <mat-option [value]="sid">{{ sid }}</mat-option>
+                        }
+                      </mat-autocomplete>
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
                       <mat-label>{{ 'smhUiRender.itemTitle' | translate }}</mat-label>
