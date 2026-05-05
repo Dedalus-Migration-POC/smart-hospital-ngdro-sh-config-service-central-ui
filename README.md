@@ -66,7 +66,8 @@ src/
     │   └── admin-shell/           # sidenav + toolbar, parent delle route protette
     ├── features/
     │   ├── auth/pages/login-page/
-    │   ├── home/pages/home-page/  # dashboard KPI + grafici (solo ADMIN)
+    │   ├── home/pages/home-page/          # dashboard ADMIN: KPI, alert DRAFT, grafici
+    │   ├── home/pages/customer-home-page/ # dashboard CUSTOMER: KPI, alert DRAFT, salute installation
     │   ├── customers/             # lista + dettaglio + create dialog
     │   │   ├── customers.routes.ts
     │   │   ├── models.ts
@@ -102,11 +103,20 @@ src/
 
 ### Dashboard admin
 
-Visibile solo agli utenti ADMIN. Mostra:
+Visibile solo agli utenti ADMIN (route `/`). Mostra:
 
 - **5 KPI card**: clienti attivi, on-prem online, utenti attivi, azioni di oggi, tasso di successo
-- **KPI on-prem online**: caricamento progressivo — per ogni installation attiva lancia un health check verso il backend gemello e aggiorna il contatore in tempo reale
+- **KPI on-prem online**: caricamento progressivo — per ogni installation attiva lancia un health check direttamente dal browser e aggiorna il contatore in tempo reale
+- **Alert DRAFT**: se ci sono configurazioni non sincronizzate (`GET /configs/draft`), viene mostrata una tabella con customer, installation, prodotto, canale, entity, versione ed errore — link diretto al prodotto
 - **Grafici Chart.js**: attività giornaliera (ultimi 30 giorni, line chart), stato clienti (doughnut), top 10 azioni per tipo (bar orizzontale)
+
+### Dashboard customer
+
+Visibile agli utenti con ruolo CUSTOMER (route `/my-dashboard`). Mostra:
+
+- **3 KPI card**: installation attive, on-prem online (health check browser-direct), configurazioni non sincronizzate
+- **Alert DRAFT**: tabella delle configurazioni in stato DRAFT del proprio customer (canale, entity, versione, errore)
+- **Tabella installation**: tutte le installation del customer con nome, URL, stato salute (health check browser-direct) e stato attivo/inattivo
 
 ### Gestione configurazioni
 

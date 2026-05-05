@@ -14,6 +14,9 @@ import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
 import { Chart, registerables } from 'chart.js';
@@ -26,10 +29,12 @@ import { CustomerService } from '../../../customers/services/customers';
 import { UserService } from '../../../users/services/users';
 import { AuditService } from '../../../audit/services/audit';
 import { InstallationService } from '../../../installations/services/installations';
+import { TenantService } from '../../../tenants/services/tenants';
 import { Customer } from '../../../customers/models';
 import { AuditLog } from '../../../audit/models';
 import { User } from '../../../users/models';
 import { Installation } from '../../../installations/models';
+import { DraftConfigSummary } from '../../../tenants/models';
 
 Chart.register(...registerables);
 
@@ -46,9 +51,12 @@ interface KpiData {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
+    RouterLink,
     MatCardModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatTableModule,
+    MatTooltipModule,
     TranslatePipe,
   ],
   templateUrl: './home-page.html',
@@ -60,6 +68,7 @@ export class HomePage implements AfterViewInit, OnDestroy {
   private readonly userService = inject(UserService);
   private readonly auditService = inject(AuditService);
   private readonly installationService = inject(InstallationService);
+  private readonly tenantService = inject(TenantService);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -69,6 +78,8 @@ export class HomePage implements AfterViewInit, OnDestroy {
 
   readonly loading = signal(true);
   readonly kpi = signal<KpiData | null>(null);
+  readonly draftConfigs = signal<DraftConfigSummary[]>([]);
+  readonly draftColumns = ['customer', 'installation', 'tenant', 'channel', 'entity', 'version', 'error', 'go'] as const;
 
   readonly onPremTotal = signal(0);
   readonly onPremOnline = signal(0);
@@ -124,11 +135,18 @@ export class HomePage implements AfterViewInit, OnDestroy {
         });
         setTimeout(() => this.buildCharts(customers, users, audit.content), 0);
         this.loadOnPremHealth(customers.filter(c => c.active).map(c => c.id));
+        this.loadDraftConfigs();
       },
       error: () => {
         this.loading.set(false);
       },
     });
+  }
+
+  private loadDraftConfigs(): void {
+    this.tenantService.getDraftConfigs()
+      .pipe(catchError(() => of([] as DraftConfigSummary[])))
+      .subscribe(drafts => this.draftConfigs.set(drafts));
   }
 
   private loadOnPremHealth(customerIds: string[]): void {

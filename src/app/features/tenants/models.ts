@@ -61,3 +61,19 @@ export const CHANNELS = ['mobile', 'web', 'totem'] as const;
 export type ChannelId = (typeof CHANNELS)[number];
 
 export const TENANT_SLUG_PATTERN = /^[a-z0-9-]+$/;
+
+export interface DraftConfigSummary {
+  configId: string;
+  tenantId: string;
+  tenantSlug: string;
+  tenantName: string;
+  installationId: string;
+  installationName: string;
+  customerId: string;
+  customerName: string;
+  channelId: string;
+  entity: string;
+  version: number;
+  syncError: string | null;
+  createdAt: string;
+}

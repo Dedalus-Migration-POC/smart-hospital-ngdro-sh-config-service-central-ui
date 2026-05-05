@@ -23,6 +23,12 @@ export const routes: Routes = [
         title: 'Configuratore centrale',
       },
       {
+        path: 'my-dashboard',
+        loadComponent: () =>
+          import('./features/home/pages/customer-home-page/customer-home-page').then((m) => m.CustomerHomePage),
+        title: 'La mia dashboard — Configuratore centrale',
+      },
+      {
         path: 'customers',
         loadChildren: () =>
           import('./features/customers/customers.routes').then((m) => m.customersRoutes),

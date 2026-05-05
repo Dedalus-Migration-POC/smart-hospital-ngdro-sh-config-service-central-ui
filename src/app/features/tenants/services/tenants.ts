@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import {
   AppConfigActive,
   AppConfigVersion,
+  DraftConfigSummary,
   Tenant,
   TenantCreateRequest,
   TenantUpdateRequest,
@@ -101,6 +102,10 @@ export class TenantService {
       {},
       { params: new HttpParams().set('entity', entity) },
     );
+  }
+
+  getDraftConfigs(): Observable<DraftConfigSummary[]> {
+    return this.http.get<DraftConfigSummary[]>(`${this.baseUrl}/configs/draft`);
   }
 
   pushConfirm(

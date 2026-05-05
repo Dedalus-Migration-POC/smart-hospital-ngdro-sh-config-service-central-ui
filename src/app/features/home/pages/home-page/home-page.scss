@@ -118,6 +118,39 @@
   color: var(--mat-sys-outline);
 }
 
+// Draft alert
+.home__draft-card {
+  border-color: var(--mat-sys-error-container) !important;
+
+  ::ng-deep mat-card-content { padding: 0 !important; }
+}
+
+.home__draft-icon {
+  color: var(--mat-sys-error);
+  font-size: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.home__draft-content {
+  overflow-x: auto;
+}
+
+.home__draft-table {
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.home__draft-error {
+  color: var(--mat-sys-error);
+  font-size: 0.8rem;
+}
+
+.home__draft-action-col {
+  width: 48px;
+  padding-right: 8px;
+}
+
 // Charts
 .home__charts-row {
   display: grid;

@@ -84,9 +84,9 @@ export class AdminShell {
     const role = user?.role ?? null;
 
     if (role === 'CUSTOMER') {
-      const customerPath = user?.customerId ? `/customers/${user.customerId}` : undefined;
       return [
-        { icon: 'business', labelKey: 'nav.myCustomer', path: customerPath } as NavItem,
+        { icon: 'dashboard', labelKey: 'nav.dashboard', path: '/my-dashboard' } as NavItem,
+        { icon: 'business', labelKey: 'nav.myCustomer', path: user?.customerId ? `/customers/${user.customerId}` : undefined } as NavItem,
       ];
     }
 
@@ -102,10 +102,10 @@ export class AdminShell {
 
     effect(() => {
       const user = this.currentUser();
-      if (user?.role === 'CUSTOMER' && user.customerId) {
+      if (user?.role === 'CUSTOMER') {
         const url = this.router.url;
         if (url === '/' || url === '') {
-          void this.router.navigateByUrl(`/customers/${user.customerId}`);
+          void this.router.navigateByUrl('/my-dashboard');
         }
       }
     });

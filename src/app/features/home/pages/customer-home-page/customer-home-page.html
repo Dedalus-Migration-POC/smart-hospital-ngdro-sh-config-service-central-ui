@@ -1,0 +1,187 @@
+<section class="home">
+
+  <div class="home__header">
+    <div>
+      <h1 class="home__title">{{ 'home.welcome' | translate }}, {{ currentUser()?.username }}</h1>
+      <p class="home__subtitle">{{ today | date:'EEEE d MMMM yyyy' }}</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="home__loading">
+      <mat-progress-spinner mode="indeterminate" diameter="40" />
+    </div>
+  } @else {
+
+    <!-- KPI Cards -->
+    <div class="home__kpi-row">
+
+      <mat-card appearance="outlined" class="home__kpi-card">
+        <mat-card-content>
+          <div class="kpi">
+            <mat-icon class="kpi__icon kpi__icon--primary">dns</mat-icon>
+            <div class="kpi__body">
+              <span class="kpi__value">{{ activeInstallations() }}</span>
+              <span class="kpi__label">{{ 'home.kpiActiveInstallations' | translate }}</span>
+              <span class="kpi__sub">{{ installations().length }} {{ 'home.kpiTotal' | translate }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="home__kpi-card">
+        <mat-card-content>
+          <div class="kpi">
+            <mat-icon class="kpi__icon"
+              [class.kpi__icon--ok]="!onPremHealthLoading() && onPremOnline() === onPremTotal() && onPremTotal() > 0"
+              [class.kpi__icon--warn]="!onPremHealthLoading() && onPremOnline() < onPremTotal()">
+              monitor_heart
+            </mat-icon>
+            <div class="kpi__body">
+              @if (onPremHealthLoading()) {
+                <mat-progress-spinner mode="indeterminate" diameter="24" class="kpi__spinner" />
+              } @else {
+                <span class="kpi__value" [class.kpi__value--warn]="onPremOnline() < onPremTotal()">
+                  {{ onPremOnline() }}<span class="kpi__value-total">/{{ onPremTotal() }}</span>
+                </span>
+              }
+              <span class="kpi__label">{{ 'home.kpiOnPremOnline' | translate }}</span>
+              @if (!onPremHealthLoading() && onPremTotal() > 0) {
+                <span class="kpi__sub">
+                  {{ onPremTotal() - onPremOnline() }} {{ 'home.kpiOnPremOffline' | translate }}
+                </span>
+              }
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="home__kpi-card">
+        <mat-card-content>
+          <div class="kpi">
+            <mat-icon class="kpi__icon"
+              [class.kpi__icon--ok]="draftConfigs().length === 0"
+              [class.kpi__icon--warn]="draftConfigs().length > 0">
+              {{ draftConfigs().length === 0 ? 'check_circle' : 'sync_problem' }}
+            </mat-icon>
+            <div class="kpi__body">
+              <span class="kpi__value" [class.kpi__value--warn]="draftConfigs().length > 0">
+                {{ draftConfigs().length }}
+              </span>
+              <span class="kpi__label">{{ 'home.kpiDraftConfigs' | translate }}</span>
+              @if (draftConfigs().length === 0) {
+                <span class="kpi__sub">{{ 'home.kpiAllSynced' | translate }}</span>
+              }
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+
+    <!-- Alert configurazioni non sincronizzate -->
+    @if (draftConfigs().length > 0) {
+      <mat-card appearance="outlined" class="home__draft-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="home__draft-icon">sync_problem</mat-icon>
+          <mat-card-title>{{ 'home.draftTitle' | translate: { count: draftConfigs().length } }}</mat-card-title>
+          <mat-card-subtitle>{{ 'home.draftSubtitle' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="home__draft-content">
+          <table mat-table [dataSource]="draftConfigs()" class="home__draft-table">
+            <ng-container matColumnDef="tenant">
+              <th mat-header-cell *matHeaderCellDef>{{ 'home.draftColTenant' | translate }}</th>
+              <td mat-cell *matCellDef="let r"><code>{{ r.tenantSlug }}</code></td>
+            </ng-container>
+            <ng-container matColumnDef="channel">
+              <th mat-header-cell *matHeaderCellDef>{{ 'home.draftColChannel' | translate }}</th>
+              <td mat-cell *matCellDef="let r"><code>{{ r.channelId }}</code></td>
+            </ng-container>
+            <ng-container matColumnDef="entity">
+              <th mat-header-cell *matHeaderCellDef>{{ 'home.draftColEntity' | translate }}</th>
+              <td mat-cell *matCellDef="let r"><code>{{ r.entity }}</code></td>
+            </ng-container>
+            <ng-container matColumnDef="version">
+              <th mat-header-cell *matHeaderCellDef>{{ 'home.draftColVersion' | translate }}</th>
+              <td mat-cell *matCellDef="let r">v{{ r.version }}</td>
+            </ng-container>
+            <ng-container matColumnDef="error">
+              <th mat-header-cell *matHeaderCellDef>{{ 'home.draftColError' | translate }}</th>
+              <td mat-cell *matCellDef="let r">
+                <span class="home__draft-error" [matTooltip]="r.syncError ?? ''">
+                  {{ (r.syncError ?? '') | slice:0:60 }}{{ (r.syncError?.length ?? 0) > 60 ? '…' : '' }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="go">
+              <th mat-header-cell *matHeaderCellDef class="home__draft-action-col"></th>
+              <td mat-cell *matCellDef="let r" class="home__draft-action-col">
+                <a mat-icon-button [routerLink]="['/prodotti', r.tenantId]" [matTooltip]="'home.draftGoToTenant' | translate">
+                  <mat-icon>open_in_new</mat-icon>
+                </a>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="draftColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: draftColumns"></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Installazioni -->
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>{{ 'home.myInstallations' | translate }}</mat-card-title>
+        <mat-card-subtitle>{{ installations().length }} {{ 'home.kpiTotal' | translate }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="home__installations-content">
+        @if (installations().length === 0) {
+          <p class="home__empty">{{ 'home.noInstallations' | translate }}</p>
+        } @else {
+          <table mat-table [dataSource]="installations()" class="home__installations-table">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>{{ 'home.colName' | translate }}</th>
+              <td mat-cell *matCellDef="let i">
+                <a [routerLink]="['/installations', i.id]">{{ i.name }}</a>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="baseUrl">
+              <th mat-header-cell *matHeaderCellDef>{{ 'home.colUrl' | translate }}</th>
+              <td mat-cell *matCellDef="let i">
+                <code class="home__url">{{ i.baseUrl || '—' }}</code>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="health">
+              <th mat-header-cell *matHeaderCellDef>{{ 'home.colHealth' | translate }}</th>
+              <td mat-cell *matCellDef="let i">
+                @if (!i.baseUrl) {
+                  <span class="home__health home__health--na">—</span>
+                } @else if (healthStatus()[i.id] === 'checking') {
+                  <mat-progress-spinner mode="indeterminate" diameter="16" class="home__health-spinner" />
+                } @else if (healthStatus()[i.id] === 'up') {
+                  <mat-icon class="home__health home__health--up" [matTooltip]="'home.healthUp' | translate">check_circle</mat-icon>
+                } @else {
+                  <mat-icon class="home__health home__health--down" [matTooltip]="'home.healthDown' | translate">cancel</mat-icon>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>{{ 'home.colStatus' | translate }}</th>
+              <td mat-cell *matCellDef="let i">
+                @if (i.active) {
+                  <span class="home__badge home__badge--active">{{ 'home.statusActive' | translate }}</span>
+                } @else {
+                  <span class="home__badge home__badge--inactive">{{ 'home.statusInactive' | translate }}</span>
+                }
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="installationColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: installationColumns"></tr>
+          </table>
+        }
+      </mat-card-content>
+    </mat-card>
+
+  }
+
+</section>
