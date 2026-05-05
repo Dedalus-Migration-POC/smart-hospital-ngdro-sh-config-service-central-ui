@@ -61,7 +61,7 @@ export class AdminShell {
 
   readonly currentUser = this.auth.currentUser;
   readonly currentLang = signal<string>(this.translate.currentLang ?? localStorage.getItem('sh.cs.lang') ?? 'it');
-  readonly feVersion = '0.0.0';
+  readonly feVersion = '1.0.0';
   readonly beVersion = signal<string>('…');
 
   readonly isMobile = toSignal(
