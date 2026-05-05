@@ -1,0 +1,286 @@
+<h2 mat-dialog-title>{{ 'smhUiRender.dialogTitle' | translate }}</h2>
+
+<mat-dialog-content class="smh-editor">
+  <form [formGroup]="form">
+    <mat-tab-group animationDuration="200ms" class="smh-editor__tabs">
+
+      <!-- ── TAB LOGIN ── -->
+      <mat-tab [label]="'smhUiRender.tabLogin' | translate">
+        <div class="smh-editor__tab-content" formGroupName="login">
+          <p class="smh-editor__desc">{{ 'smhUiRender.loginDesc' | translate }}</p>
+          <div class="smh-editor__field-row">
+            <span class="smh-editor__field-label">{{ 'smhUiRender.loginIcon' | translate }}</span>
+            <app-svg-upload-field formControlName="svg_icon" />
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── TAB SPLASH ── -->
+      <mat-tab [label]="'smhUiRender.tabSplash' | translate">
+        <div class="smh-editor__tab-content" formGroupName="splash">
+          <p class="smh-editor__desc">{{ 'smhUiRender.splashDesc' | translate }}</p>
+          <div class="smh-editor__field-row">
+            <span class="smh-editor__field-label">{{ 'smhUiRender.splashIcon' | translate }}</span>
+            <app-svg-upload-field formControlName="svg_main_icon" />
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── TAB HOME ── -->
+      <mat-tab [label]="'smhUiRender.tabHome' | translate">
+        <div class="smh-editor__tab-content" formGroupName="home">
+
+          <!-- App bar -->
+          <section class="smh-editor__section">
+            <h3 class="smh-editor__section-title">{{ 'smhUiRender.appBar' | translate }}</h3>
+            <div formGroupName="app_bar" class="smh-editor__section-body">
+              <mat-form-field appearance="outline" class="smh-editor__text-field">
+                <mat-label>{{ 'smhUiRender.appBarTitle' | translate }}</mat-label>
+                <input matInput formControlName="title" />
+              </mat-form-field>
+              <div class="smh-editor__field-row">
+                <span class="smh-editor__field-label">{{ 'smhUiRender.appBarIcon' | translate }}</span>
+                <app-svg-upload-field formControlName="svg_icon" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Search bar -->
+          <section class="smh-editor__section">
+            <h3 class="smh-editor__section-title">{{ 'smhUiRender.searchBar' | translate }}</h3>
+            <div formGroupName="search_bar" class="smh-editor__section-body">
+              <mat-form-field appearance="outline" class="smh-editor__text-field">
+                <mat-label>{{ 'smhUiRender.searchHint' | translate }}</mat-label>
+                <input matInput formControlName="hint_label" />
+              </mat-form-field>
+            </div>
+          </section>
+
+          <!-- Header banners -->
+          <section class="smh-editor__section">
+            <div class="smh-editor__section-header">
+              <h3 class="smh-editor__section-title">{{ 'smhUiRender.header' | translate }}</h3>
+              <button mat-stroked-button type="button" (click)="addHeader()">
+                <mat-icon>add</mat-icon>
+                {{ 'smhUiRender.addHeader' | translate }}
+              </button>
+            </div>
+
+            <div
+              cdkDropList
+              (cdkDropListDropped)="dropHeader($event)"
+              class="smh-editor__drag-list"
+            >
+              @for (ctrl of headerArray.controls; track ctrl; let i = $index) {
+                <div cdkDrag class="smh-editor__drag-item" [formGroup]="asFormGroup(ctrl)">
+                  <mat-icon cdkDragHandle class="smh-editor__drag-handle">drag_indicator</mat-icon>
+                  <div class="smh-editor__drag-body">
+                    <div class="smh-editor__inline-row">
+                      <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                        <mat-label>{{ 'smhUiRender.headerTitle' | translate }}</mat-label>
+                        <input matInput formControlName="title" required />
+                        @if (asFormGroup(ctrl).controls['title'].touched && asFormGroup(ctrl).controls['title'].hasError('required')) {
+                          <mat-error>{{ 'smhUiRender.fieldRequired' | translate }}</mat-error>
+                        }
+                      </mat-form-field>
+                      <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                        <mat-label>{{ 'smhUiRender.headerSubtitle' | translate }}</mat-label>
+                        <input matInput formControlName="subtitle" />
+                      </mat-form-field>
+                    </div>
+                    <div class="smh-editor__field-row">
+                      <span class="smh-editor__field-label">{{ 'smhUiRender.icon' | translate }}</span>
+                      <app-svg-upload-field formControlName="svg_icon" />
+                    </div>
+                    <mat-checkbox formControlName="show_card">{{ 'smhUiRender.showCard' | translate }}</mat-checkbox>
+                  </div>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [matTooltip]="'smhUiRender.removeHeader' | translate"
+                    (click)="removeHeader(i)"
+                    class="smh-editor__remove-btn"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          </section>
+
+          <!-- Body categories -->
+          <section class="smh-editor__section">
+            <div class="smh-editor__section-header">
+              <h3 class="smh-editor__section-title">{{ 'smhUiRender.body' | translate }}</h3>
+              <button mat-stroked-button type="button" (click)="addCategory()">
+                <mat-icon>create_new_folder</mat-icon>
+                {{ 'smhUiRender.addCategory' | translate }}
+              </button>
+            </div>
+
+            <div
+              cdkDropList
+              (cdkDropListDropped)="dropCategory($event)"
+              class="smh-editor__drag-list smh-editor__drag-list--categories"
+            >
+              @for (catCtrl of bodyArray.controls; track catCtrl; let ci = $index) {
+                <div cdkDrag class="smh-editor__category" [formGroup]="asFormGroup(catCtrl)">
+                  <div class="smh-editor__category-header">
+                    <mat-icon cdkDragHandle class="smh-editor__drag-handle">drag_indicator</mat-icon>
+                    <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                      <mat-label>{{ 'smhUiRender.categoryName' | translate }}</mat-label>
+                      <input matInput formControlName="categoryName" required />
+                      @if (asFormGroup(catCtrl).controls['categoryName'].touched && asFormGroup(catCtrl).controls['categoryName'].hasError('required')) {
+                        <mat-error>{{ 'smhUiRender.fieldRequired' | translate }}</mat-error>
+                      }
+                    </mat-form-field>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      [matTooltip]="'smhUiRender.removeCategory' | translate"
+                      (click)="removeCategory(ci)"
+                      class="smh-editor__remove-btn"
+                    >
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  </div>
+
+                  <div class="smh-editor__category-body">
+                    <div
+                      cdkDropList
+                      (cdkDropListDropped)="dropItem(ci, $event)"
+                      class="smh-editor__drag-list smh-editor__drag-list--items"
+                    >
+                      @for (itemCtrl of getCategoryItemsArray(ci).controls; track itemCtrl; let ii = $index) {
+                        <div cdkDrag class="smh-editor__drag-item smh-editor__drag-item--item" [formGroup]="asFormGroup(itemCtrl)">
+                          <mat-icon cdkDragHandle class="smh-editor__drag-handle">drag_indicator</mat-icon>
+                          <div class="smh-editor__drag-body">
+                            <div class="smh-editor__inline-row">
+                              <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--sm">
+                                <mat-label>ID</mat-label>
+                                <input matInput formControlName="id" />
+                              </mat-form-field>
+                              <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                                <mat-label>{{ 'smhUiRender.itemTitle' | translate }}</mat-label>
+                                <input matInput formControlName="title" required />
+                                @if (asFormGroup(itemCtrl).controls['title'].touched && asFormGroup(itemCtrl).controls['title'].hasError('required')) {
+                                  <mat-error>{{ 'smhUiRender.fieldRequired' | translate }}</mat-error>
+                                }
+                              </mat-form-field>
+                              <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                                <mat-label>{{ 'smhUiRender.itemSubtitle' | translate }}</mat-label>
+                                <input matInput formControlName="subtitle" />
+                              </mat-form-field>
+                            </div>
+                            <div class="smh-editor__field-row">
+                              <span class="smh-editor__field-label">{{ 'smhUiRender.icon' | translate }}</span>
+                              <app-svg-upload-field formControlName="svg_icon" />
+                            </div>
+                            <mat-checkbox formControlName="show_lock">{{ 'smhUiRender.showLock' | translate }}</mat-checkbox>
+                          </div>
+                          <button
+                            mat-icon-button
+                            type="button"
+                            [matTooltip]="'smhUiRender.removeItem' | translate"
+                            (click)="removeItem(ci, ii)"
+                            class="smh-editor__remove-btn"
+                          >
+                            <mat-icon>delete_outline</mat-icon>
+                          </button>
+                        </div>
+                      }
+                      @if (getCategoryItemsArray(ci).length === 0) {
+                        <div class="smh-editor__empty">
+                          <mat-icon>widgets</mat-icon>
+                          <span>{{ 'smhUiRender.emptyItems' | translate }}</span>
+                        </div>
+                      }
+                    </div>
+
+                    <button mat-button type="button" (click)="addItem(ci)" class="smh-editor__add-item-btn">
+                      <mat-icon>add</mat-icon>
+                      {{ 'smhUiRender.addItem' | translate }}
+                    </button>
+                  </div>
+                </div>
+              }
+              @if (bodyArray.length === 0) {
+                <div class="smh-editor__empty">
+                  <mat-icon>category</mat-icon>
+                  <span>{{ 'smhUiRender.emptyCategories' | translate }}</span>
+                </div>
+              }
+            </div>
+          </section>
+        </div>
+      </mat-tab>
+
+      <!-- ── TAB NAVIGATION BAR ── -->
+      <mat-tab [label]="'smhUiRender.tabNavBar' | translate">
+        <div class="smh-editor__tab-content" formGroupName="navigation_bar">
+          <div class="smh-editor__section-header">
+            <p class="smh-editor__desc">{{ 'smhUiRender.navBarDesc' | translate }}</p>
+            <button mat-stroked-button type="button" (click)="addNavService()">
+              <mat-icon>add</mat-icon>
+              {{ 'smhUiRender.addNavItem' | translate }}
+            </button>
+          </div>
+
+          <div
+            cdkDropList
+            (cdkDropListDropped)="dropNavService($event)"
+            class="smh-editor__drag-list"
+            formArrayName="services"
+          >
+            @for (ctrl of navServicesArray.controls; track ctrl; let i = $index) {
+              <div cdkDrag class="smh-editor__drag-item" [formGroup]="asFormGroup(ctrl)">
+                <mat-icon cdkDragHandle class="smh-editor__drag-handle">drag_indicator</mat-icon>
+                <div class="smh-editor__drag-body">
+                  <div class="smh-editor__inline-row">
+                    <mat-form-field appearance="outline" class="smh-editor__text-field">
+                      <mat-label>ID</mat-label>
+                      <input matInput formControlName="id" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                      <mat-label>{{ 'smhUiRender.itemTitle' | translate }}</mat-label>
+                      <input matInput formControlName="title" required />
+                      @if (asFormGroup(ctrl).controls['title'].touched && asFormGroup(ctrl).controls['title'].hasError('required')) {
+                        <mat-error>{{ 'smhUiRender.fieldRequired' | translate }}</mat-error>
+                      }
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                      <mat-label>{{ 'smhUiRender.itemSubtitle' | translate }}</mat-label>
+                      <input matInput formControlName="subtitle" />
+                    </mat-form-field>
+                  </div>
+                  <div class="smh-editor__field-row">
+                    <span class="smh-editor__field-label">{{ 'smhUiRender.icon' | translate }}</span>
+                    <app-svg-upload-field formControlName="svg_icon" />
+                  </div>
+                  <mat-checkbox formControlName="show_lock">{{ 'smhUiRender.showLock' | translate }}</mat-checkbox>
+                </div>
+                <button
+                  mat-icon-button
+                  type="button"
+                  [matTooltip]="'smhUiRender.removeItem' | translate"
+                  (click)="removeNavService(i)"
+                  class="smh-editor__remove-btn"
+                >
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close()">{{ 'common.cancel' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="confirm()">
+    {{ 'smhUiRender.apply' | translate }}
+  </button>
+</mat-dialog-actions>

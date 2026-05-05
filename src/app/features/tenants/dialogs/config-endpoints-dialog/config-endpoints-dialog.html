@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>{{ 'config.endpointsTitle' | translate: { channel: data.channelLabel } }}</h2>
+
+<mat-dialog-content class="endpoints-dialog">
+  <p class="endpoints-dialog__subtitle">{{ 'config.endpointsSubtitle' | translate }}</p>
+
+  <div class="endpoints-dialog__auth">
+    <mat-icon class="endpoints-dialog__auth-icon">vpn_key</mat-icon>
+    <div>
+      <strong>{{ 'config.endpointsHeaderAuth' | translate }}</strong>
+      <code class="endpoints-dialog__code">{{ 'config.endpointsHeaderAuthValue' | translate }}</code>
+    </div>
+  </div>
+
+  <mat-divider />
+
+  @if (loading()) {
+    <div class="endpoints-dialog__loading">
+      <mat-progress-spinner mode="indeterminate" diameter="28" />
+      <span>{{ 'config.endpointsLoading' | translate }}</span>
+    </div>
+  } @else if (error(); as err) {
+    <p class="endpoints-dialog__error">{{ err }}</p>
+  } @else if (endpoints().length === 0) {
+    <p class="endpoints-dialog__empty">{{ 'config.endpointsNoEntities' | translate }}</p>
+  } @else {
+    <div class="endpoints-dialog__list">
+      @for (row of endpoints(); track row.entity) {
+        <div class="endpoints-dialog__row">
+          <span class="chip chip--primary chip--sm">{{ row.entity }}</span>
+          <code class="endpoints-dialog__url">{{ row.url }}</code>
+          <button
+            mat-icon-button
+            type="button"
+            (click)="copy(row.url)"
+            [matTooltip]="'common.copy' | translate"
+          >
+            <mat-icon>content_copy</mat-icon>
+          </button>
+        </div>
+        <mat-divider />
+      }
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">{{ 'common.close' | translate }}</button>
+</mat-dialog-actions>

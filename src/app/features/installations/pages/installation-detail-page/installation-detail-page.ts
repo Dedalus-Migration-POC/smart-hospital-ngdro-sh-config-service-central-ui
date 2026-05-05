@@ -19,6 +19,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -60,6 +61,7 @@ import { InstallationService } from '../../services/installations';
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatDividerModule,
+    MatTooltipModule,
     InstallationTenantsSection,
     TranslatePipe,
   ],

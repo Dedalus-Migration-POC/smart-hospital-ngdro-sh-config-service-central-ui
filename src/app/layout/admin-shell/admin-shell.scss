@@ -1,111 +1,190 @@
-:host {
-  display: block;
-  height: 100dvh;
-}
+// ── Token sidenav scura (Designers Italia / SmartHospital) ───────────────────
+$nav-bg:          #17324d;
+$nav-bg-hover:    rgba(255, 255, 255, 0.08);
+$nav-bg-active:   rgba(255, 255, 255, 0.14);
+$nav-text:        rgba(255, 255, 255, 0.90);
+$nav-text-muted:  rgba(255, 255, 255, 0.45);
+$nav-icon:        rgba(255, 255, 255, 0.65);
+$nav-icon-active: #5bc0de;   // azzurro chiaro sul blu scuro — item attivo
+$nav-divider:     rgba(255, 255, 255, 0.10);
+
+// ─────────────────────────────────────────────────────────────────────────────
+:host { display: block; height: 100dvh; }
 
 .admin-shell {
   height: 100%;
-  background: var(--mat-sys-surface-container);
+  background: #F4F6FB;  // sfondo contenuto — grigio-blu chiaro come il riferimento
 }
 
+// ── Sidenav ───────────────────────────────────────────────────────────────────
 .admin-shell__sidenav {
-  width: 260px;
-  background: var(--mat-sys-surface);
-  border-right: 1px solid var(--mat-sys-outline-variant);
+  width: 240px;
+  background: $nav-bg;
+  border-right: none;
+  display: flex;
+  flex-direction: column;
+
+  // Token Material per testo/icone su sfondo scuro
+  --mat-list-list-item-label-text-color:         #{$nav-text};
+  --mat-list-list-item-leading-icon-color:        #{$nav-icon};
+  --mat-list-list-item-hover-state-layer-color:   #{$nav-bg-hover};
+  --mat-list-list-item-hover-state-layer-opacity: 1;
+  --mat-list-list-item-focus-state-layer-color:   #{$nav-bg-hover};
+  --mat-divider-color: #{$nav-divider};
+
+  // Fallback ::ng-deep per mdc
+  ::ng-deep {
+    .mdc-list-item__primary-text  { color: $nav-text !important; }
+    .mat-mdc-list-item-icon       { color: $nav-icon !important; }
+    .mat-mdc-list-item:hover:not([disabled]):not(.admin-shell__nav-item--active) {
+      background: $nav-bg-hover !important;
+      border-radius: 6px;
+    }
+    .mdc-list-item--disabled .mdc-list-item__primary-text { color: $nav-text-muted !important; }
+  }
 }
 
+// ── Brand area ────────────────────────────────────────────────────────────────
 .admin-shell__brand {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
   padding: 20px 16px 16px;
+  border-bottom: 1px solid $nav-divider;
 }
 
 .admin-shell__brand-logo {
-  width: 148px;
+  width: 136px;
   height: auto;
   display: block;
+  // rende il logo bianco su sfondo scuro
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
 }
 
 .admin-shell__brand-subtitle {
-  font-size: 0.72rem;
-  color: var(--mat-sys-on-surface-variant);
-  letter-spacing: 0.02em;
-  padding-left: 2px;
+  font-size: 0.68rem;
+  color: $nav-text-muted;
+  letter-spacing: 0.03em;
+  padding-left: 1px;
+  margin-top: 2px;
 }
 
+// ── Nav list ──────────────────────────────────────────────────────────────────
 .admin-shell__nav {
-  padding-top: 8px;
+  padding: 8px 8px 8px;
+  flex: 1;
 }
 
 .admin-shell__nav-item--active {
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
+  background: $nav-bg-active !important;
+  border-radius: 6px;
+  position: relative;
 
-  mat-icon {
-    color: var(--mat-sys-on-secondary-container);
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: $nav-icon-active;
+  }
+
+  ::ng-deep {
+    .mdc-list-item__primary-text { color: #ffffff !important; font-weight: 600; }
+    .mat-mdc-list-item-icon       { color: $nav-icon-active !important; }
   }
 }
 
-.admin-shell__nav-item-meta {
-  font-size: 0.7rem;
-  color: var(--mat-sys-on-surface-variant);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.admin-shell__nav-item--placeholder {
+  opacity: 0.5;
 }
 
+.admin-shell__nav-item-meta {
+  font-size: 0.65rem;
+  color: $nav-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+// ── Content area ──────────────────────────────────────────────────────────────
 .admin-shell__content {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
+// ── Toolbar bianca ────────────────────────────────────────────────────────────
 .admin-shell__toolbar {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100;
   gap: 8px;
+  background: #ffffff !important;
+  color: var(--mat-sys-on-surface) !important;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  min-height: 52px !important;
+
+  // icone e bottoni nella toolbar devono essere scuri
+  .mat-icon        { color: var(--mat-sys-on-surface-variant); }
+  button.mat-mdc-icon-button { color: var(--mat-sys-on-surface-variant); }
 }
 
 .admin-shell__toolbar-title {
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.01em;
 }
 
-.admin-shell__toolbar-spacer {
-  flex: 1 1 auto;
-}
+.admin-shell__toolbar-spacer { flex: 1 1 auto; }
 
+// ── User info nella toolbar ───────────────────────────────────────────────────
 .admin-shell__user {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  color: var(--mat-sys-on-surface) !important;
 }
 
 .admin-shell__user-name {
   font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface);
 }
 
 .admin-shell__user-role {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  letter-spacing: 0.05em;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  font-weight: 600;
+}
+
+.admin-shell__lang-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--mat-sys-on-surface-variant) !important;
+  min-width: 36px !important;
 }
 
 .admin-shell__user-menu-header {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  line-height: 1.3;
+  line-height: 1.4;
   gap: 2px;
-
   small {
     color: var(--mat-sys-on-surface-variant);
     font-size: 0.7rem;
@@ -114,6 +193,7 @@
   }
 }
 
+// ── Main ──────────────────────────────────────────────────────────────────────
 .admin-shell__main {
   flex: 1 1 auto;
   overflow: auto;
@@ -121,12 +201,7 @@
 }
 
 @media (max-width: 599px) {
-  .admin-shell__main {
-    padding: 16px;
-  }
-
+  .admin-shell__main { padding: 16px; }
   .admin-shell__user-name,
-  .admin-shell__user-role {
-    display: none;
-  }
+  .admin-shell__user-role { display: none; }
 }

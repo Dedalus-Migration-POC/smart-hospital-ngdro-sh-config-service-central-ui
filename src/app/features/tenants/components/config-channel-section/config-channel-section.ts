@@ -35,6 +35,15 @@ import {
   ConfirmDialog,
   ConfirmDialogData,
 } from '../../../../shared/dialogs/confirm-dialog/confirm-dialog';
+import {
+  ConfigVersionDiffDialog,
+  ConfigVersionDiffDialogData,
+} from '../../dialogs/config-version-diff-dialog/config-version-diff-dialog';
+import {
+  SmhUiRenderEditorDialog,
+  SmhUiRenderEditorDialogData,
+  SmhUiRenderJson,
+} from '../../dialogs/smh-ui-render-editor-dialog/smh-ui-render-editor-dialog';
 import { AppConfigVersion, ChannelId } from '../../models';
 import { TenantService } from '../../services/tenants';
 
@@ -331,6 +340,40 @@ export class ConfigChannelSection {
           { duration: 6000 },
         );
       },
+    });
+  }
+
+  readonly isSmhUiRender = computed(() => this.entity() === 'smh_ui_render');
+
+  openGraphicEditor(): void {
+    let parsed: SmhUiRenderJson = {};
+    const raw = this.configControl.value ?? '';
+    if (raw.trim()) {
+      try { parsed = JSON.parse(raw) as SmhUiRenderJson; } catch { /* usa vuoto */ }
+    }
+    const data: SmhUiRenderEditorDialogData = { value: parsed };
+    const ref = this.dialog.open<SmhUiRenderEditorDialog, SmhUiRenderEditorDialogData, SmhUiRenderJson>(
+      SmhUiRenderEditorDialog,
+      { data, autoFocus: 'first-tabbable', maxWidth: '960px', width: '960px' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === undefined) return;
+      const pretty = JSON.stringify(result, null, 2);
+      this.configControl.setValue(pretty);
+      this.configControl.markAsDirty();
+    });
+  }
+
+  openDiff(target: AppConfigVersion): void {
+    const active = this.activeVersion();
+    if (!active) return;
+    const data: ConfigVersionDiffDialogData = { activeVersion: active, targetVersion: target };
+    const ref = this.dialog.open<ConfigVersionDiffDialog, ConfigVersionDiffDialogData, boolean>(
+      ConfigVersionDiffDialog,
+      { data, maxWidth: '1160px', width: '95vw' },
+    );
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) this.doRollback(target.version);
     });
   }
 

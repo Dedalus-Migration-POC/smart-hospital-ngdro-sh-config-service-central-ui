@@ -120,6 +120,15 @@
             </div>
           </div>
           <div class="security__actions">
+            <button
+              mat-icon-button
+              type="button"
+              [matTooltip]="'installation.rotateApiKeyInfo' | translate"
+              matTooltipPosition="above"
+              matTooltipShowDelay="200"
+            >
+              <mat-icon>info_outline</mat-icon>
+            </button>
             <button mat-stroked-button type="button" (click)="rotateApiKey()">
               <mat-icon>autorenew</mat-icon>
               {{ 'installation.rotate' | translate }}
@@ -146,6 +155,15 @@
             </div>
           </div>
           <div class="security__actions">
+            <button
+              mat-icon-button
+              type="button"
+              [matTooltip]="'installation.rotateMasterKeyInfo' | translate"
+              matTooltipPosition="above"
+              matTooltipShowDelay="200"
+            >
+              <mat-icon>info_outline</mat-icon>
+            </button>
             <button
               mat-button
               type="button"

@@ -13,55 +13,55 @@ html {
         primary: mat.$blue-palette,
         tertiary: mat.$green-palette,
       ),
-      typography: Roboto,
-      density: 0,
+      typography: 'Titillium Web',
+      density: -2,
     )
   );
 
-  // ── Dedalus brand palette ─────────────────────────────────────────────────
-  // Primary: Dedalus Blue
-  --mat-sys-primary:                    #1D4F91;
+  // ── Palette ispirata al portale SmartHospital (salute-lazio) ─────────────
+  // Primary: Blu istituzionale
+  --mat-sys-primary:                    #0066cc;
   --mat-sys-on-primary:                 #ffffff;
-  --mat-sys-primary-container:          #d2dff5;
-  --mat-sys-on-primary-container:       #0C3170;
-  --mat-sys-primary-fixed:              #d2dff5;
-  --mat-sys-primary-fixed-dim:          #a3bde3;
-  --mat-sys-on-primary-fixed:           #051c40;
-  --mat-sys-on-primary-fixed-variant:   #0C3170;
-  --mat-sys-inverse-primary:            #a3bde3;
+  --mat-sys-primary-container:          #d6e8ff;
+  --mat-sys-on-primary-container:       #003d7a;
+  --mat-sys-primary-fixed:              #d6e8ff;
+  --mat-sys-primary-fixed-dim:          #99c2f0;
+  --mat-sys-on-primary-fixed:           #001f3d;
+  --mat-sys-on-primary-fixed-variant:   #003d7a;
+  --mat-sys-inverse-primary:            #99c2f0;
 
-  // Secondary: usata per lo stato attivo nella sidenav → Lime Dedalus
-  --mat-sys-secondary:                  #3d5800;
+  // Secondary: verde per chip ok/synced
+  --mat-sys-secondary:                  #2e6b30;
   --mat-sys-on-secondary:               #ffffff;
-  --mat-sys-secondary-container:        #E8F6C6;
-  --mat-sys-on-secondary-container:     #323232;
-  --mat-sys-secondary-fixed:            #E8F6C6;
-  --mat-sys-secondary-fixed-dim:        #C5E86C;
-  --mat-sys-on-secondary-fixed:         #111f00;
-  --mat-sys-on-secondary-fixed-variant: #3d5800;
+  --mat-sys-secondary-container:        #c8eeca;
+  --mat-sys-on-secondary-container:     #1a3d1b;
+  --mat-sys-secondary-fixed:            #c8eeca;
+  --mat-sys-secondary-fixed-dim:        #97d69a;
+  --mat-sys-on-secondary-fixed:         #051f07;
+  --mat-sys-on-secondary-fixed-variant: #2e6b30;
 
-  // Tertiary: usata per i chip "ok" (SYNCED, Attivo) → stessa Lime Dedalus
-  --mat-sys-tertiary:                   #3d5800;
+  // Tertiary: stessa verde per chip ok
+  --mat-sys-tertiary:                   #2e6b30;
   --mat-sys-on-tertiary:                #ffffff;
-  --mat-sys-tertiary-container:         #E8F6C6;
-  --mat-sys-on-tertiary-container:      #323232;
+  --mat-sys-tertiary-container:         #c8eeca;
+  --mat-sys-on-tertiary-container:      #1a3d1b;
 
-  // Surface / Neutral: palette neutri Dedalus
-  --mat-sys-background:                 #fafafa;
-  --mat-sys-on-background:              #323232;
-  --mat-sys-surface:                    #fafafa;
-  --mat-sys-on-surface:                 #323232;
-  --mat-sys-surface-variant:            #EEF1F0;
-  --mat-sys-on-surface-variant:         #646967;
+  // Surface / Neutral: grigio istituzionale Designers Italia
+  --mat-sys-background:                 #f1f3f5;
+  --mat-sys-on-background:              #1a1a1a;
+  --mat-sys-surface:                    #ffffff;
+  --mat-sys-on-surface:                 #1a1a1a;
+  --mat-sys-surface-variant:            #e8ecf0;
+  --mat-sys-on-surface-variant:         #5c6f82;
   --mat-sys-surface-container-lowest:   #ffffff;
-  --mat-sys-surface-container-low:      #f5f7f5;
-  --mat-sys-surface-container:          #EEF1F0;
-  --mat-sys-surface-container-high:     #e4e9e6;
-  --mat-sys-surface-container-highest:  #d9dfdb;
-  --mat-sys-inverse-surface:            #323232;
-  --mat-sys-inverse-on-surface:         #f0f4f1;
-  --mat-sys-outline:                    #8a8f8c;
-  --mat-sys-outline-variant:            #BEC6C4;
+  --mat-sys-surface-container-low:      #f1f3f5;
+  --mat-sys-surface-container:          #e8ecf0;
+  --mat-sys-surface-container-high:     #dde2e7;
+  --mat-sys-surface-container-highest:  #cfd6dc;
+  --mat-sys-inverse-surface:            #17324d;
+  --mat-sys-inverse-on-surface:         #f1f3f5;
+  --mat-sys-outline:                    #7a8ea0;
+  --mat-sys-outline-variant:            #c5c7c9;
   --mat-sys-shadow:                     #000000;
   --mat-sys-scrim:                      #000000;
 }
@@ -75,7 +75,7 @@ body {
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
+  background-color: var(--mat-sys-background);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
 
@@ -83,9 +83,158 @@ body {
   margin: 0;
   height: 100%;
 }
-/* You can add global styles to this file, and also import other style files */
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mat-sys-outline-variant) transparent;
+}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--mat-sys-outline-variant);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--mat-sys-outline); }
 
-/* Stili condivisi per i dialog Material */
+/* ── Material overrides globali ──────────────────────────────────────────── */
+
+// Dialog: angoli leggermente arrotondati stile istituzionale
+.mdc-dialog__surface {
+  border-radius: 8px !important;
+}
+
+// Card: superficie bianca che stacca sul background grigio-blu
+.mat-mdc-card {
+  background: var(--mat-sys-surface) !important;
+  box-shadow: 0 1px 4px rgba(30, 38, 64, 0.08) !important;
+
+  &.mat-mdc-card-outlined {
+    box-shadow: 0 1px 4px rgba(30, 38, 64, 0.06) !important;
+    border-color: var(--mat-sys-outline-variant) !important;
+  }
+}
+
+// Card title: più leggibile
+.mat-mdc-card-title {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+}
+
+.mat-mdc-card-subtitle {
+  font-size: 0.825rem !important;
+}
+
+// Bottoni: stile istituzionale (bordi squadrati, font Titillium Web)
+.mdc-button, .mat-mdc-raised-button, .mat-mdc-outlined-button, .mat-mdc-unelevated-button {
+  letter-spacing: 0.02em !important;
+  --mdc-filled-button-container-shape: 4px;
+  --mdc-outlined-button-container-shape: 4px;
+  --mdc-text-button-container-shape: 4px;
+  --mdc-protected-button-container-shape: 4px;
+  border-radius: 4px !important;
+}
+
+// Snackbar: bordo arrotondato
+.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-shape: 12px;
+}
+
+// Progress bar: arrotondamento
+.mat-mdc-progress-bar {
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+// Toolbar: no box-shadow di default, gestito in shell
+.mat-toolbar { box-shadow: none; }
+
+// Tab header: testo non uppercase
+.mat-mdc-tab .mdc-tab__text-label {
+  text-transform: none !important;
+  letter-spacing: 0.01em !important;
+  font-size: 0.875rem !important;
+}
+
+// Form field: hint e label più piccoli da gestionale
+.mat-mdc-form-field-hint {
+  font-size: 0.72rem !important;
+  line-height: 1.4 !important;
+}
+
+.mat-mdc-form-field-infix {
+  font-size: 0.875rem;
+}
+
+// Tabella: righe più compatte con font da admin
+.mat-mdc-table {
+  font-size: 0.875rem;
+}
+.mat-mdc-header-cell {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase;
+  color: var(--mat-sys-on-surface-variant) !important;
+}
+.mat-mdc-cell {
+  font-size: 0.875rem;
+}
+
+// Paginator più compatto
+.mat-mdc-paginator {
+  font-size: 0.8125rem;
+}
+
+// Menu items più compatti
+.mat-mdc-menu-item {
+  font-size: 0.875rem;
+}
+
+// Toolbar: altezza fissa da admin
+.mat-toolbar {
+  min-height: 52px !important;
+}
+
+// Sidenav list items: testo più piccolo
+.mat-mdc-list-item .mdc-list-item__primary-text {
+  font-size: 0.875rem !important;
+}
+
+/* ── Utility globali ─────────────────────────────────────────────────────── */
+.full-width { width: 100%; }
+
+/* ── Chip status (globale, condiviso tra più pagine) ─────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+.chip--sm { font-size: 0.65rem; padding: 2px 7px; }
+.chip--ok {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+.chip--warn {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+.chip--off {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}
+.chip--primary {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+/* ── Dialog utility (condivisi) ──────────────────────────────────────────── */
 .dialog-form {
   display: flex;
   flex-direction: column;
@@ -96,12 +245,11 @@ body {
 .dialog-error {
   margin: 0 0 8px;
   padding: 10px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--mat-sys-error-container);
   color: var(--mat-sys-on-error-container);
   font-size: 0.875rem;
-}
-
-.full-width {
-  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }

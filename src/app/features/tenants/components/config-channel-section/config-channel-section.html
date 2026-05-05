@@ -129,6 +129,17 @@
       }
     </div>
 
+    @if (isSmhUiRender()) {
+      <div class="channel__graphic-editor-bar">
+        <mat-icon class="channel__graphic-editor-icon">palette</mat-icon>
+        <span class="channel__graphic-editor-hint">{{ 'smhUiRender.editorHint' | translate }}</span>
+        <button mat-stroked-button type="button" (click)="openGraphicEditor()">
+          <mat-icon>edit</mat-icon>
+          {{ 'smhUiRender.openEditor' | translate }}
+        </button>
+      </div>
+    }
+
     <mat-form-field appearance="outline" class="channel__editor">
       <mat-label>{{ 'config.jsonLabel' | translate: { entity: entity() } }}</mat-label>
       <textarea
@@ -215,20 +226,31 @@
                 </span>
               </div>
               @if (!v.active) {
-                <button
-                  mat-button
-                  type="button"
-                  (click)="confirmRollback(v)"
-                  [disabled]="rollingBack() !== null"
-                  [matTooltip]="'config.rollbackTooltip' | translate"
-                >
-                  @if (rollingBack() === v.version) {
-                    <mat-progress-spinner mode="indeterminate" diameter="18" />
-                  } @else {
-                    <mat-icon>history</mat-icon>
-                  }
-                  Rollback
-                </button>
+                <div class="channel__history-actions">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    (click)="openDiff(v)"
+                    [disabled]="rollingBack() !== null || !activeVersion()"
+                    [matTooltip]="'config.diffTooltip' | translate"
+                  >
+                    <mat-icon>compare</mat-icon>
+                  </button>
+                  <button
+                    mat-button
+                    type="button"
+                    (click)="confirmRollback(v)"
+                    [disabled]="rollingBack() !== null"
+                    [matTooltip]="'config.rollbackTooltip' | translate"
+                  >
+                    @if (rollingBack() === v.version) {
+                      <mat-progress-spinner mode="indeterminate" diameter="18" />
+                    } @else {
+                      <mat-icon>history</mat-icon>
+                    }
+                    Rollback
+                  </button>
+                </div>
               }
             </div>
             <mat-divider />

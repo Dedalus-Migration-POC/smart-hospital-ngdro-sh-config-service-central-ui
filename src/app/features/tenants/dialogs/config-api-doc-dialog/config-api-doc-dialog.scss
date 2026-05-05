@@ -1,0 +1,62 @@
+.api-doc-dialog {
+  min-width: 540px;
+  max-width: 680px;
+
+  &__intro {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 14px;
+    margin: 0 0 16px;
+  }
+
+  &__section {
+    padding: 16px 0;
+  }
+
+  &__section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 10px;
+    color: var(--mat-sys-on-surface);
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: var(--mat-sys-primary);
+    }
+  }
+
+  &__body {
+    font-size: 13px;
+    color: var(--mat-sys-on-surface-variant);
+    margin: 0 0 8px;
+    line-height: 1.5;
+  }
+
+  &__code {
+    display: block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    background: var(--mat-sys-surface-container);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--mat-sys-on-surface);
+    word-break: break-all;
+  }
+
+  &__curl {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    background: var(--mat-sys-surface-container);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 0;
+    color: var(--mat-sys-on-surface);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.6;
+  }
+}

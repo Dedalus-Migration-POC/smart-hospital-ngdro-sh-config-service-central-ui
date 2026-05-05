@@ -19,6 +19,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -29,6 +30,14 @@ import {
   ConfirmDialogData,
 } from '../../../../shared/dialogs/confirm-dialog/confirm-dialog';
 import { ConfigChannelSection } from '../../components/config-channel-section/config-channel-section';
+import {
+  ConfigApiDocDialog,
+  ConfigApiDocDialogData,
+} from '../../dialogs/config-api-doc-dialog/config-api-doc-dialog';
+import {
+  ConfigEndpointsDialog,
+  ConfigEndpointsDialogData,
+} from '../../dialogs/config-endpoints-dialog/config-endpoints-dialog';
 import { CHANNELS, ChannelId, Tenant } from '../../models';
 import { TenantService } from '../../services/tenants';
 
@@ -48,6 +57,7 @@ import { TenantService } from '../../services/tenants';
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatTabsModule,
+    MatTooltipModule,
     ConfigChannelSection,
     TranslatePipe,
   ],
@@ -170,6 +180,27 @@ export class TenantDetailPage {
         );
       },
     });
+  }
+
+  openEndpoints(t: Tenant, ch: ChannelId): void {
+    const data: ConfigEndpointsDialogData = {
+      tenantId: t.id,
+      tenantSlug: t.slug,
+      installationId: t.installationId,
+      channelId: ch,
+      channelLabel: this.channelLabel(ch),
+    };
+    this.dialog.open<ConfigEndpointsDialog, ConfigEndpointsDialogData>(ConfigEndpointsDialog, { data });
+  }
+
+  openApiDoc(t: Tenant, ch: ChannelId): void {
+    const data: ConfigApiDocDialogData = {
+      tenantSlug: t.slug,
+      channelId: ch,
+      channelLabel: this.channelLabel(ch),
+      baseUrl: '',
+    };
+    this.dialog.open<ConfigApiDocDialog, ConfigApiDocDialogData>(ConfigApiDocDialog, { data });
   }
 
   channelLabel(ch: ChannelId): string {

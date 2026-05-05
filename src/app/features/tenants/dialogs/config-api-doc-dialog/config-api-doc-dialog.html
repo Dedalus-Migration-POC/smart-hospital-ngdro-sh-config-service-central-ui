@@ -1,0 +1,70 @@
+<h2 mat-dialog-title>{{ 'config.docTitle' | translate }}</h2>
+
+<mat-dialog-content class="api-doc-dialog">
+  <p class="api-doc-dialog__intro">{{ 'config.docIntro' | translate }}</p>
+
+  <mat-divider />
+
+  <section class="api-doc-dialog__section">
+    <h3 class="api-doc-dialog__section-title">
+      <mat-icon>vpn_key</mat-icon>
+      {{ 'config.docAuthTitle' | translate }}
+    </h3>
+    <p class="api-doc-dialog__body">{{ 'config.docAuthBody' | translate }}</p>
+    <code class="api-doc-dialog__code">X-API-Key: &lt;la-tua-api-key&gt;</code>
+  </section>
+
+  <mat-divider />
+
+  <section class="api-doc-dialog__section">
+    <h3 class="api-doc-dialog__section-title">
+      <mat-icon>link</mat-icon>
+      {{ 'config.docEndpointTitle' | translate }}
+    </h3>
+    <code class="api-doc-dialog__code">GET {{ data.baseUrl || '{base-url}' }}/v1/{{ data.tenantSlug }}/{{ data.channelId }}</code>
+  </section>
+
+  <mat-divider />
+
+  <section class="api-doc-dialog__section">
+    <h3 class="api-doc-dialog__section-title">
+      <mat-icon>tune</mat-icon>
+      {{ 'config.docParamsTitle' | translate }}
+    </h3>
+    <p class="api-doc-dialog__body">{{ 'config.docParamEntity' | translate }}</p>
+  </section>
+
+  <mat-divider />
+
+  <section class="api-doc-dialog__section">
+    <h3 class="api-doc-dialog__section-title">
+      <mat-icon>data_object</mat-icon>
+      {{ 'config.docResponseTitle' | translate }}
+    </h3>
+    <p class="api-doc-dialog__body">{{ 'config.docResponseBody' | translate }}</p>
+  </section>
+
+  <mat-divider />
+
+  <section class="api-doc-dialog__section">
+    <h3 class="api-doc-dialog__section-title">
+      <mat-icon>lock_open</mat-icon>
+      {{ 'config.docDecryptTitle' | translate }}
+    </h3>
+    <p class="api-doc-dialog__body">{{ 'config.docDecryptBody' | translate }}</p>
+  </section>
+
+  <mat-divider />
+
+  <section class="api-doc-dialog__section">
+    <h3 class="api-doc-dialog__section-title">
+      <mat-icon>terminal</mat-icon>
+      {{ 'config.docCurlTitle' | translate }}
+    </h3>
+    <pre class="api-doc-dialog__curl">{{ curlExample }}</pre>
+  </section>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button type="button" (click)="close()">{{ 'config.docClose' | translate }}</button>
+</mat-dialog-actions>

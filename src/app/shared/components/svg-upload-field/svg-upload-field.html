@@ -1,0 +1,42 @@
+<div class="svg-field" [class.svg-field--disabled]="isDisabled()">
+  <div class="svg-field__preview">
+    @if (previewSrc) {
+      <img [src]="previewSrc" alt="SVG preview" class="svg-field__img" />
+    } @else {
+      <div class="svg-field__placeholder">
+        <mat-icon>image</mat-icon>
+      </div>
+    }
+  </div>
+
+  <div class="svg-field__controls">
+    <input
+      #fileInput
+      type="file"
+      accept=".svg,image/svg+xml"
+      class="svg-field__input"
+      [disabled]="isDisabled()"
+      (change)="onFileChange($event)"
+    />
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="isDisabled()"
+      (click)="fileInput.click()"
+    >
+      <mat-icon>upload</mat-icon>
+      {{ 'svgUpload.choose' | translate }}
+    </button>
+    @if (value()) {
+      <button
+        mat-icon-button
+        type="button"
+        [disabled]="isDisabled()"
+        [matTooltip]="'svgUpload.clear' | translate"
+        (click)="clear()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </div>
+</div>

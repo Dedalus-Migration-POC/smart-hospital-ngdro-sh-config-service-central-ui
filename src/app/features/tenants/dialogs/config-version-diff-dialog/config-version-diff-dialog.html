@@ -1,0 +1,106 @@
+<h2 mat-dialog-title class="diff-dialog__title">
+  <mat-icon class="diff-dialog__title-icon">compare</mat-icon>
+  {{ 'config.diffTitle' | translate }}
+  <span class="diff-dialog__title-versions">
+    v{{ data.activeVersion.version }}
+    <mat-icon class="diff-dialog__arrow">arrow_forward</mat-icon>
+    v{{ data.targetVersion.version }}
+  </span>
+</h2>
+
+<mat-dialog-content class="diff-dialog__content">
+
+  <!-- Stat bar -->
+  <div class="diff-stat">
+    @if (identical()) {
+      <span class="diff-stat__equal">
+        <mat-icon>check_circle</mat-icon>
+        {{ 'config.diffIdentical' | translate }}
+      </span>
+    } @else {
+      @if (removedCount() > 0) {
+        <span class="diff-stat__removed">
+          <mat-icon>remove</mat-icon>
+          {{ removedCount() }} {{ 'config.diffRemoved' | translate }}
+        </span>
+      }
+      @if (addedCount() > 0) {
+        <span class="diff-stat__added">
+          <mat-icon>add</mat-icon>
+          {{ addedCount() }} {{ 'config.diffAdded' | translate }}
+        </span>
+      }
+    }
+    <span class="diff-stat__spacer"></span>
+    <span class="diff-stat__legend diff-stat__legend--removed">{{ 'config.diffLegendRemoved' | translate }}</span>
+    <span class="diff-stat__legend diff-stat__legend--added">{{ 'config.diffLegendAdded' | translate }}</span>
+  </div>
+
+  <!-- Side-by-side panels -->
+  <div class="diff-panels">
+
+    <!-- LEFT: versione attiva -->
+    <div class="diff-panel">
+      <div class="diff-panel__header diff-panel__header--left">
+        <span class="diff-panel__label">{{ 'config.diffPanelActive' | translate }}</span>
+        <span class="diff-panel__meta">
+          v{{ data.activeVersion.version }} · {{ data.activeVersion.createdAt | date:'dd/MM/yyyy HH:mm' }}
+          @if (data.activeVersion.pushedBy) { · {{ data.activeVersion.pushedBy }} }
+        </span>
+      </div>
+      <div class="diff-panel__code">
+        @for (row of diffRows(); track $index) {
+          <div class="diff-line diff-line--{{ row.left.type }}">
+            <span class="diff-line__num">{{ row.left.lineNum ?? '' }}</span>
+            <span class="diff-line__gutter">
+              @if (row.left.type === 'removed') { <span>−</span> }
+            </span>
+            <pre class="diff-line__text">{{ row.left.text }}</pre>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="diff-splitter"></div>
+
+    <!-- RIGHT: versione target rollback -->
+    <div class="diff-panel">
+      <div class="diff-panel__header diff-panel__header--right">
+        <span class="diff-panel__label">{{ 'config.diffPanelTarget' | translate }}</span>
+        <span class="diff-panel__meta">
+          v{{ data.targetVersion.version }} · {{ data.targetVersion.createdAt | date:'dd/MM/yyyy HH:mm' }}
+          @if (data.targetVersion.pushedBy) { · {{ data.targetVersion.pushedBy }} }
+        </span>
+      </div>
+      <div class="diff-panel__code">
+        @for (row of diffRows(); track $index) {
+          <div class="diff-line diff-line--{{ row.right.type }}">
+            <span class="diff-line__num">{{ row.right.lineNum ?? '' }}</span>
+            <span class="diff-line__gutter">
+              @if (row.right.type === 'added') { <span>+</span> }
+            </span>
+            <pre class="diff-line__text">{{ row.right.text }}</pre>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close(false)">
+    {{ 'common.close' | translate }}
+  </button>
+  <button
+    mat-flat-button
+    color="warn"
+    type="button"
+    [disabled]="identical()"
+    [matTooltip]="identical() ? ('config.diffRollbackDisabledTooltip' | translate) : ''"
+    (click)="dialogRef.close(true)"
+  >
+    <mat-icon>history</mat-icon>
+    {{ 'config.diffRollbackBtn' | translate: { version: data.targetVersion.version } }}
+  </button>
+</mat-dialog-actions>

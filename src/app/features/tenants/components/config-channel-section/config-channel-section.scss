@@ -124,6 +124,26 @@
   margin-left: 4px;
 }
 
+.channel__graphic-editor-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.channel__graphic-editor-icon {
+  flex-shrink: 0;
+  color: var(--mat-sys-primary);
+}
+
+.channel__graphic-editor-hint {
+  flex: 1;
+}
+
 .channel__editor {
   width: 100%;
 }
@@ -208,6 +228,13 @@
 .channel__history-meta {
   font-size: 0.8rem;
   color: var(--mat-sys-on-surface-variant);
+}
+
+.channel__history-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .chip {
