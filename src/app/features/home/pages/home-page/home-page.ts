@@ -10,7 +10,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, SlicePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -51,6 +51,7 @@ interface KpiData {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
+    SlicePipe,
     RouterLink,
     MatCardModule,
     MatIconModule,

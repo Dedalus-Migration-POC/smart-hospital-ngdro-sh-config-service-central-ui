@@ -5,7 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -29,6 +29,7 @@ import { DraftConfigSummary } from '../../../tenants/models';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
+    SlicePipe,
     RouterLink,
     MatCardModule,
     MatIconModule,
