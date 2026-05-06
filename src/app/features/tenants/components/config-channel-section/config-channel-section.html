@@ -19,11 +19,14 @@
           type="button"
           class="entity-chip"
           [class.entity-chip--active]="entity() === e"
+          [class.entity-chip--disabled]="disabledEntities().has(e)"
           (click)="selectEntity(e)"
           [attr.aria-pressed]="entity() === e"
         >
           {{ e }}
-          @if (hasGraphicEditor(e)) {
+          @if (disabledEntities().has(e)) {
+            <mat-icon class="entity-chip__editor-icon">block</mat-icon>
+          } @else if (hasGraphicEditor(e)) {
             <mat-icon class="entity-chip__editor-icon">palette</mat-icon>
           }
         </button>
@@ -131,94 +134,141 @@
       } @else {
         <span class="channel__status-meta">{{ 'config.noConfig' | translate }}</span>
       }
+
+      @if (isAdmin() && entity() !== 'base') {
+        @if (isCurrentEntityDisabled()) {
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="onEnableEntity()"
+            [disabled]="enablingEntity()"
+            [matTooltip]="'config.enableEntityTooltip' | translate"
+          >
+            @if (enablingEntity()) {
+              <mat-progress-spinner mode="indeterminate" diameter="18" />
+            } @else {
+              <mat-icon>check_circle</mat-icon>
+            }
+            {{ 'config.enableEntity' | translate }}
+          </button>
+        } @else {
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="onDisableEntity()"
+            [disabled]="disablingEntity()"
+            [matTooltip]="'config.disableEntityTooltip' | translate"
+            class="channel__disable-btn"
+          >
+            @if (disablingEntity()) {
+              <mat-progress-spinner mode="indeterminate" diameter="18" />
+            } @else {
+              <mat-icon>block</mat-icon>
+            }
+            {{ 'config.disableEntity' | translate }}
+          </button>
+        }
+      }
     </div>
 
-    @if (isSmhUiRender()) {
-      <div class="channel__graphic-editor-bar">
-        <mat-icon class="channel__graphic-editor-icon">palette</mat-icon>
-        <span class="channel__graphic-editor-hint">{{ 'smhUiRender.editorHint' | translate }}</span>
-        <button mat-stroked-button type="button" (click)="openGraphicEditor()">
-          <mat-icon>edit</mat-icon>
-          {{ 'smhUiRender.openEditor' | translate }}
-        </button>
+    @if (isCurrentEntityDisabled()) {
+      <div class="channel__hint channel__hint--disabled" role="alert">
+        <mat-icon>block</mat-icon>
+        <div>
+          <strong>{{ 'config.entityDisabledTitle' | translate }}</strong><br />
+          {{ 'config.entityDisabledHint' | translate }}
+        </div>
       </div>
     }
 
-    @if (isSmhSpidProvider()) {
-      <div class="channel__graphic-editor-bar">
-        <mat-icon class="channel__graphic-editor-icon">verified_user</mat-icon>
-        <span class="channel__graphic-editor-hint">{{ 'smhSpidProvider.editorHint' | translate }}</span>
-        <button mat-stroked-button type="button" (click)="openSpidProviderEditor()">
-          <mat-icon>edit</mat-icon>
-          {{ 'smhSpidProvider.openEditor' | translate }}
-        </button>
-      </div>
-    }
+    @if (!isCurrentEntityDisabled()) {
+      @if (isSmhUiRender()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">palette</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'smhUiRender.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openGraphicEditor()">
+            <mat-icon>edit</mat-icon>
+            {{ 'smhUiRender.openEditor' | translate }}
+          </button>
+        </div>
+      }
 
-    @if (isSmhFaq()) {
-      <div class="channel__graphic-editor-bar">
-        <mat-icon class="channel__graphic-editor-icon">quiz</mat-icon>
-        <span class="channel__graphic-editor-hint">{{ 'smhFaq.editorHint' | translate }}</span>
-        <button mat-stroked-button type="button" (click)="openFaqEditor()">
-          <mat-icon>edit</mat-icon>
-          {{ 'smhFaq.openEditor' | translate }}
-        </button>
-      </div>
-    }
+      @if (isSmhSpidProvider()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">verified_user</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'smhSpidProvider.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openSpidProviderEditor()">
+            <mat-icon>edit</mat-icon>
+            {{ 'smhSpidProvider.openEditor' | translate }}
+          </button>
+        </div>
+      }
 
-    @if (isSmhServiceConfig()) {
-      <div class="channel__graphic-editor-bar">
-        <mat-icon class="channel__graphic-editor-icon">settings_applications</mat-icon>
-        <span class="channel__graphic-editor-hint">{{ 'smhServiceConfig.editorHint' | translate }}</span>
-        <button mat-stroked-button type="button" (click)="openServiceConfigEditor()">
-          <mat-icon>edit</mat-icon>
-          {{ 'smhServiceConfig.openEditor' | translate }}
-        </button>
-      </div>
-    }
+      @if (isSmhFaq()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">quiz</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'smhFaq.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openFaqEditor()">
+            <mat-icon>edit</mat-icon>
+            {{ 'smhFaq.openEditor' | translate }}
+          </button>
+        </div>
+      }
 
-    @if (isSmhLinkServiceConfig()) {
-      <div class="channel__graphic-editor-bar">
-        <mat-icon class="channel__graphic-editor-icon">link</mat-icon>
-        <span class="channel__graphic-editor-hint">{{ 'smhLinkServiceConfig.editorHint' | translate }}</span>
-        <button mat-stroked-button type="button" (click)="openLinkServiceConfigEditor()">
-          <mat-icon>edit</mat-icon>
-          {{ 'smhLinkServiceConfig.openEditor' | translate }}
-        </button>
-      </div>
-    }
+      @if (isSmhServiceConfig()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">settings_applications</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'smhServiceConfig.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openServiceConfigEditor()">
+            <mat-icon>edit</mat-icon>
+            {{ 'smhServiceConfig.openEditor' | translate }}
+          </button>
+        </div>
+      }
 
-    @if (isSmhMinAppVersion()) {
-      <div class="channel__graphic-editor-bar">
-        <mat-icon class="channel__graphic-editor-icon">system_update</mat-icon>
-        <span class="channel__graphic-editor-hint">{{ 'smhMinAppVersion.editorHint' | translate }}</span>
-        <button mat-stroked-button type="button" (click)="openMinAppVersionEditor()">
-          <mat-icon>edit</mat-icon>
-          {{ 'smhMinAppVersion.openEditor' | translate }}
-        </button>
-      </div>
-    }
+      @if (isSmhLinkServiceConfig()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">link</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'smhLinkServiceConfig.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openLinkServiceConfigEditor()">
+            <mat-icon>edit</mat-icon>
+            {{ 'smhLinkServiceConfig.openEditor' | translate }}
+          </button>
+        </div>
+      }
 
-    @if (isSmhNews()) {
-      <div class="channel__graphic-editor-bar">
-        <mat-icon class="channel__graphic-editor-icon">rss_feed</mat-icon>
-        <span class="channel__graphic-editor-hint">{{ 'smhNews.editorHint' | translate }}</span>
-        <button mat-stroked-button type="button" (click)="openNewsEditor()">
-          <mat-icon>edit</mat-icon>
-          {{ 'smhNews.openEditor' | translate }}
-        </button>
-      </div>
-    }
+      @if (isSmhMinAppVersion()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">system_update</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'smhMinAppVersion.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openMinAppVersionEditor()">
+            <mat-icon>edit</mat-icon>
+            {{ 'smhMinAppVersion.openEditor' | translate }}
+          </button>
+        </div>
+      }
 
-    @if (isSmhTutorial()) {
-      <div class="channel__graphic-editor-bar">
-        <mat-icon class="channel__graphic-editor-icon">video_library</mat-icon>
-        <span class="channel__graphic-editor-hint">{{ 'smhTutorial.editorHint' | translate }}</span>
-        <button mat-stroked-button type="button" (click)="openTutorialEditor()">
-          <mat-icon>edit</mat-icon>
-          {{ 'smhTutorial.openEditor' | translate }}
-        </button>
-      </div>
+      @if (isSmhNews()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">rss_feed</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'smhNews.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openNewsEditor()">
+            <mat-icon>edit</mat-icon>
+            {{ 'smhNews.openEditor' | translate }}
+          </button>
+        </div>
+      }
+
+      @if (isSmhTutorial()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">video_library</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'smhTutorial.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openTutorialEditor()">
+            <mat-icon>edit</mat-icon>
+            {{ 'smhTutorial.openEditor' | translate }}
+          </button>
+        </div>
+      }
     }
 
     <mat-expansion-panel class="channel__json-panel" [expanded]="!hasGraphicEditor(entity())">
@@ -269,7 +319,7 @@
           color="primary"
           type="button"
           (click)="save()"
-          [disabled]="saving() || configControl.invalid || configControl.pristine"
+          [disabled]="saving() || configControl.invalid || configControl.pristine || isCurrentEntityDisabled()"
         >
           @if (saving()) {
             <mat-progress-spinner mode="indeterminate" diameter="20" />

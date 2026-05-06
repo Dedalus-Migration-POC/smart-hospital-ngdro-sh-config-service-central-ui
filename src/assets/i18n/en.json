@@ -358,7 +358,20 @@
     "browserPushInProgress": "Pushing via browser…",
     "browserPushSynced": "Direct push completed. Configuration synchronized.",
     "browserPushFailed": "Direct push failed. Configuration remains as draft.",
-    "browserPushConfirmError": "Push completed but unable to update status on the server."
+    "browserPushConfirmError": "Push completed but unable to update status on the server.",
+    "disableEntity": "Disable entity",
+    "disableEntityTooltip": "Disable this entity — the config is preserved but will no longer be pushed",
+    "disableEntityTitle": "Disable entity «{entity}»",
+    "disableEntityMessage": "The configuration will be preserved but this entity will no longer be pushed to on-prem until re-enabled. Continue?",
+    "disableEntityConfirm": "Disable",
+    "disableEntitySuccess": "Entity «{entity}» disabled.",
+    "disableEntityError": "Unable to disable the entity.",
+    "enableEntity": "Re-enable entity",
+    "enableEntityTooltip": "Re-enable this entity to resume pushing to on-prem",
+    "enableEntitySuccess": "Entity «{entity}» re-enabled.",
+    "enableEntityError": "Unable to re-enable the entity.",
+    "entityDisabledTitle": "Entity disabled",
+    "entityDisabledHint": "This entity has been disabled by an administrator. The configuration is visible but cannot be edited or pushed to on-prem. Re-enable the entity to resume changes."
   },
   "user": {
     "title": "Users",

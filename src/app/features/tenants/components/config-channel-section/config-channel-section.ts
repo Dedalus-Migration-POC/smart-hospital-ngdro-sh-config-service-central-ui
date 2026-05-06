@@ -85,7 +85,7 @@ import {
   SmhUiRenderEditorDialogData,
   SmhUiRenderJson,
 } from '../../dialogs/smh-ui-render-editor-dialog/smh-ui-render-editor-dialog';
-import { AppConfigVersion, ChannelId, PushPackage } from '../../models';
+import { AppConfigVersion, ChannelId, EntityInfo, PushPackage } from '../../models';
 import { TenantService } from '../../services/tenants';
 
 interface JsonError {
@@ -188,6 +188,9 @@ export class ConfigChannelSection {
   readonly resyncing = signal(false);
   readonly historyLoading = signal(false);
   readonly rollingBack = signal<number | null>(null);
+  readonly disabledEntities = signal<Set<string>>(new Set());
+  readonly disablingEntity = signal(false);
+  readonly enablingEntity = signal(false);
 
   readonly activeVersion = signal<AppConfigVersion | null>(null);
   readonly history = signal<AppConfigVersion[]>([]);
@@ -230,8 +233,11 @@ export class ConfigChannelSection {
 
   private loadEntities(tenantId: string, channelId: string): void {
     this.tenantService.getEntities(tenantId, channelId).subscribe({
-      next: (list) => {
-        const merged = new Set([...this.entities(), ...list]);
+      next: (list: EntityInfo[]) => {
+        // Update disabled entities set
+        this.disabledEntities.set(new Set(list.filter((e) => !e.enabled).map((e) => e.entity)));
+        // Merge entity names
+        const merged = new Set([...this.entities(), ...list.map((e) => e.entity)]);
         merged.add('base');
         if (channelId === 'mobile') {
           ConfigChannelSection.MOBILE_MANDATORY_ENTITIES.forEach((e) => merged.add(e));
@@ -511,6 +517,7 @@ export class ConfigChannelSection {
   }
 
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
+  readonly isCurrentEntityDisabled = computed(() => this.disabledEntities().has(this.entity()));
   readonly isSmhUiRender = computed(() => this.entity() === 'smh_ui_render');
   readonly isSmhSpidProvider = computed(() => this.entity() === 'smh_spid_provider');
   readonly isSmhFaq = computed(() => this.entity() === 'smh_faq');
@@ -678,6 +685,72 @@ export class ConfigChannelSection {
       if (result === undefined) return;
       this.configControl.setValue(JSON.stringify(result, null, 2));
       this.configControl.markAsDirty();
+    });
+  }
+
+  onDisableEntity(): void {
+    const entity = this.entity();
+    const data: ConfirmDialogData = {
+      title: this.translate.instant('config.disableEntityTitle', { entity }),
+      message: this.translate.instant('config.disableEntityMessage', { entity }),
+      confirmLabel: this.translate.instant('config.disableEntityConfirm'),
+      destructive: true,
+    };
+    const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (!confirmed) return;
+      const tenantId = this.tenantId();
+      const channelId = this.channelId();
+      this.disablingEntity.set(true);
+      this.tenantService.disableEntity(tenantId, channelId, entity).subscribe({
+        next: () => {
+          this.disablingEntity.set(false);
+          this.disabledEntities.update((s) => new Set([...s, entity]));
+          this.snackbar.open(
+            this.translate.instant('config.disableEntitySuccess', { entity }),
+            'OK',
+            { duration: 4000 },
+          );
+        },
+        error: (err: unknown) => {
+          this.disablingEntity.set(false);
+          this.snackbar.open(
+            toUserMessage(err, this.translate.instant('config.disableEntityError')),
+            'OK',
+            { duration: 6000 },
+          );
+        },
+      });
+    });
+  }
+
+  onEnableEntity(): void {
+    const tenantId = this.tenantId();
+    const channelId = this.channelId();
+    const entity = this.entity();
+    this.enablingEntity.set(true);
+    this.tenantService.enableEntity(tenantId, channelId, entity).subscribe({
+      next: () => {
+        this.enablingEntity.set(false);
+        this.disabledEntities.update((s) => {
+          const next = new Set(s);
+          next.delete(entity);
+          return next;
+        });
+        this.snackbar.open(
+          this.translate.instant('config.enableEntitySuccess', { entity }),
+          'OK',
+          { duration: 3000 },
+        );
+      },
+      error: (err: unknown) => {
+        this.enablingEntity.set(false);
+        this.snackbar.open(
+          toUserMessage(err, this.translate.instant('config.enableEntityError')),
+          'OK',
+          { duration: 6000 },
+        );
+      },
     });
   }
 

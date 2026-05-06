@@ -7,6 +7,7 @@ import {
   AppConfigActive,
   AppConfigVersion,
   DraftConfigSummary,
+  EntityInfo,
   Tenant,
   TenantCreateRequest,
   TenantUpdateRequest,
@@ -43,9 +44,22 @@ export class TenantService {
     return this.http.delete<void>(`${this.baseUrl}/tenants/${id}`);
   }
 
-  getEntities(tenantId: string, channelId: string): Observable<string[]> {
-    return this.http.get<string[]>(
+  getEntities(tenantId: string, channelId: string): Observable<EntityInfo[]> {
+    return this.http.get<EntityInfo[]>(
       `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}/entities`,
+    );
+  }
+
+  disableEntity(tenantId: string, channelId: string, entity: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}/entities/${entity}`,
+    );
+  }
+
+  enableEntity(tenantId: string, channelId: string, entity: string): Observable<void> {
+    return this.http.put<void>(
+      `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}/entities/${entity}/enable`,
+      {},
     );
   }
 

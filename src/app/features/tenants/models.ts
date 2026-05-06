@@ -62,6 +62,11 @@ export type ChannelId = (typeof CHANNELS)[number];
 
 export const TENANT_SLUG_PATTERN = /^[a-z0-9-]+$/;
 
+export interface EntityInfo {
+  entity: string;
+  enabled: boolean;
+}
+
 export interface DraftConfigSummary {
   configId: string;
   tenantId: string;

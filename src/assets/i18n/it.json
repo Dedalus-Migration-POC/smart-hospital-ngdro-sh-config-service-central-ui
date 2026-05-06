@@ -358,7 +358,20 @@
     "browserPushInProgress": "Push in corso via browser…",
     "browserPushSynced": "Push diretto completato. Configurazione sincronizzata.",
     "browserPushFailed": "Push diretto fallito. Configurazione rimasta come bozza.",
-    "browserPushConfirmError": "Push completato ma impossibile aggiornare lo stato sul server."
+    "browserPushConfirmError": "Push completato ma impossibile aggiornare lo stato sul server.",
+    "disableEntity": "Disabilita entity",
+    "disableEntityTooltip": "Disabilita questa entity — la config viene preservata ma non verrà più pushata",
+    "disableEntityTitle": "Disabilita entity «{entity}»",
+    "disableEntityMessage": "La configurazione verrà preservata ma l'entity non sarà più pushata all'on-prem finché non viene riabilitata. Continuare?",
+    "disableEntityConfirm": "Disabilita",
+    "disableEntitySuccess": "Entity «{entity}» disabilitata.",
+    "disableEntityError": "Impossibile disabilitare l'entity.",
+    "enableEntity": "Riabilita entity",
+    "enableEntityTooltip": "Riabilita questa entity per riprendere il push all'on-prem",
+    "enableEntitySuccess": "Entity «{entity}» riabilitata.",
+    "enableEntityError": "Impossibile riabilitare l'entity.",
+    "entityDisabledTitle": "Entity disabilitata",
+    "entityDisabledHint": "Questa entity è stata disabilitata da un amministratore. La configurazione è visibile ma non modificabile né pushata all'on-prem. Riabilita l'entity per riprendere le modifiche."
   },
   "user": {
     "title": "Utenti",
