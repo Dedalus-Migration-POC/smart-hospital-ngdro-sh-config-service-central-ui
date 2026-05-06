@@ -1,4 +1,5 @@
 <div class="login-shell">
+  <div class="login-shell__center">
   <mat-card appearance="outlined" class="login-card">
     <div class="login-card__brand">
       <img src="dedalus-logo-white.svg" alt="Dedalus" class="login-card__logo" />
@@ -56,4 +57,11 @@
       </form>
     </mat-card-content>
   </mat-card>
+  </div>
+
+  <footer class="login-footer">
+    <span>{{ 'shell.footerCompany' | translate }}</span>
+    <span class="login-footer__sep" aria-hidden="true">·</span>
+    <span>{{ 'shell.footerCookies' | translate }}</span>
+  </footer>
 </div>
