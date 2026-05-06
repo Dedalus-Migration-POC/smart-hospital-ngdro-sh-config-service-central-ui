@@ -229,8 +229,31 @@ $nav-divider:     rgba(255, 255, 255, 0.10);
   padding: 24px;
 }
 
+// ── Footer ────────────────────────────────────────────────────────────────────
+.admin-shell__footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 10px 24px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  background: #ffffff;
+  font-size: 0.72rem;
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.4;
+}
+
+.admin-shell__footer-sep {
+  color: var(--mat-sys-outline);
+}
+
 @media (max-width: 599px) {
   .admin-shell__main { padding: 16px; }
   .admin-shell__user-name,
   .admin-shell__user-role { display: none; }
+  .admin-shell__footer { padding: 10px 16px; }
+  .admin-shell__footer-sep { display: none; }
+  .admin-shell__footer-company,
+  .admin-shell__footer-cookies { display: block; width: 100%; }
 }
