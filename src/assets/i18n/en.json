@@ -553,27 +553,6 @@
     "empty": "No services. Use the button above to add one.",
     "apply": "Apply"
   },
-  "smhLinkServiceConfig": {
-    "openEditor": "Edit graphically",
-    "editorHint": "This entity supports the graphical editor. You can manage external link services visually.",
-    "dialogTitle": "Editor — smh_link_service_config",
-    "desc": "List of services with external links shown in the app (separate SVG icons for mobile and web).",
-    "services": "Services",
-    "addService": "Add service",
-    "removeService": "Remove service",
-    "title": "Title",
-    "description": "Description",
-    "link": "URL",
-    "web": "Show on web",
-    "mobile": "Show on mobile",
-    "hidden": "Hidden",
-    "disabled": "Disabled",
-    "svgMobile": "Mobile icon (SVG)",
-    "svgWeb": "Web icon (SVG)",
-    "fieldRequired": "Field required.",
-    "empty": "No services. Use the button above to add one.",
-    "apply": "Apply"
-  },
   "smhFaq": {
     "openEditor": "Graphic editor",
     "editorHint": "This entity supports the graphic editor. You can manage FAQs visually.",

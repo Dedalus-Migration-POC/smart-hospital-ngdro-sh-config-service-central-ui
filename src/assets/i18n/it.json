@@ -553,27 +553,6 @@
     "empty": "Nessun servizio. Usa il pulsante qui sopra per aggiungerne uno.",
     "apply": "Applica"
   },
-  "smhLinkServiceConfig": {
-    "openEditor": "Modifica grafico",
-    "editorHint": "Questa entity supporta l'editor grafico. Puoi gestire i servizi con link esterno visualmente.",
-    "dialogTitle": "Editor — smh_link_service_config",
-    "desc": "Lista dei servizi con link esterno mostrati nell'app (icone SVG separate per mobile e web).",
-    "services": "Servizi",
-    "addService": "Aggiungi servizio",
-    "removeService": "Rimuovi servizio",
-    "title": "Titolo",
-    "description": "Descrizione",
-    "link": "URL",
-    "web": "Mostra su web",
-    "mobile": "Mostra su mobile",
-    "hidden": "Nascosto",
-    "disabled": "Disabilitato",
-    "svgMobile": "Icona mobile (SVG)",
-    "svgWeb": "Icona web (SVG)",
-    "fieldRequired": "Campo obbligatorio.",
-    "empty": "Nessun servizio. Usa il pulsante qui sopra per aggiungerne uno.",
-    "apply": "Applica"
-  },
   "smhFaq": {
     "openEditor": "Modifica grafico",
     "editorHint": "Questa entity supporta l'editor grafico. Puoi gestire le FAQ visualmente.",

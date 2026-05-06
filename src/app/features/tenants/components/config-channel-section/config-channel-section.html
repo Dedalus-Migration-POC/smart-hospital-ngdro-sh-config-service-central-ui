@@ -228,17 +228,6 @@
         </div>
       }
 
-      @if (isSmhLinkServiceConfig()) {
-        <div class="channel__graphic-editor-bar">
-          <mat-icon class="channel__graphic-editor-icon">link</mat-icon>
-          <span class="channel__graphic-editor-hint">{{ 'smhLinkServiceConfig.editorHint' | translate }}</span>
-          <button mat-stroked-button type="button" (click)="openLinkServiceConfigEditor()">
-            <mat-icon>edit</mat-icon>
-            {{ 'smhLinkServiceConfig.openEditor' | translate }}
-          </button>
-        </div>
-      }
-
       @if (isSmhMinAppVersion()) {
         <div class="channel__graphic-editor-bar">
           <mat-icon class="channel__graphic-editor-icon">system_update</mat-icon>
@@ -408,7 +397,7 @@
       <mat-icon class="channel__preview-label-icon">smartphone</mat-icon>
       <span>{{ 'config.previewTitle' | translate }}</span>
     </div>
-    <app-smh-phone-preview [renderData]="previewJson()" [linkServiceIds]="linkServiceIds()" />
+    <app-smh-phone-preview [renderData]="previewJson()" />
   </div>
 }
 

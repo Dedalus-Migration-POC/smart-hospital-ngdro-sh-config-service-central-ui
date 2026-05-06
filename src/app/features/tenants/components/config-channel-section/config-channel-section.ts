@@ -29,7 +29,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { forkJoin, of } from 'rxjs';
+import { of } from 'rxjs';
 import { catchError, startWith } from 'rxjs/operators';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -50,11 +50,6 @@ import {
   SmhFaqEditorDialogData,
   SmhFaqJson,
 } from '../../dialogs/smh-faq-editor-dialog/smh-faq-editor-dialog';
-import {
-  SmhLinkServiceConfigEditorDialog,
-  SmhLinkServiceConfigEditorDialogData,
-  SmhLinkServiceConfigJson,
-} from '../../dialogs/smh-link-service-config-editor-dialog/smh-link-service-config-editor-dialog';
 import {
   SmhMinAppVersionEditorDialog,
   SmhMinAppVersionEditorDialogData,
@@ -222,15 +217,6 @@ export class ConfigChannelSection {
       this.loadConfig(tenantId, channelId, entity);
     });
 
-    // Load link service IDs for preview badge (solo quando la preview è attiva)
-    effect(() => {
-      if (!this.showPreview()) return;
-      const tenantId = this.tenantId();
-      const channelId = this.channelId();
-      this.tenantService.getConfig(tenantId, channelId, 'local', 'smh_link_service_config')
-        .pipe(catchError(() => of({ source: 'local' as const, configJson: [] as unknown })))
-        .subscribe((cfg) => this.linkServiceIds.set(extractServiceIds(cfg.configJson)));
-    });
   }
 
   private loadEntities(tenantId: string, channelId: string): void {
@@ -527,22 +513,19 @@ export class ConfigChannelSection {
   readonly isSmhSpidProvider = computed(() => this.entity() === 'smh_spid_provider');
   readonly isSmhFaq = computed(() => this.entity() === 'smh_faq');
   readonly isSmhServiceConfig = computed(() => this.entity() === 'smh_service_config');
-  readonly isSmhLinkServiceConfig = computed(() => this.entity() === 'smh_link_service_config');
   readonly isSmhMinAppVersion = computed(() => this.entity() === 'smh_min_app_version');
   readonly isSmhNews = computed(() => this.entity() === 'smh_news');
   readonly isSmhTutorial = computed(() => this.entity() === 'smh_tutorial');
 
   private static readonly GRAPHIC_EDITOR_ENTITIES = new Set([
     'smh_ui_render', 'smh_spid_provider', 'smh_faq',
-    'smh_service_config', 'smh_link_service_config',
-    'smh_min_app_version', 'smh_news', 'smh_tutorial',
+    'smh_service_config', 'smh_min_app_version', 'smh_news', 'smh_tutorial',
   ]);
 
   private static readonly MOBILE_MANDATORY_ENTITIES = [
     'smh_ui_render',
     'smh_spid_provider',
     'smh_faq',
-    'smh_link_service_config',
     'smh_service_config',
     'smh_it',
     'smh_min_app_version',
@@ -562,7 +545,6 @@ export class ConfigChannelSection {
     },
     smh_spid_provider: { providers: [] },
     smh_faq: [],
-    smh_link_service_config: [],
     smh_service_config: [],
     smh_it: {},
     smh_min_app_version: { ios: '1.0', android: '1.0' },
@@ -588,8 +570,6 @@ export class ConfigChannelSection {
     try { return JSON.parse(raw) as SmhUiRenderJson; } catch { return null; }
   });
 
-  readonly linkServiceIds = signal<string[]>([]);
-
   openGraphicEditor(): void {
     let parsed: SmhUiRenderJson = {};
     const raw = this.configControl.value ?? '';
@@ -599,14 +579,10 @@ export class ConfigChannelSection {
     const tenantId = this.tenantId();
     const channelId = this.channelId();
     const emptyConfig = { source: 'local' as const, configJson: [] as unknown };
-    forkJoin([
-      this.tenantService.getConfig(tenantId, channelId, 'local', 'smh_link_service_config').pipe(catchError(() => of(emptyConfig))),
-      this.tenantService.getConfig(tenantId, channelId, 'local', 'smh_service_config').pipe(catchError(() => of(emptyConfig))),
-    ]).subscribe(([linkCfg, svcCfg]) => {
-      const availableServiceIds = [
-        ...extractServiceIds(linkCfg.configJson),
-        ...extractServiceIds(svcCfg.configJson),
-      ];
+    this.tenantService.getConfig(tenantId, channelId, 'local', 'smh_service_config')
+      .pipe(catchError(() => of(emptyConfig)))
+      .subscribe((svcCfg) => {
+      const availableServiceIds = extractServiceIds(svcCfg.configJson);
       const data: SmhUiRenderEditorDialogData = { value: parsed, availableServiceIds };
       const ref = this.dialog.open<SmhUiRenderEditorDialog, SmhUiRenderEditorDialogData, SmhUiRenderJson>(
         SmhUiRenderEditorDialog,
@@ -667,24 +643,6 @@ export class ConfigChannelSection {
     const ref = this.dialog.open<SmhServiceConfigEditorDialog, SmhServiceConfigEditorDialogData, SmhServiceConfigJson>(
       SmhServiceConfigEditorDialog,
       { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px' },
-    );
-    ref.afterClosed().subscribe((result) => {
-      if (result === undefined) return;
-      this.configControl.setValue(JSON.stringify(result, null, 2));
-      this.configControl.markAsDirty();
-    });
-  }
-
-  openLinkServiceConfigEditor(): void {
-    const raw = this.configControl.value ?? '';
-    let parsed: SmhLinkServiceConfigJson = { services: [] };
-    if (raw.trim()) {
-      try { parsed = JSON.parse(raw) as SmhLinkServiceConfigJson; } catch { /* usa vuoto */ }
-    }
-    const data: SmhLinkServiceConfigEditorDialogData = { value: parsed };
-    const ref = this.dialog.open<SmhLinkServiceConfigEditorDialog, SmhLinkServiceConfigEditorDialogData, SmhLinkServiceConfigJson>(
-      SmhLinkServiceConfigEditorDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '800px', width: '800px' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;

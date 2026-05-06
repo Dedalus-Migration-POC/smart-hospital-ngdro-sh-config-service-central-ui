@@ -16,14 +16,6 @@ export interface BodyCategory {
 })
 export class SmhPhonePreview {
   readonly renderData = input<SmhUiRenderJson | null>(null);
-  readonly linkServiceIds = input<string[]>([]);
-
-  readonly linkIdSet = computed(() => new Set(this.linkServiceIds()));
-
-  isLinkedService(id: string): boolean {
-    return !!id && this.linkIdSet().has(id);
-  }
-
   readonly bodyCategories = computed((): BodyCategory[] => {
     const body = this.renderData()?.home?.body;
     if (!body) return [];
