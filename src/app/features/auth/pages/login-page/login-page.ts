@@ -1,8 +1,6 @@
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  ViewChild,
   inject,
   signal,
 } from '@angular/core';
@@ -14,11 +12,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { from, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
 import { environment } from '../../../../../environments/environment';
-import { HCaptchaComponent } from '../../../../shared/components/hcaptcha/hcaptcha';
+import { RecaptchaV3Service } from '../../../../shared/services/recaptcha-v3';
 
 @Component({
   selector: 'app-login-page',
@@ -32,21 +31,19 @@ import { HCaptchaComponent } from '../../../../shared/components/hcaptcha/hcaptc
     MatButtonModule,
     MatProgressSpinnerModule,
     TranslatePipe,
-    HCaptchaComponent,
   ],
   templateUrl: './login-page.html',
   styleUrl: './login-page.scss',
 })
 export class LoginPage {
-  @ViewChild(HCaptchaComponent) private captchaWidget?: HCaptchaComponent;
-
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
+  private readonly recaptcha = inject(RecaptchaV3Service);
 
-  readonly hcaptchaSiteKey = environment.hcaptchaSiteKey;
+  private readonly captchaEnabled = environment.captchaEnabled;
 
   readonly form = this.fb.nonNullable.group({
     username: ['', [Validators.required]],
@@ -55,42 +52,33 @@ export class LoginPage {
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
-  readonly captchaToken = signal<string | null>(null);
-
-  onCaptchaVerified(token: string): void {
-    this.captchaToken.set(token);
-  }
-
-  onCaptchaExpired(): void {
-    this.captchaToken.set(null);
-  }
 
   submit(): void {
     if (this.form.invalid || this.loading()) {
       this.form.markAllAsTouched();
       return;
     }
-    if (!this.captchaToken()) {
-      this.errorMessage.set(this.translate.instant('auth.captchaRequired'));
-      return;
-    }
-
     this.loading.set(true);
     this.errorMessage.set(null);
 
     const { username, password } = this.form.getRawValue();
-    this.auth.login({ username, password, captchaToken: this.captchaToken()! }).subscribe({
-      next: () => {
-        this.loading.set(false);
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
-        void this.router.navigateByUrl(returnUrl);
-      },
-      error: (err: unknown) => {
-        this.loading.set(false);
-        this.captchaToken.set(null);
-        this.captchaWidget?.reset();
-        this.errorMessage.set(toUserMessage(err, this.translate.instant('auth.loginError')));
-      },
-    });
+
+    const token$ = this.captchaEnabled
+      ? from(this.recaptcha.execute('login'))
+      : of('dev-bypass');
+
+    token$
+      .pipe(switchMap((captchaToken) => this.auth.login({ username, password, captchaToken })))
+      .subscribe({
+        next: () => {
+          this.loading.set(false);
+          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
+          void this.router.navigateByUrl(returnUrl);
+        },
+        error: (err: unknown) => {
+          this.loading.set(false);
+          this.errorMessage.set(toUserMessage(err, this.translate.instant('auth.loginError')));
+        },
+      });
   }
 }
