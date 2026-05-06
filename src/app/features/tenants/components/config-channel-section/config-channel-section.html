@@ -1,5 +1,76 @@
 <div class="channel" [class.channel--with-preview]="showPreview()">
 <div class="channel__main">
+
+  <!-- Entity selector — always visible, non si nasconde durante il loading -->
+  <div class="channel__entity-bar">
+    @for (e of entities(); track e) {
+      <button
+        type="button"
+        class="entity-chip"
+        [class.entity-chip--active]="entity() === e"
+        [class.entity-chip--disabled]="disabledEntities().has(e)"
+        (click)="selectEntity(e)"
+        [attr.aria-pressed]="entity() === e"
+      >
+        {{ e }}
+        @if (disabledEntities().has(e)) {
+          <mat-icon class="entity-chip__editor-icon">block</mat-icon>
+        } @else if (hasGraphicEditor(e)) {
+          <mat-icon class="entity-chip__editor-icon">palette</mat-icon>
+        }
+      </button>
+    }
+    @if (isAdmin() && !addingEntity()) {
+      <button
+        type="button"
+        class="entity-chip entity-chip--add"
+        (click)="startAddEntity()"
+        [matTooltip]="'config.addEntityTooltip' | translate"
+      >
+        <mat-icon>add</mat-icon>
+        {{ 'config.addEntity' | translate }}
+      </button>
+    }
+  </div>
+
+  @if (isAdmin() && addingEntity()) {
+    <div class="channel__add-entity-form">
+      <mat-form-field appearance="outline" class="channel__add-entity-field">
+        <mat-label>{{ 'config.addEntityLabel' | translate }}</mat-label>
+        <input
+          matInput
+          [formControl]="newEntityControl"
+          [placeholder]="'config.addEntityPlaceholder' | translate"
+          (keyup.enter)="confirmAddEntity()"
+          (keyup.escape)="cancelAddEntity()"
+          autocomplete="off"
+          autofocus
+        />
+        <mat-hint>{{ 'config.addEntityHint' | translate }}</mat-hint>
+        @if (newEntityControl.touched) {
+          @if (newEntityControl.hasError('required')) {
+            <mat-error>{{ 'config.addEntityRequired' | translate }}</mat-error>
+          } @else if (newEntityControl.hasError('pattern')) {
+            <mat-error>{{ 'config.addEntityPattern' | translate }}</mat-error>
+          }
+        }
+      </mat-form-field>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="confirmAddEntity()"
+        [disabled]="newEntityControl.invalid"
+      >
+        {{ 'config.addEntityConfirm' | translate }}
+      </button>
+      <button mat-button type="button" (click)="cancelAddEntity()">
+        {{ 'common.cancel' | translate }}
+      </button>
+    </div>
+  }
+
+  <!-- Progress bar e stato di caricamento/errore -->
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" />
   }
@@ -12,75 +83,6 @@
   }
 
   @if (!loading() && !errorMessage()) {
-    <!-- Entity selector -->
-    <div class="channel__entity-bar">
-      @for (e of entities(); track e) {
-        <button
-          type="button"
-          class="entity-chip"
-          [class.entity-chip--active]="entity() === e"
-          [class.entity-chip--disabled]="disabledEntities().has(e)"
-          (click)="selectEntity(e)"
-          [attr.aria-pressed]="entity() === e"
-        >
-          {{ e }}
-          @if (disabledEntities().has(e)) {
-            <mat-icon class="entity-chip__editor-icon">block</mat-icon>
-          } @else if (hasGraphicEditor(e)) {
-            <mat-icon class="entity-chip__editor-icon">palette</mat-icon>
-          }
-        </button>
-      }
-      @if (isAdmin() && !addingEntity()) {
-        <button
-          type="button"
-          class="entity-chip entity-chip--add"
-          (click)="startAddEntity()"
-          [matTooltip]="'config.addEntityTooltip' | translate"
-        >
-          <mat-icon>add</mat-icon>
-          {{ 'config.addEntity' | translate }}
-        </button>
-      }
-    </div>
-
-    @if (isAdmin() && addingEntity()) {
-      <div class="channel__add-entity-form">
-        <mat-form-field appearance="outline" class="channel__add-entity-field">
-          <mat-label>{{ 'config.addEntityLabel' | translate }}</mat-label>
-          <input
-            matInput
-            [formControl]="newEntityControl"
-            [placeholder]="'config.addEntityPlaceholder' | translate"
-            (keyup.enter)="confirmAddEntity()"
-            (keyup.escape)="cancelAddEntity()"
-            autocomplete="off"
-            autofocus
-          />
-          <mat-hint>{{ 'config.addEntityHint' | translate }}</mat-hint>
-          @if (newEntityControl.touched) {
-            @if (newEntityControl.hasError('required')) {
-              <mat-error>{{ 'config.addEntityRequired' | translate }}</mat-error>
-            } @else if (newEntityControl.hasError('pattern')) {
-              <mat-error>{{ 'config.addEntityPattern' | translate }}</mat-error>
-            }
-          }
-        </mat-form-field>
-        <button
-          mat-flat-button
-          color="primary"
-          type="button"
-          (click)="confirmAddEntity()"
-          [disabled]="newEntityControl.invalid"
-        >
-          {{ 'config.addEntityConfirm' | translate }}
-        </button>
-        <button mat-button type="button" (click)="cancelAddEntity()">
-          {{ 'common.cancel' | translate }}
-        </button>
-      </div>
-    }
-
     <div class="channel__status-bar">
       @if (activeVersion(); as v) {
         <div class="channel__status">
