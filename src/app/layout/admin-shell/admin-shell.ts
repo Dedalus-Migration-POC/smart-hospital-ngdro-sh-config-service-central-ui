@@ -86,7 +86,7 @@ export class AdminShell {
     if (role === 'CUSTOMER') {
       return [
         { icon: 'dashboard', labelKey: 'nav.dashboard', path: '/my-dashboard' } as NavItem,
-        { icon: 'business', labelKey: 'nav.myCustomer', path: user?.customerId ? `/customers/${user.customerId}` : undefined } as NavItem,
+        { icon: 'tune', labelKey: 'nav.myConfigurations', path: user?.customerId ? `/customers/${user.customerId}` : undefined } as NavItem,
       ];
     }
 

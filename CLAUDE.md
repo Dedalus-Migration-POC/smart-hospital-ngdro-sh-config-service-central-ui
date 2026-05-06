@@ -135,8 +135,8 @@ Branch default: `main`. Niente push iniziale finché non c'è uno scaffold pulit
 - [x] Layout admin (`AdminShell`: sidenav responsive + toolbar con utente/ruolo/logout, nav items con placeholder per le sezioni future, filtraggio per ruolo)
 - [x] Feature **Customer**: lista (mat-table, search, sort, paginator, toggle inattivi), create dialog, detail page con edit + soft delete (confirm dialog condiviso)
 - [x] Feature **Installation**: sezione embedded nel dettaglio Customer (lista + create dialog + alert master key generata) + pagina `/installations/:id` (edit, sezione sicurezza con rotate api-key + rotate/show payload-master-key, sezione sync status, soft delete). Nessuna lista globale lato BE → voce sidenav resta "prossimamente".
-- [ ] Feature per dominio rimanenti (tenants → configs)
-- [ ] Users + Audit log (ADMIN-only routes)
+- [x] Feature per dominio rimanenti (tenants → configs)
+- [x] Users + Audit log (ADMIN-only routes)
 - [ ] Build di produzione + Dockerfile + Jenkinsfile (`buildNode` se shared lib disponibile)
 
 ## Test del backend

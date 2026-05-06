@@ -12,7 +12,8 @@
     "customers": "Customers",
     "users": "Users",
     "auditLog": "Audit log",
-    "myCustomer": "My customer"
+    "myCustomer": "My customer",
+    "myConfigurations": "Configurations"
   },
   "common": {
     "save": "Save",
