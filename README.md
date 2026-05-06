@@ -96,7 +96,8 @@ src/
     │           └── _smh-editor-base.scss            # mixin SCSS condiviso dagli editor SMH
     └── shared/
         ├── components/svg-upload-field/ # campo upload SVG con anteprima
-        └── dialogs/confirm-dialog/
+        ├── dialogs/confirm-dialog/
+        └── services/recaptcha-v3.ts    # carica enterprise.js e genera token
 ```
 
 ## Funzionalità principali
@@ -163,10 +164,20 @@ I controlli partono in parallelo al caricamento della lista e si aggiornano prog
 - Interceptor: attacca `Authorization: Bearer <token>` a tutte le chiamate verso `apiBaseUrl` eccetto `/auth/login`. Su `401` pulisce lo stato e redirige a `/login?returnUrl=...`.
 - Guard: `authGuard` (functional `CanActivateFn`) protegge le route che richiedono utente loggato.
 
+### reCAPTCHA Enterprise
+
+La login usa **Google reCAPTCHA Enterprise** (score-based, invisibile). Il widget appare in basso a destra sulla pagina di login.
+
+- Chiave sito: configurata in `environment.ts` → `recaptchaSiteKey`
+- Il flag `captchaEnabled` in environment permette di disabilitare il captcha (es. test automatici). In dev e prod è `true`.
+- Il service `shared/services/recaptcha-v3.ts` carica `enterprise.js` dinamicamente e chiama `grecaptcha.enterprise.execute()`.
+- Il token viene inviato al backend nel campo `captchaToken` del body di login; il backend lo verifica tramite l'Assessment API di Google.
+
 ## Layout admin
 
 - `AdminShell` è la shell per tutte le route protette: sidenav responsive (side su desktop, over su mobile) + toolbar con utente/ruolo/logout.
 - Voci di navigazione in `AdminShell.navItems`: `icon`, `label`, `path` opzionale, `requiredRole` opzionale.
+- **Footer fisso** in calce all'area di contenuto (e sulla pagina di login): ragione sociale, sede e P.IVA di Dedalus Italia S.p.A. + nota sull'uso esclusivo di cookie tecnici.
 
 ## Convenzioni
 
