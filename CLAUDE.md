@@ -137,7 +137,9 @@ Branch default: `main`. Niente push iniziale finché non c'è uno scaffold pulit
 - [x] Feature **Installation**: sezione embedded nel dettaglio Customer (lista + create dialog + alert master key generata) + pagina `/installations/:id` (edit, sezione sicurezza con rotate api-key + rotate/show payload-master-key, sezione sync status, soft delete). Nessuna lista globale lato BE → voce sidenav resta "prossimamente".
 - [x] Feature per dominio rimanenti (tenants → configs)
 - [x] Users + Audit log (ADMIN-only routes)
+- [x] Editor grafico canale web (`base`): dialog 95vw × 92vh, 5 tab (Generale, Tema, Header, Footer, Pagine), anteprima live `WebPagePreview`. Logica di estrazione/patch preserva il JSON originale per le sezioni non gestite.
 - [ ] Build di produzione + Dockerfile + Jenkinsfile (`buildNode` se shared lib disponibile)
+- [ ] **[on-prem `sh-config-service`]** Cache entity config: quando il central aggiorna una entity in DB, invalidare/ricaricare la cache lato on-prem. Attualmente le config vengono lette da DB ad ogni richiesta oppure non sono cachate — valutare `@Cacheable` con eviction su `PUT /configs/{channelId}/{entity}`.
 
 ## Test del backend
 
