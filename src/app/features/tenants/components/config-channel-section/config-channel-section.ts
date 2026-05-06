@@ -46,6 +46,11 @@ import {
 } from '../../dialogs/config-version-diff-dialog/config-version-diff-dialog';
 import { SmhPhonePreview } from '../smh-phone-preview/smh-phone-preview';
 import {
+  WebAppConfigEditorDialog,
+  WebAppConfigEditorDialogData,
+  WebAppConfigJson,
+} from '../../dialogs/web-app-config-editor-dialog/web-app-config-editor-dialog';
+import {
   SmhFaqEditorDialog,
   SmhFaqEditorDialogData,
   SmhFaqJson,
@@ -516,6 +521,7 @@ export class ConfigChannelSection {
   readonly isSmhMinAppVersion = computed(() => this.entity() === 'smh_min_app_version');
   readonly isSmhNews = computed(() => this.entity() === 'smh_news');
   readonly isSmhTutorial = computed(() => this.entity() === 'smh_tutorial');
+  readonly isWebBase     = computed(() => this.channelId() === 'web' && this.entity() === 'base');
 
   private static readonly GRAPHIC_EDITOR_ENTITIES = new Set([
     'smh_ui_render', 'smh_spid_provider', 'smh_faq',
@@ -553,6 +559,7 @@ export class ConfigChannelSection {
   };
 
   hasGraphicEditor(entity: string): boolean {
+    if (this.channelId() === 'web' && entity === 'base') return true;
     return ConfigChannelSection.GRAPHIC_EDITOR_ENTITIES.has(entity);
   }
 
@@ -763,6 +770,24 @@ export class ConfigChannelSection {
     const ref = this.dialog.open<SmhTutorialEditorDialog, SmhTutorialEditorDialogData, SmhTutorialJson>(
       SmhTutorialEditorDialog,
       { data, autoFocus: 'first-tabbable', maxWidth: '560px', width: '560px' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === undefined) return;
+      this.configControl.setValue(JSON.stringify(result, null, 2));
+      this.configControl.markAsDirty();
+    });
+  }
+
+  openWebConfigEditor(): void {
+    let parsed: WebAppConfigJson = {};
+    const raw = this.configControl.value ?? '';
+    if (raw.trim()) {
+      try { parsed = JSON.parse(raw) as WebAppConfigJson; } catch { /* usa default */ }
+    }
+    const data: WebAppConfigEditorDialogData = { value: parsed };
+    const ref = this.dialog.open<WebAppConfigEditorDialog, WebAppConfigEditorDialogData, WebAppConfigJson>(
+      WebAppConfigEditorDialog,
+      { data, autoFocus: 'first-tabbable', width: '95vw', maxWidth: '95vw', height: '92vh', maxHeight: '92vh' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;

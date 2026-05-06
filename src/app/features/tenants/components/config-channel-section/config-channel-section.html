@@ -260,6 +260,17 @@
           </button>
         </div>
       }
+
+      @if (isWebBase()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">web</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'webAppConfig.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openWebConfigEditor()">
+            <mat-icon>edit</mat-icon>
+            {{ 'webAppConfig.openEditor' | translate }}
+          </button>
+        </div>
+      }
     }
 
     <mat-expansion-panel class="channel__json-panel" [expanded]="!hasGraphicEditor(entity())">

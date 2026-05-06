@@ -1,0 +1,92 @@
+<div class="webprev">
+  <!-- Browser chrome -->
+  <div class="webprev__chrome">
+    <div class="webprev__chrome-dots">
+      <span class="webprev__dot webprev__dot--red"></span>
+      <span class="webprev__dot webprev__dot--yellow"></span>
+      <span class="webprev__dot webprev__dot--green"></span>
+    </div>
+    <div class="webprev__chrome-bar">
+      <span class="webprev__chrome-url">{{ logoUrl || '/' }}</span>
+    </div>
+  </div>
+
+  <!-- Page frame -->
+  <div class="webprev__page" [style.background]="homeBg || '#f8f9fa'">
+
+    <!-- Topbar -->
+    <div class="webprev__topbar" [style.background]="topbarBg">
+      <div class="webprev__topbar-start">
+        @for (link of topbarLinks; track $index) {
+          <span class="webprev__topbar-link">{{ link['text_it'] || link['text'] || 'Link' }}</span>
+        }
+      </div>
+      <div class="webprev__topbar-end">
+        @if (showLang) { <span class="webprev__topbar-ctrl">IT ▾</span> }
+        @if (showUser) { <span class="webprev__topbar-ctrl webprev__topbar-ctrl--user">👤</span> }
+      </div>
+    </div>
+
+    <!-- Main header -->
+    <div class="webprev__main-header" [style.background]="mainBg">
+      <div class="webprev__main-header-start">
+        @if (svgUri(logoSvg); as uri) {
+          <img class="webprev__logo" [src]="uri" alt="logo" />
+        } @else {
+          <span class="webprev__logo-text" [style.color]="'white'">{{ appName || 'Logo' }}</span>
+        }
+      </div>
+      <div class="webprev__main-header-end">
+        @for (s of headerSocials; track s['id']) {
+          <span class="webprev__social-dot"></span>
+        }
+      </div>
+    </div>
+
+    <!-- Bottombar / nav -->
+    @if (btmLinks.length > 0) {
+      <div class="webprev__bottombar" [style.background]="bottombarBg">
+        @for (link of btmLinks; track $index) {
+          <span class="webprev__nav-link" [style.color]="primaryColor">{{ link['text_it'] || 'Link' }}</span>
+        }
+      </div>
+    }
+
+    <!-- Page content -->
+    <div class="webprev__content">
+      @if (homeTitle) {
+        <div class="webprev__page-title" [style.color]="primaryColor">{{ homeTitle }}</div>
+      }
+      @if (homeSub) {
+        <div class="webprev__page-sub">{{ homeSub }}</div>
+      }
+      <!-- Placeholder content cards -->
+      <div class="webprev__cards">
+        <div class="webprev__card"></div>
+        <div class="webprev__card"></div>
+        <div class="webprev__card"></div>
+      </div>
+    </div>
+
+    <!-- Footer main -->
+    <div class="webprev__footer-main" [style.background]="fMainBg">
+      @if (svgUri(fLogoSvg); as uri) {
+        <img class="webprev__footer-logo" [src]="uri" alt="logo" />
+      }
+      @if (fDesc) {
+        <p class="webprev__footer-desc">{{ fDesc | slice:0:60 }}{{ fDesc.length > 60 ? '…' : '' }}</p>
+      }
+      @for (s of fSocials; track s['id']) {
+        <span class="webprev__footer-social">{{ s['id'] }}</span>
+      }
+    </div>
+
+    <!-- Footer bottombar -->
+    <div class="webprev__footer-bottom" [style.background]="fBottomBg">
+      @for (link of fBtmLinks; track $index) {
+        <span class="webprev__footer-link">{{ link['text_it'] || 'Link' }}</span>
+      }
+    </div>
+
+  </div>
+</div>

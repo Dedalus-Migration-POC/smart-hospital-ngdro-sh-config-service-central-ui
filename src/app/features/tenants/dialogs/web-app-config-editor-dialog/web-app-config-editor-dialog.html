@@ -1,0 +1,375 @@
+<form [formGroup]="form" class="web-editor">
+
+  <!-- LEFT PANE: FORM -->
+  <div class="web-editor__left">
+    <div class="web-editor__header">
+      <mat-icon class="web-editor__header-icon">web</mat-icon>
+      <span class="web-editor__title">{{ 'webAppConfig.dialogTitle' | translate }}</span>
+    </div>
+
+    <mat-tab-group class="web-editor__tabs" animationDuration="100ms">
+
+      <!-- ── Tab: Generale ── -->
+      <mat-tab [label]="'webAppConfig.tabGeneral' | translate">
+        <div class="web-editor__tab-content">
+          <p class="smh-editor__desc">{{ 'webAppConfig.generalDesc' | translate }}</p>
+
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.appName' | translate }}</p>
+            <mat-form-field appearance="outline" class="smh-editor__text-field">
+              <mat-label>{{ 'webAppConfig.appNameLabel' | translate }}</mat-label>
+              <input matInput formControlName="name" />
+            </mat-form-field>
+          </div>
+
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.favicon' | translate }}</p>
+            <mat-form-field appearance="outline" class="smh-editor__text-field">
+              <mat-label>{{ 'webAppConfig.faviconLabel' | translate }}</mat-label>
+              <input matInput formControlName="favicon" placeholder="/assets/favicon.ico" />
+            </mat-form-field>
+          </div>
+
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.language' | translate }}</p>
+            <div class="smh-editor__inline-row">
+              <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                <mat-label>{{ 'webAppConfig.defaultLang' | translate }}</mat-label>
+                <input matInput formControlName="defaultLanguage" placeholder="it" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab: Tema ── -->
+      <mat-tab [label]="'webAppConfig.tabTheme' | translate">
+        <div class="web-editor__tab-content">
+          <p class="smh-editor__desc">{{ 'webAppConfig.themeDesc' | translate }}</p>
+
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.colors' | translate }}</p>
+            <div class="smh-editor__section-body">
+              @for (col of colorFields; track col.key) {
+                <div class="web-editor__color-row">
+                  <input
+                    type="color"
+                    [value]="form.get(col.key)?.value"
+                    (change)="setColor(col.key, $event)"
+                    class="web-editor__color-swatch"
+                  />
+                  <span class="web-editor__color-label">{{ col.label }}</span>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput [formControlName]="col.key" placeholder="#000000" />
+                  </mat-form-field>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.typography' | translate }}</p>
+            <mat-form-field appearance="outline" class="smh-editor__text-field">
+              <mat-label>{{ 'webAppConfig.fontFamily' | translate }}</mat-label>
+              <input matInput formControlName="fontFamily" placeholder="Inter, sans-serif" />
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab: Header ── -->
+      <mat-tab [label]="'webAppConfig.tabHeader' | translate">
+        <div class="web-editor__tab-content">
+
+          <!-- Topbar -->
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.topbar' | translate }}</p>
+            <div class="smh-editor__section-body">
+              <div class="smh-editor__inline-row">
+                <div class="web-editor__color-row web-editor__color-row--named">
+                  <span class="web-editor__color-label">{{ 'webAppConfig.background' | translate }}</span>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="topbar_background" placeholder="primary" />
+                    <mat-hint>{{ 'webAppConfig.namedColorHint' | translate }}</mat-hint>
+                  </mat-form-field>
+                </div>
+                <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                  <mat-label>{{ 'webAppConfig.height' | translate }}</mat-label>
+                  <input matInput formControlName="topbar_height" placeholder="48px" />
+                </mat-form-field>
+              </div>
+
+              <div class="smh-editor__inline-row">
+                <mat-checkbox formControlName="showLangSelector">{{ 'webAppConfig.showLangSelector' | translate }}</mat-checkbox>
+                <mat-checkbox formControlName="showUserMenu">{{ 'webAppConfig.showUserMenu' | translate }}</mat-checkbox>
+              </div>
+
+              <p class="smh-editor__section-title" style="font-size: 0.7rem; margin-top: 4px">{{ 'webAppConfig.topbarLinks' | translate }}</p>
+              @for (ctrl of topbarLinksArray.controls; track $index) {
+                <div class="smh-editor__drag-item smh-editor__drag-item--item" [formGroup]="asFormGroup(ctrl)">
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <mat-label>{{ 'webAppConfig.linkText' | translate }}</mat-label>
+                    <input matInput formControlName="text_it" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <mat-label>URL</mat-label>
+                    <input matInput formControlName="url" />
+                  </mat-form-field>
+                  <button mat-icon-button type="button" class="smh-editor__remove-btn" (click)="removeTopbarLink($index)" [matTooltip]="'common.remove' | translate">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              }
+              <button mat-button type="button" class="smh-editor__add-item-btn" (click)="addTopbarLink()">
+                <mat-icon>add</mat-icon> {{ 'webAppConfig.addLink' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Main header -->
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.headerMain' | translate }}</p>
+            <div class="smh-editor__section-body">
+              <div class="smh-editor__inline-row">
+                <div class="web-editor__color-row web-editor__color-row--named">
+                  <span class="web-editor__color-label">{{ 'webAppConfig.background' | translate }}</span>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="main_background" placeholder="primary" />
+                    <mat-hint>{{ 'webAppConfig.namedColorHint' | translate }}</mat-hint>
+                  </mat-form-field>
+                </div>
+                <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                  <mat-label>{{ 'webAppConfig.height' | translate }}</mat-label>
+                  <input matInput formControlName="main_height" placeholder="88px" />
+                </mat-form-field>
+              </div>
+              <p class="smh-editor__section-title" style="font-size: 0.7rem; margin-top: 4px">{{ 'webAppConfig.logo' | translate }}</p>
+              <app-svg-upload-field formControlName="logo_svg" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field">
+                <mat-label>{{ 'webAppConfig.logoActionUrl' | translate }}</mat-label>
+                <input matInput formControlName="logo_url" placeholder="https://..." />
+              </mat-form-field>
+              <p class="smh-editor__section-title" style="font-size: 0.7rem; margin-top: 4px">{{ 'webAppConfig.socials' | translate }}</p>
+              @for (ctrl of headerSocialsArray.controls; track $index) {
+                <div class="smh-editor__drag-item smh-editor__drag-item--item" [formGroup]="asFormGroup(ctrl)">
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                    <mat-label>ID</mat-label>
+                    <input matInput formControlName="id" placeholder="facebook" />
+                    <mat-hint>fb, instagram, linkedin…</mat-hint>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <mat-label>URL</mat-label>
+                    <input matInput formControlName="url" placeholder="https://facebook.com/..." />
+                  </mat-form-field>
+                  <button mat-icon-button type="button" class="smh-editor__remove-btn" (click)="removeHeaderSocial($index)" [matTooltip]="'common.remove' | translate">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              }
+              <button mat-button type="button" class="smh-editor__add-item-btn" (click)="addHeaderSocial()">
+                <mat-icon>add</mat-icon> {{ 'webAppConfig.addSocial' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottombar -->
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.headerBottombar' | translate }}</p>
+            <div class="smh-editor__section-body">
+              <div class="smh-editor__inline-row">
+                <div class="web-editor__color-row web-editor__color-row--named">
+                  <span class="web-editor__color-label">{{ 'webAppConfig.background' | translate }}</span>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="bottombar_background" placeholder="light" />
+                    <mat-hint>{{ 'webAppConfig.namedColorHint' | translate }}</mat-hint>
+                  </mat-form-field>
+                </div>
+                <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                  <mat-label>{{ 'webAppConfig.height' | translate }}</mat-label>
+                  <input matInput formControlName="bottombar_height" placeholder="48px" />
+                </mat-form-field>
+              </div>
+              @for (ctrl of bottombarLinksArray.controls; track $index) {
+                <div class="smh-editor__drag-item smh-editor__drag-item--item" [formGroup]="asFormGroup(ctrl)">
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <mat-label>{{ 'webAppConfig.linkText' | translate }}</mat-label>
+                    <input matInput formControlName="text_it" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <mat-label>URL</mat-label>
+                    <input matInput formControlName="url" />
+                  </mat-form-field>
+                  <button mat-icon-button type="button" class="smh-editor__remove-btn" (click)="removeBottombarLink($index)" [matTooltip]="'common.remove' | translate">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              }
+              <button mat-button type="button" class="smh-editor__add-item-btn" (click)="addBottombarLink()">
+                <mat-icon>add</mat-icon> {{ 'webAppConfig.addLink' | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab: Footer ── -->
+      <mat-tab [label]="'webAppConfig.tabFooter' | translate">
+        <div class="web-editor__tab-content">
+
+          <!-- Footer main -->
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.footerMain' | translate }}</p>
+            <div class="smh-editor__section-body">
+              <div class="smh-editor__inline-row">
+                <div class="web-editor__color-row web-editor__color-row--named">
+                  <span class="web-editor__color-label">{{ 'webAppConfig.background' | translate }}</span>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="footer_main_background" placeholder="primary" />
+                    <mat-hint>{{ 'webAppConfig.namedColorHint' | translate }}</mat-hint>
+                  </mat-form-field>
+                </div>
+                <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                  <mat-label>{{ 'webAppConfig.height' | translate }}</mat-label>
+                  <input matInput formControlName="footer_main_height" placeholder="150px" />
+                </mat-form-field>
+              </div>
+              <mat-form-field appearance="outline" class="smh-editor__text-field">
+                <mat-label>{{ 'webAppConfig.footerDescription' | translate }}</mat-label>
+                <textarea matInput formControlName="footer_description" rows="2"></textarea>
+              </mat-form-field>
+              <p class="smh-editor__section-title" style="font-size: 0.7rem">{{ 'webAppConfig.logo' | translate }}</p>
+              <app-svg-upload-field formControlName="footer_logo_svg" />
+              <p class="smh-editor__section-title" style="font-size: 0.7rem; margin-top: 4px">{{ 'webAppConfig.socials' | translate }}</p>
+              @for (ctrl of footerSocialsArray.controls; track $index) {
+                <div class="smh-editor__drag-item smh-editor__drag-item--item" [formGroup]="asFormGroup(ctrl)">
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                    <mat-label>ID</mat-label>
+                    <input matInput formControlName="id" placeholder="facebook" />
+                    <mat-hint>fb, instagram, linkedin…</mat-hint>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <mat-label>URL</mat-label>
+                    <input matInput formControlName="url" />
+                  </mat-form-field>
+                  <button mat-icon-button type="button" class="smh-editor__remove-btn" (click)="removeFooterSocial($index)" [matTooltip]="'common.remove' | translate">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              }
+              <button mat-button type="button" class="smh-editor__add-item-btn" (click)="addFooterSocial()">
+                <mat-icon>add</mat-icon> {{ 'webAppConfig.addSocial' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Footer bottombar -->
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.footerBottombar' | translate }}</p>
+            <div class="smh-editor__section-body">
+              <div class="smh-editor__inline-row">
+                <div class="web-editor__color-row web-editor__color-row--named">
+                  <span class="web-editor__color-label">{{ 'webAppConfig.background' | translate }}</span>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="footer_bottom_background" placeholder="info" />
+                    <mat-hint>{{ 'webAppConfig.namedColorHint' | translate }}</mat-hint>
+                  </mat-form-field>
+                </div>
+                <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                  <mat-label>{{ 'webAppConfig.height' | translate }}</mat-label>
+                  <input matInput formControlName="footer_bottom_height" placeholder="48px" />
+                </mat-form-field>
+              </div>
+              @for (ctrl of footerBottomLinksArray.controls; track $index) {
+                <div class="smh-editor__drag-item smh-editor__drag-item--item" [formGroup]="asFormGroup(ctrl)">
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <mat-label>{{ 'webAppConfig.linkText' | translate }}</mat-label>
+                    <input matInput formControlName="text_it" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <mat-label>URL</mat-label>
+                    <input matInput formControlName="url" />
+                  </mat-form-field>
+                  <button mat-icon-button type="button" class="smh-editor__remove-btn" (click)="removeFooterBottomLink($index)" [matTooltip]="'common.remove' | translate">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              }
+              <button mat-button type="button" class="smh-editor__add-item-btn" (click)="addFooterBottomLink()">
+                <mat-icon>add</mat-icon> {{ 'webAppConfig.addLink' | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab: Pagine ── -->
+      <mat-tab [label]="'webAppConfig.tabPages' | translate">
+        <div class="web-editor__tab-content">
+
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.loginPage' | translate }}</p>
+            <div class="smh-editor__section-body">
+              <mat-form-field appearance="outline" class="smh-editor__text-field">
+                <mat-label>{{ 'webAppConfig.pageTitle' | translate }}</mat-label>
+                <input matInput formControlName="login_title" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="smh-editor__text-field">
+                <mat-label>{{ 'webAppConfig.pageSubtitle' | translate }}</mat-label>
+                <textarea matInput formControlName="login_subtitle" rows="2"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="smh-editor__text-field">
+                <mat-label>{{ 'webAppConfig.pageBackground' | translate }}</mat-label>
+                <input matInput formControlName="login_background" placeholder="/assets/images/bg.svg" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="smh-editor__section">
+            <p class="smh-editor__section-title">{{ 'webAppConfig.homePage' | translate }}</p>
+            <div class="smh-editor__section-body">
+              <mat-form-field appearance="outline" class="smh-editor__text-field">
+                <mat-label>{{ 'webAppConfig.pageTitle' | translate }}</mat-label>
+                <input matInput formControlName="home_title" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="smh-editor__text-field">
+                <mat-label>{{ 'webAppConfig.pageSubtitle' | translate }}</mat-label>
+                <textarea matInput formControlName="home_subtitle" rows="2"></textarea>
+              </mat-form-field>
+              <div class="web-editor__color-row">
+                <input
+                  type="color"
+                  [value]="form.get('home_background')?.value || '#ffffff'"
+                  (change)="setColor('home_background', $event)"
+                  class="web-editor__color-swatch"
+                />
+                <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                  <mat-label>{{ 'webAppConfig.pageBackgroundColor' | translate }}</mat-label>
+                  <input matInput formControlName="home_background" placeholder="#c1e7e7" />
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+
+    <div class="web-editor__actions">
+      <button mat-button type="button" (click)="dialogRef.close()">{{ 'common.cancel' | translate }}</button>
+      <button mat-flat-button color="primary" type="button" (click)="confirm()">
+        <mat-icon>check</mat-icon>
+        {{ 'webAppConfig.apply' | translate }}
+      </button>
+    </div>
+  </div><!-- /left -->
+
+  <!-- RIGHT PANE: PREVIEW -->
+  <div class="web-editor__right">
+    <div class="web-editor__preview-label">
+      <mat-icon>monitor</mat-icon>
+      <span>{{ 'webAppConfig.previewLabel' | translate }}</span>
+    </div>
+    <app-web-page-preview [config]="form.value" />
+  </div>
+
+</form>

@@ -1,0 +1,259 @@
+:host {
+  display: block;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.webprev {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--mat-sys-outline-variant);
+  font-size: 10px;
+
+  &__chrome {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    background: #e8e8e8;
+    border-bottom: 1px solid #ccc;
+    flex-shrink: 0;
+  }
+
+  &__chrome-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: block;
+
+    &--red    { background: #ff5f57; }
+    &--yellow { background: #ffbd2e; }
+    &--green  { background: #28c940; }
+  }
+
+  &__chrome-bar {
+    flex: 1;
+    background: #fff;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 9px;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__chrome-url {
+    color: #555;
+  }
+
+  &__page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  &__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    height: 22px;
+    flex-shrink: 0;
+    background: #001F5E;
+    min-height: 14px;
+  }
+
+  &__topbar-start,
+  &__topbar-end {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__topbar-link {
+    font-size: 7px;
+    color: rgba(255,255,255,0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60px;
+  }
+
+  &__topbar-ctrl {
+    font-size: 7px;
+    color: rgba(255,255,255,0.9);
+
+    &--user {
+      font-size: 9px;
+    }
+  }
+
+  &__main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    height: 36px;
+    flex-shrink: 0;
+    background: #003087;
+  }
+
+  &__main-header-start,
+  &__main-header-end {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__logo {
+    height: 22px;
+    max-width: 80px;
+    object-fit: contain;
+  }
+
+  &__logo-text {
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__social-dot {
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.3);
+  }
+
+  &__bottombar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    height: 22px;
+    flex-shrink: 0;
+    background: #fff;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+
+  &__nav-link {
+    font-size: 7.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50px;
+  }
+
+  &__content {
+    flex: 1;
+    padding: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__page-title {
+    font-size: 10px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__page-sub {
+    font-size: 8px;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__cards {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  &__card {
+    height: 24px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+
+  &__footer-main {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    min-height: 36px;
+  }
+
+  &__footer-logo {
+    height: 16px;
+    max-width: 50px;
+    object-fit: contain;
+    opacity: 0.9;
+  }
+
+  &__footer-desc {
+    font-size: 7px;
+    color: rgba(255,255,255,0.8);
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__footer-social {
+    font-size: 6px;
+    color: rgba(255,255,255,0.75);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 2px;
+    padding: 1px 3px;
+  }
+
+  &__footer-bottom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    height: 18px;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  &__footer-link {
+    font-size: 7px;
+    color: rgba(255,255,255,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
