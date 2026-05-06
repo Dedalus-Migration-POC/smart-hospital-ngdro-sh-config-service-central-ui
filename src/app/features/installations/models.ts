@@ -52,5 +52,16 @@ export interface InstallationHealth {
   reachable: boolean;
 }
 
+export interface InstallationStats {
+  generatedAt: string;
+  retentionDays: number;
+  totalRequests: number;
+  byEventType: Record<string, number>;
+  byChannel: Record<string, number>;
+  byDate: { date: string; count: number }[];
+  byUserAgentClass: Record<string, number>;
+  uniqueIpCount: number;
+}
+
 /** Regex baseUrl come Pattern lato backend. */
 export const INSTALLATION_BASE_URL_PATTERN = /^https?:\/\/.+/;

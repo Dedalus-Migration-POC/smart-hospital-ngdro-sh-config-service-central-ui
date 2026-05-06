@@ -10,6 +10,7 @@ import {
   InstallationHealth,
   InstallationPayloadMasterKeyResponse,
   InstallationPayloadMasterKeyUpdateRequest,
+  InstallationStats,
   InstallationUpdateRequest,
 } from '../models';
 
@@ -74,6 +75,11 @@ export class InstallationService {
   /** GET /installations/{id}/health — ADMIN only. */
   checkHealth(id: string): Observable<InstallationHealth> {
     return this.http.get<InstallationHealth>(`${this.baseUrl}/installations/${id}/health`);
+  }
+
+  /** GET /installations/{id}/stats — ADMIN only, pull on-demand dall'on-prem. */
+  getStats(id: string): Observable<InstallationStats> {
+    return this.http.get<InstallationStats>(`${this.baseUrl}/installations/${id}/stats`);
   }
 
   /** DELETE /installations/{id} — soft-delete (active=false). */

@@ -217,6 +217,83 @@
       </mat-card-content>
     </mat-card>
 
+    @if (isAdmin()) {
+      <mat-card appearance="outlined" class="detail__card">
+        <mat-card-header>
+          <mat-card-title>{{ 'installation.statsTitle' | translate }}</mat-card-title>
+          <mat-card-subtitle>
+            {{ 'installation.statsSubtitle' | translate : { days: stats()?.retentionDays ?? 45 } }}
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (statsLoading()) {
+            <mat-progress-bar mode="indeterminate" />
+          } @else if (statsError(); as err) {
+            <p class="detail__meta" role="alert">{{ err }}</p>
+          } @else if (stats(); as s) {
+            <div class="stats">
+              <div class="stats__kpis">
+                <div class="stats__kpi">
+                  <span class="stats__kpi-value">{{ s.totalRequests }}</span>
+                  <span class="stats__kpi-label">{{ 'installation.statsTotal' | translate }}</span>
+                </div>
+                <div class="stats__kpi">
+                  <span class="stats__kpi-value">{{ s.uniqueIpCount }}</span>
+                  <span class="stats__kpi-label">{{ 'installation.statsUniqueIps' | translate }}</span>
+                </div>
+              </div>
+
+              @if (s.byEventType | keyvalue; as entries) {
+                @if (entries.length) {
+                  <div class="stats__group">
+                    <div class="stats__group-title">{{ 'installation.statsByEvent' | translate }}</div>
+                    @for (entry of entries; track entry.key) {
+                      <div class="stats__row">
+                        <span class="stats__key">{{ entry.key }}</span>
+                        <span class="stats__val">{{ entry.value }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              }
+
+              @if (s.byChannel | keyvalue; as entries) {
+                @if (entries.length) {
+                  <div class="stats__group">
+                    <div class="stats__group-title">{{ 'installation.statsByChannel' | translate }}</div>
+                    @for (entry of entries; track entry.key) {
+                      <div class="stats__row">
+                        <span class="stats__key">{{ entry.key }}</span>
+                        <span class="stats__val">{{ entry.value }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              }
+
+              <div class="stats__generated">
+                {{ 'installation.statsGeneratedAt' | translate }}
+                {{ s.generatedAt | date:'dd/MM/yyyy HH:mm' }}
+              </div>
+            </div>
+          } @else {
+            <button mat-stroked-button type="button" (click)="loadStats()">
+              <mat-icon>bar_chart</mat-icon>
+              {{ 'installation.statsLoad' | translate }}
+            </button>
+          }
+        </mat-card-content>
+        @if (stats()) {
+          <mat-card-actions align="end">
+            <button mat-button type="button" (click)="loadStats()" [disabled]="statsLoading()">
+              <mat-icon>refresh</mat-icon>
+              {{ 'installation.statsRefresh' | translate }}
+            </button>
+          </mat-card-actions>
+        }
+      </mat-card>
+    }
+
     <app-installation-tenants-section [installationId]="i.id" [installationName]="i.name" />
   }
 </section>

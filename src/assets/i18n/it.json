@@ -5,7 +5,9 @@
     "openCloseMenu": "Apri o chiudi il menu di navigazione",
     "role": "ruolo",
     "logout": "Logout",
-    "comingSoon": "prossimamente"
+    "comingSoon": "prossimamente",
+    "footerCompany": "Dedalus Italia S.p.A · Via di Collodi, 6/C · 50141 Firenze · P.IVA 05994810488",
+    "footerCookies": "Questo sito utilizza esclusivamente cookie tecnici necessari al funzionamento del servizio."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -237,7 +239,17 @@
     "showMasterKeyIntroPre": "Chiave AES-256 attualmente configurata per",
     "showMasterKeyIntroHint": "Serve all'on-prem per decifrare i payload di config pushati dal central.",
     "showMasterKeyLoading": "Recupero in corso…",
-    "showMasterKeyError": "Impossibile recuperare la chiave."
+    "showMasterKeyError": "Impossibile recuperare la chiave.",
+    "statsTitle": "Statistiche accessi",
+    "statsSubtitle": "Richieste ricevute dall'on-prem negli ultimi {{days}} giorni. IP anonimizzati (GDPR).",
+    "statsLoad": "Carica statistiche",
+    "statsRefresh": "Aggiorna",
+    "statsTotal": "Richieste totali",
+    "statsUniqueIps": "IP univoci (anonimi)",
+    "statsByEvent": "Per tipo evento",
+    "statsByChannel": "Per canale",
+    "statsGeneratedAt": "Aggiornato al",
+    "statsError": "Impossibile recuperare le statistiche dall'on-prem."
   },
   "product": {
     "title": "Prodotti",

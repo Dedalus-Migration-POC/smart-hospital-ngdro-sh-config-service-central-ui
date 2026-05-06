@@ -5,7 +5,9 @@
     "openCloseMenu": "Open or close the navigation menu",
     "role": "role",
     "logout": "Logout",
-    "comingSoon": "coming soon"
+    "comingSoon": "coming soon",
+    "footerCompany": "Dedalus Italia S.p.A · Via di Collodi, 6/C · 50141 Florence · VAT 05994810488",
+    "footerCookies": "This site uses only technical cookies strictly necessary for the service to function."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -237,7 +239,17 @@
     "showMasterKeyIntroPre": "AES-256 key currently configured for",
     "showMasterKeyIntroHint": "Used by the on-premise server to decrypt config payloads pushed by the central.",
     "showMasterKeyLoading": "Retrieving…",
-    "showMasterKeyError": "Unable to retrieve the key."
+    "showMasterKeyError": "Unable to retrieve the key.",
+    "statsTitle": "Access statistics",
+    "statsSubtitle": "Requests received by the on-prem in the last {{days}} days. IPs anonymised (GDPR).",
+    "statsLoad": "Load statistics",
+    "statsRefresh": "Refresh",
+    "statsTotal": "Total requests",
+    "statsUniqueIps": "Unique IPs (anonymous)",
+    "statsByEvent": "By event type",
+    "statsByChannel": "By channel",
+    "statsGeneratedAt": "Generated at",
+    "statsError": "Unable to retrieve statistics from the on-prem."
   },
   "product": {
     "title": "Products",

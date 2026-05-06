@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, KeyValuePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -44,7 +44,7 @@ import {
   ShowPayloadMasterKeyDialogData,
 } from '../../dialogs/show-payload-master-key-dialog/show-payload-master-key-dialog';
 import { InstallationTenantsSection } from '../../../tenants/components/installation-tenants-section/installation-tenants-section';
-import { Installation, INSTALLATION_BASE_URL_PATTERN } from '../../models';
+import { Installation, InstallationStats, INSTALLATION_BASE_URL_PATTERN } from '../../models';
 import { InstallationService } from '../../services/installations';
 
 @Component({
@@ -53,6 +53,7 @@ import { InstallationService } from '../../services/installations';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
+    KeyValuePipe,
     ReactiveFormsModule,
     MatCardModule,
     MatFormFieldModule,
@@ -88,6 +89,10 @@ export class InstallationDetailPage {
   readonly deleting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly installation = signal<Installation | null>(null);
+
+  readonly statsLoading = signal(false);
+  readonly statsError = signal<string | null>(null);
+  readonly stats = signal<InstallationStats | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(255)]],
@@ -228,6 +233,23 @@ export class InstallationDetailPage {
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) this.delete(inst);
+    });
+  }
+
+  loadStats(): void {
+    const inst = this.installation();
+    if (!inst || this.statsLoading()) return;
+    this.statsLoading.set(true);
+    this.statsError.set(null);
+    this.installations.getStats(inst.id).subscribe({
+      next: (s) => {
+        this.stats.set(s);
+        this.statsLoading.set(false);
+      },
+      error: (err: unknown) => {
+        this.statsLoading.set(false);
+        this.statsError.set(toUserMessage(err, this.translate.instant('installation.statsError')));
+      },
     });
   }
 
