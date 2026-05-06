@@ -64,7 +64,8 @@ export class ConfigEndpointsDialog {
       next: ({ installation, entities }) => {
         const base = installation.baseUrl.replace(/\/$/, '');
         this.baseUrl.set(base);
-        const rows = (entities.length ? entities : ['base']).map((e) => ({
+        const entityNames = entities.length ? entities.map((e) => e.entity) : ['base'];
+        const rows = entityNames.map((e) => ({
           entity: e,
           url: `${base}/v1/${this.data.tenantSlug}/${this.data.channelId}?entity=${e}`,
         }));
