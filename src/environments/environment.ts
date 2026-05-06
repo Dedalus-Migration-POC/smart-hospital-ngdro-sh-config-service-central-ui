@@ -10,4 +10,6 @@
 export const environment = {
   production: true,
   apiBaseUrl: '/api',
+  // Chiave pubblica hCaptcha — sostituire con la chiave del sito registrato su hcaptcha.com
+  hcaptchaSiteKey: '10000000-ffff-ffff-ffff-000000000001',
 } as const;

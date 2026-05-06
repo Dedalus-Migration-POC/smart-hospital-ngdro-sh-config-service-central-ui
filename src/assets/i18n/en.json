@@ -55,7 +55,9 @@
     "login": "Sign in",
     "usernameRequired": "Username is required.",
     "passwordRequired": "Password is required.",
-    "loginError": "Invalid credentials or access error."
+    "loginError": "Invalid credentials or access error.",
+    "captchaRequired": "Please complete the captcha verification before signing in.",
+    "tooManyRequests": "Too many login attempts. Please try again in a few minutes."
   },
   "home": {
     "welcome": "Hello",

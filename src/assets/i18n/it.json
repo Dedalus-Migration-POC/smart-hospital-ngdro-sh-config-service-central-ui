@@ -55,7 +55,9 @@
     "login": "Entra",
     "usernameRequired": "Lo username è obbligatorio.",
     "passwordRequired": "La password è obbligatoria.",
-    "loginError": "Credenziali non valide o errore di accesso."
+    "loginError": "Credenziali non valide o errore di accesso.",
+    "captchaRequired": "Completa la verifica captcha prima di accedere.",
+    "tooManyRequests": "Troppi tentativi di accesso. Riprova tra qualche minuto."
   },
   "home": {
     "welcome": "Ciao",

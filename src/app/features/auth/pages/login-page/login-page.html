@@ -36,6 +36,13 @@
           }
         </mat-form-field>
 
+        <app-hcaptcha
+          [sitekey]="hcaptchaSiteKey"
+          (verified)="onCaptchaVerified($event)"
+          (expired)="onCaptchaExpired()"
+          class="login-captcha"
+        />
+
         @if (errorMessage()) {
           <p class="login-error" role="alert">{{ errorMessage() }}</p>
         }
@@ -44,7 +51,7 @@
           mat-flat-button
           color="primary"
           type="submit"
-          [disabled]="loading() || form.invalid"
+          [disabled]="loading() || form.invalid || !captchaToken()"
           class="login-submit"
         >
           @if (loading()) {
