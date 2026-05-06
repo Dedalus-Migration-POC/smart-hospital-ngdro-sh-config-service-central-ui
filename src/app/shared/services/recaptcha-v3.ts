@@ -4,8 +4,10 @@ import { environment } from '../../../environments/environment';
 declare global {
   interface Window {
     grecaptcha: {
-      ready(cb: () => void): void;
-      execute(siteKey: string, options: { action: string }): Promise<string>;
+      enterprise: {
+        ready(cb: () => void): void;
+        execute(siteKey: string, options: { action: string }): Promise<string>;
+      };
     };
   }
 }
@@ -19,25 +21,26 @@ export class RecaptchaV3Service {
     return this.ensureLoaded().then(
       () =>
         new Promise((resolve, reject) => {
-          window.grecaptcha.ready(() => {
-            window.grecaptcha.execute(this.siteKey, { action }).then(resolve).catch(reject);
+          window.grecaptcha.enterprise.ready(() => {
+            window.grecaptcha.enterprise.execute(this.siteKey, { action }).then(resolve).catch(reject);
           });
         }),
     );
   }
 
   private ensureLoaded(): Promise<void> {
-    if (this.scriptLoaded || typeof window.grecaptcha !== 'undefined') {
+    if (this.scriptLoaded || typeof window.grecaptcha?.enterprise !== 'undefined') {
       this.scriptLoaded = true;
       return Promise.resolve();
     }
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = `https://www.google.com/recaptcha/api.js?render=${this.siteKey}`;
+      script.src = `https://www.google.com/recaptcha/enterprise.js?render=${this.siteKey}`;
       script.onload = () => {
         this.scriptLoaded = true;
         resolve();
       };
+      script.onerror = () => reject(new Error('Impossibile caricare reCAPTCHA Enterprise'));
       document.head.appendChild(script);
     });
   }
