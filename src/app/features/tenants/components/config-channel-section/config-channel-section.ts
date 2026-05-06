@@ -183,6 +183,7 @@ export class ConfigChannelSection {
     Validators.pattern(ENTITY_PATTERN),
   ]);
 
+  readonly initialized = signal(false);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly resyncing = signal(false);
@@ -209,6 +210,7 @@ export class ConfigChannelSection {
       const tenantId = this.tenantId();
       const channelId = this.channelId();
       this.entities.set(['base']);
+      this.initialized.set(false);
       this.loadEntities(tenantId, channelId);
     });
 
@@ -309,6 +311,7 @@ export class ConfigChannelSection {
           : '';
         this.configControl.reset(pretty);
         this.loading.set(false);
+        this.initialized.set(true);
         this.loadHistory(tenantId, channelId, entity);
       },
       error: (err: unknown) => {
@@ -317,9 +320,11 @@ export class ConfigChannelSection {
           const def = ConfigChannelSection.ENTITY_DEFAULTS[entity];
           this.configControl.reset(def !== undefined ? JSON.stringify(def, null, 2) : '{}');
           this.activeVersion.set(null);
+          this.initialized.set(true);
           this.loadHistory(tenantId, channelId, entity);
         } else {
           this.errorMessage.set(toUserMessage(err, this.translate.instant('config.loadError')));
+          this.initialized.set(true);
         }
       },
     });

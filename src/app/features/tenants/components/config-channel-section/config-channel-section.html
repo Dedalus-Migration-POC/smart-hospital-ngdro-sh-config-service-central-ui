@@ -82,7 +82,7 @@
     </div>
   }
 
-  @if (!loading() && !errorMessage()) {
+  @if (initialized()) {
     <div class="channel__status-bar">
       @if (activeVersion(); as v) {
         <div class="channel__status">
