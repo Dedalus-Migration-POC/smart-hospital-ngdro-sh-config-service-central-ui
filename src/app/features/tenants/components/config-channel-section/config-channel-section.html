@@ -188,6 +188,39 @@
       </div>
     }
 
+    @if (isSmhMinAppVersion()) {
+      <div class="channel__graphic-editor-bar">
+        <mat-icon class="channel__graphic-editor-icon">system_update</mat-icon>
+        <span class="channel__graphic-editor-hint">{{ 'smhMinAppVersion.editorHint' | translate }}</span>
+        <button mat-stroked-button type="button" (click)="openMinAppVersionEditor()">
+          <mat-icon>edit</mat-icon>
+          {{ 'smhMinAppVersion.openEditor' | translate }}
+        </button>
+      </div>
+    }
+
+    @if (isSmhNews()) {
+      <div class="channel__graphic-editor-bar">
+        <mat-icon class="channel__graphic-editor-icon">rss_feed</mat-icon>
+        <span class="channel__graphic-editor-hint">{{ 'smhNews.editorHint' | translate }}</span>
+        <button mat-stroked-button type="button" (click)="openNewsEditor()">
+          <mat-icon>edit</mat-icon>
+          {{ 'smhNews.openEditor' | translate }}
+        </button>
+      </div>
+    }
+
+    @if (isSmhTutorial()) {
+      <div class="channel__graphic-editor-bar">
+        <mat-icon class="channel__graphic-editor-icon">video_library</mat-icon>
+        <span class="channel__graphic-editor-hint">{{ 'smhTutorial.editorHint' | translate }}</span>
+        <button mat-stroked-button type="button" (click)="openTutorialEditor()">
+          <mat-icon>edit</mat-icon>
+          {{ 'smhTutorial.openEditor' | translate }}
+        </button>
+      </div>
+    }
+
     <mat-expansion-panel class="channel__json-panel" [expanded]="!hasGraphicEditor(entity())">
       <mat-expansion-panel-header>
         <mat-panel-title>

@@ -56,6 +56,16 @@ import {
   SmhLinkServiceConfigJson,
 } from '../../dialogs/smh-link-service-config-editor-dialog/smh-link-service-config-editor-dialog';
 import {
+  SmhMinAppVersionEditorDialog,
+  SmhMinAppVersionEditorDialogData,
+  SmhMinAppVersionJson,
+} from '../../dialogs/smh-min-app-version-editor-dialog/smh-min-app-version-editor-dialog';
+import {
+  SmhNewsEditorDialog,
+  SmhNewsEditorDialogData,
+  SmhNewsJson,
+} from '../../dialogs/smh-news-editor-dialog/smh-news-editor-dialog';
+import {
   SmhServiceConfigEditorDialog,
   SmhServiceConfigEditorDialogData,
   SmhServiceConfigJson,
@@ -65,6 +75,11 @@ import {
   SmhSpidProviderEditorDialogData,
   SmhSpidProviderJson,
 } from '../../dialogs/smh-spid-provider-editor-dialog/smh-spid-provider-editor-dialog';
+import {
+  SmhTutorialEditorDialog,
+  SmhTutorialEditorDialogData,
+  SmhTutorialJson,
+} from '../../dialogs/smh-tutorial-editor-dialog/smh-tutorial-editor-dialog';
 import {
   SmhUiRenderEditorDialog,
   SmhUiRenderEditorDialogData,
@@ -501,10 +516,14 @@ export class ConfigChannelSection {
   readonly isSmhFaq = computed(() => this.entity() === 'smh_faq');
   readonly isSmhServiceConfig = computed(() => this.entity() === 'smh_service_config');
   readonly isSmhLinkServiceConfig = computed(() => this.entity() === 'smh_link_service_config');
+  readonly isSmhMinAppVersion = computed(() => this.entity() === 'smh_min_app_version');
+  readonly isSmhNews = computed(() => this.entity() === 'smh_news');
+  readonly isSmhTutorial = computed(() => this.entity() === 'smh_tutorial');
 
   private static readonly GRAPHIC_EDITOR_ENTITIES = new Set([
     'smh_ui_render', 'smh_spid_provider', 'smh_faq',
     'smh_service_config', 'smh_link_service_config',
+    'smh_min_app_version', 'smh_news', 'smh_tutorial',
   ]);
 
   private static readonly MOBILE_MANDATORY_ENTITIES = [
@@ -513,6 +532,10 @@ export class ConfigChannelSection {
     'smh_faq',
     'smh_link_service_config',
     'smh_service_config',
+    'smh_it',
+    'smh_min_app_version',
+    'smh_news',
+    'smh_tutorial',
   ];
 
   private static readonly ENTITY_DEFAULTS: Record<string, unknown> = {
@@ -529,6 +552,10 @@ export class ConfigChannelSection {
     smh_faq: [],
     smh_link_service_config: [],
     smh_service_config: [],
+    smh_it: {},
+    smh_min_app_version: { ios: '1.0', android: '1.0' },
+    smh_news: [],
+    smh_tutorial: { cdnBaseUrl: '', youtubePlaylistUrl: '' },
   };
 
   hasGraphicEditor(entity: string): boolean {
@@ -646,6 +673,60 @@ export class ConfigChannelSection {
     const ref = this.dialog.open<SmhLinkServiceConfigEditorDialog, SmhLinkServiceConfigEditorDialogData, SmhLinkServiceConfigJson>(
       SmhLinkServiceConfigEditorDialog,
       { data, autoFocus: 'first-tabbable', maxWidth: '800px', width: '800px' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === undefined) return;
+      this.configControl.setValue(JSON.stringify(result, null, 2));
+      this.configControl.markAsDirty();
+    });
+  }
+
+  openMinAppVersionEditor(): void {
+    const raw = this.configControl.value ?? '';
+    let parsed: SmhMinAppVersionJson = { ios: '1.0', android: '1.0' };
+    if (raw.trim()) {
+      try { parsed = JSON.parse(raw) as SmhMinAppVersionJson; } catch { /* usa default */ }
+    }
+    const data: SmhMinAppVersionEditorDialogData = { value: parsed };
+    const ref = this.dialog.open<SmhMinAppVersionEditorDialog, SmhMinAppVersionEditorDialogData, SmhMinAppVersionJson>(
+      SmhMinAppVersionEditorDialog,
+      { data, autoFocus: 'first-tabbable', maxWidth: '480px', width: '480px' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === undefined) return;
+      this.configControl.setValue(JSON.stringify(result, null, 2));
+      this.configControl.markAsDirty();
+    });
+  }
+
+  openNewsEditor(): void {
+    const raw = this.configControl.value ?? '';
+    let parsed: SmhNewsJson = [];
+    if (raw.trim()) {
+      try { parsed = JSON.parse(raw) as SmhNewsJson; } catch { /* usa default */ }
+    }
+    const data: SmhNewsEditorDialogData = { value: parsed };
+    const ref = this.dialog.open<SmhNewsEditorDialog, SmhNewsEditorDialogData, SmhNewsJson>(
+      SmhNewsEditorDialog,
+      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === undefined) return;
+      this.configControl.setValue(JSON.stringify(result, null, 2));
+      this.configControl.markAsDirty();
+    });
+  }
+
+  openTutorialEditor(): void {
+    const raw = this.configControl.value ?? '';
+    let parsed: SmhTutorialJson = { cdnBaseUrl: '', youtubePlaylistUrl: '' };
+    if (raw.trim()) {
+      try { parsed = JSON.parse(raw) as SmhTutorialJson; } catch { /* usa default */ }
+    }
+    const data: SmhTutorialEditorDialogData = { value: parsed };
+    const ref = this.dialog.open<SmhTutorialEditorDialog, SmhTutorialEditorDialogData, SmhTutorialJson>(
+      SmhTutorialEditorDialog,
+      { data, autoFocus: 'first-tabbable', maxWidth: '560px', width: '560px' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;

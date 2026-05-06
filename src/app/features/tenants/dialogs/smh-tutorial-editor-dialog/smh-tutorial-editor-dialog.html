@@ -1,0 +1,29 @@
+<h2 mat-dialog-title>{{ 'smhTutorial.dialogTitle' | translate }}</h2>
+
+<mat-dialog-content class="smh-editor">
+  <div class="smh-editor__content" [formGroup]="form">
+    <p class="smh-editor__desc">{{ 'smhTutorial.desc' | translate }}</p>
+
+    <mat-form-field appearance="outline" class="smh-editor__text-field">
+      <mat-label>{{ 'smhTutorial.cdnBaseUrl' | translate }}</mat-label>
+      <mat-icon matPrefix>cloud</mat-icon>
+      <input matInput formControlName="cdnBaseUrl" required />
+      @if (form.controls['cdnBaseUrl'].touched && form.controls['cdnBaseUrl'].hasError('required')) {
+        <mat-error>{{ 'smhTutorial.fieldRequired' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="smh-editor__text-field">
+      <mat-label>{{ 'smhTutorial.youtubePlaylistUrl' | translate }}</mat-label>
+      <mat-icon matPrefix>video_library</mat-icon>
+      <input matInput formControlName="youtubePlaylistUrl" />
+    </mat-form-field>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close()">{{ 'common.cancel' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="confirm()">
+    {{ 'smhTutorial.apply' | translate }}
+  </button>
+</mat-dialog-actions>

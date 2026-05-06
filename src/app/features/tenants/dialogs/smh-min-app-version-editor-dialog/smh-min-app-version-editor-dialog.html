@@ -1,0 +1,34 @@
+<h2 mat-dialog-title>{{ 'smhMinAppVersion.dialogTitle' | translate }}</h2>
+
+<mat-dialog-content class="smh-editor">
+  <div class="smh-editor__content" [formGroup]="form">
+    <p class="smh-editor__desc">{{ 'smhMinAppVersion.desc' | translate }}</p>
+
+    <div class="smh-editor__inline-row">
+      <mat-form-field appearance="outline" class="smh-editor__text-field">
+        <mat-label>{{ 'smhMinAppVersion.ios' | translate }}</mat-label>
+        <mat-icon matPrefix>phone_iphone</mat-icon>
+        <input matInput formControlName="ios" required />
+        @if (form.controls['ios'].touched && form.controls['ios'].hasError('required')) {
+          <mat-error>{{ 'smhMinAppVersion.fieldRequired' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="smh-editor__text-field">
+        <mat-label>{{ 'smhMinAppVersion.android' | translate }}</mat-label>
+        <mat-icon matPrefix>android</mat-icon>
+        <input matInput formControlName="android" required />
+        @if (form.controls['android'].touched && form.controls['android'].hasError('required')) {
+          <mat-error>{{ 'smhMinAppVersion.fieldRequired' | translate }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close()">{{ 'common.cancel' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="confirm()">
+    {{ 'smhMinAppVersion.apply' | translate }}
+  </button>
+</mat-dialog-actions>

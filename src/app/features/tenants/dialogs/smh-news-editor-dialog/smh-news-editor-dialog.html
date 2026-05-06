@@ -1,0 +1,71 @@
+<h2 mat-dialog-title>{{ 'smhNews.dialogTitle' | translate }}</h2>
+
+<mat-dialog-content class="smh-editor">
+  <div class="smh-editor__content">
+    <p class="smh-editor__desc">{{ 'smhNews.desc' | translate }}</p>
+
+    <div class="smh-editor__section-header">
+      <h3 class="smh-editor__section-title">{{ 'smhNews.feeds' | translate }}</h3>
+      <button mat-stroked-button type="button" (click)="add()">
+        <mat-icon>add</mat-icon>
+        {{ 'smhNews.addFeed' | translate }}
+      </button>
+    </div>
+
+    <div
+      cdkDropList
+      (cdkDropListDropped)="drop($event)"
+      class="smh-editor__drag-list"
+    >
+      @for (ctrl of newsArray.controls; track ctrl; let i = $index) {
+        <div cdkDrag class="smh-editor__drag-item" [formGroup]="asFormGroup(ctrl)">
+          <mat-icon cdkDragHandle class="smh-editor__drag-handle">drag_indicator</mat-icon>
+
+          <div class="smh-editor__drag-body">
+            <div class="smh-editor__inline-row">
+              <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--sm">
+                <mat-label>{{ 'smhNews.feedTitle' | translate }}</mat-label>
+                <input matInput formControlName="title" required />
+                @if (asFormGroup(ctrl).controls['title'].touched && asFormGroup(ctrl).controls['title'].hasError('required')) {
+                  <mat-error>{{ 'smhNews.fieldRequired' | translate }}</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                <mat-label>{{ 'smhNews.feedUrl' | translate }}</mat-label>
+                <mat-icon matPrefix>rss_feed</mat-icon>
+                <input matInput formControlName="url" required />
+                @if (asFormGroup(ctrl).controls['url'].touched && asFormGroup(ctrl).controls['url'].hasError('required')) {
+                  <mat-error>{{ 'smhNews.fieldRequired' | translate }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+          </div>
+
+          <button
+            mat-icon-button
+            type="button"
+            [matTooltip]="'smhNews.removeFeed' | translate"
+            (click)="remove(i)"
+            class="smh-editor__remove-btn"
+          >
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      }
+
+      @if (newsArray.length === 0) {
+        <div class="smh-editor__empty">
+          <mat-icon>rss_feed</mat-icon>
+          <span>{{ 'smhNews.empty' | translate }}</span>
+        </div>
+      }
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close()">{{ 'common.cancel' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="confirm()">
+    {{ 'smhNews.apply' | translate }}
+  </button>
+</mat-dialog-actions>

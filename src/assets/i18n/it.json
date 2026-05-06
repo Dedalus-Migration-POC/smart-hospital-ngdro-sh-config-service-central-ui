@@ -559,5 +559,39 @@
     "fieldRequired": "Campo obbligatorio.",
     "empty": "Nessuna FAQ. Usa il pulsante qui sopra per aggiungerne una.",
     "apply": "Applica"
+  },
+  "smhMinAppVersion": {
+    "dialogTitle": "Versione minima app",
+    "desc": "Imposta la versione minima richiesta dell'app per iOS e Android.",
+    "ios": "Versione minima iOS",
+    "android": "Versione minima Android",
+    "fieldRequired": "Campo obbligatorio.",
+    "apply": "Applica",
+    "editorHint": "Configura la versione minima dell'app richiesta su iOS e Android.",
+    "openEditor": "Apri editor"
+  },
+  "smhNews": {
+    "dialogTitle": "Feed news",
+    "desc": "Configura i feed RSS delle news mostrate nell'app.",
+    "feeds": "Feed RSS",
+    "addFeed": "Aggiungi feed",
+    "feedTitle": "Titolo",
+    "feedUrl": "URL feed RSS",
+    "removeFeed": "Rimuovi feed",
+    "fieldRequired": "Campo obbligatorio.",
+    "empty": "Nessun feed configurato.",
+    "apply": "Applica",
+    "editorHint": "Gestisci la lista dei feed RSS delle news.",
+    "openEditor": "Apri editor"
+  },
+  "smhTutorial": {
+    "dialogTitle": "Tutorial",
+    "desc": "Configura il CDN dei tutorial e la playlist YouTube.",
+    "cdnBaseUrl": "CDN base URL",
+    "youtubePlaylistUrl": "YouTube playlist URL",
+    "fieldRequired": "Campo obbligatorio.",
+    "apply": "Applica",
+    "editorHint": "Configura la sorgente dei contenuti tutorial (CDN e YouTube).",
+    "openEditor": "Apri editor"
   }
 }
