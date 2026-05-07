@@ -134,4 +134,15 @@ DB locale: customer "asl-latina", installation "localdev" (→ on-prem `:8080`),
 - [x] Feature Tenants → Configs (CRUD + push + rollback + resync)
 - [x] Users + Audit log (ADMIN-only)
 - [x] Editor grafico canale web (`base`): dialog 5 tab + anteprima live `WebPagePreview`
+- [x] Editor web: supporto multi-tipo immagine logo (`url | inlineSvg | file | base64`)
 - [ ] Build produzione + Dockerfile + Jenkinsfile
+
+## Note implementative importanti
+
+### Editor grafico canale web (`web-app-config-editor-dialog`)
+
+- Struttura JSON gestita: `name`, `favicon`, `theme.colors/typography`, `translate.i18n`, `header.topbar/main/bottombar`, `footer.main/bottombar`, `pages[/login, /]`
+- **`ImageType`** (`'url' | 'inlineSvg' | 'file' | 'base64'`) — tipo immagine selezionabile per il logo header e footer. Persiste in `image.type` nel JSON.
+- `patchImageInItems` aggiorna **solo il primo `IMAGE_BLOCK`** di ogni sezione — gli altri (loghi istituzionali `file`-based) sono preservati intatti.
+- `extractImage(items)` legge tipo+valore dal primo `IMAGE_BLOCK`.
+- `WebPagePreview` usa `logoSrc`/`fLogoSrc` che gestiscono tutti i tipi con fallback retrocompatibile su `logo_svg`/`footer_logo_svg`.
