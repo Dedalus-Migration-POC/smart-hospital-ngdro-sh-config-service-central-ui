@@ -30,7 +30,7 @@
     <!-- Main header -->
     <div class="webprev__main-header" [style.background]="mainBg">
       <div class="webprev__main-header-start">
-        @if (svgUri(logoSvg); as uri) {
+        @if (logoSrc; as uri) {
           <img class="webprev__logo" [src]="uri" alt="logo" />
         } @else {
           <span class="webprev__logo-text" [style.color]="'white'">{{ appName || 'Logo' }}</span>
@@ -70,7 +70,7 @@
 
     <!-- Footer main -->
     <div class="webprev__footer-main" [style.background]="fMainBg">
-      @if (svgUri(fLogoSvg); as uri) {
+      @if (fLogoSrc; as uri) {
         <img class="webprev__footer-logo" [src]="uri" alt="logo" />
       }
       @if (fDesc) {

@@ -1,6 +1,8 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type WebAppConfigJson = Record<string, any>;
 
+export type ImageType = 'url' | 'inlineSvg' | 'file' | 'base64';
+
 export interface WebEditorModel {
   name: string;
   favicon: string;
@@ -21,7 +23,8 @@ export interface WebEditorModel {
   showUserMenu: boolean;
   main_height: string;
   main_background: string;
-  logo_svg: string;
+  logo_type: ImageType;
+  logo_value: string;
   logo_url: string;
   header_socials: Array<{ id: string; url: string }>;
   bottombar_height: string;
@@ -30,7 +33,8 @@ export interface WebEditorModel {
   footer_main_height: string;
   footer_main_background: string;
   footer_description: string;
-  footer_logo_svg: string;
+  footer_logo_type: ImageType;
+  footer_logo_value: string;
   footer_socials: Array<{ id: string; url: string }>;
   footer_bottom_height: string;
   footer_bottom_background: string;

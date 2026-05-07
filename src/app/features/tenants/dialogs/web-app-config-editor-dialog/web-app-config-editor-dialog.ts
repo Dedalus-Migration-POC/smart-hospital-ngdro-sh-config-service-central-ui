@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -32,6 +33,7 @@ export interface WebAppConfigEditorDialogData {
     ReactiveFormsModule,
     MatDialogModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
@@ -95,7 +97,8 @@ export class WebAppConfigEditorDialog {
       showUserMenu:      [m.showUserMenu],
       main_height:       [m.main_height],
       main_background:   [m.main_background],
-      logo_svg:          [m.logo_svg],
+      logo_type:         [m.logo_type],
+      logo_value:        [m.logo_value],
       logo_url:          [m.logo_url],
       header_socials:    this.fb.array(m.header_socials.map(s => this.makeSocialGroup(s))),
       bottombar_height:     [m.bottombar_height],
@@ -104,7 +107,8 @@ export class WebAppConfigEditorDialog {
       footer_main_height:     [m.footer_main_height],
       footer_main_background: [m.footer_main_background],
       footer_description:     [m.footer_description],
-      footer_logo_svg:        [m.footer_logo_svg],
+      footer_logo_type:        [m.footer_logo_type],
+      footer_logo_value:       [m.footer_logo_value],
       footer_socials:         this.fb.array(m.footer_socials.map(s => this.makeSocialGroup(s))),
       footer_bottom_height:     [m.footer_bottom_height],
       footer_bottom_background: [m.footer_bottom_background],
@@ -145,6 +149,16 @@ export class WebAppConfigEditorDialog {
 
   setColor(name: string, event: Event): void {
     this.form.get(name)?.setValue((event.target as HTMLInputElement).value);
+  }
+
+  handleBase64Upload(controlName: string, event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.form.get(controlName)?.setValue(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   }
 
   confirm(): void {

@@ -64,7 +64,34 @@ export class WebPagePreview {
   get fMainBg(): string     { return this.resolveColor((this.config() as Cfg)?.['footer_main_background']?? this.footerMain['background']); }
   get fBottomBg(): string   { return this.resolveColor((this.config() as Cfg)?.['footer_bottom_background'] ?? this.footerBottom['background']); }
 
-  get logoSvg(): string    { return (this.config() as Cfg)?.['logo_svg']        ?? ''; }
+  get logoSrc(): string {
+    const cfg = this.config() as Cfg;
+    const type: string = cfg?.['logo_type'] ?? 'inlineSvg';
+    const value: string = cfg?.['logo_value'] ?? cfg?.['logo_svg'] ?? '';
+    return this.imageUri(type, value);
+  }
+
+  get fLogoSrc(): string {
+    const cfg = this.config() as Cfg;
+    const type: string = cfg?.['footer_logo_type'] ?? 'inlineSvg';
+    const value: string = cfg?.['footer_logo_value'] ?? cfg?.['footer_logo_svg'] ?? '';
+    return this.imageUri(type, value);
+  }
+
+  imageUri(type: string, value: string): string {
+    if (!value) return '';
+    switch (type) {
+      case 'inlineSvg':
+        return this.svgUri(value);
+      case 'url':
+      case 'file':
+      case 'base64':
+        return value;
+      default:
+        return this.svgUri(value);
+    }
+  }
+
   get logoUrl(): string    { return (this.config() as Cfg)?.['logo_url']        ?? '/'; }
   get topbarLinks(): Cfg[] { return (this.config() as Cfg)?.['topbar_links']    ?? []; }
   get btmLinks(): Cfg[]    { return (this.config() as Cfg)?.['bottombar_links'] ?? []; }
@@ -74,7 +101,6 @@ export class WebPagePreview {
   get homeSub(): string    { return (this.config() as Cfg)?.['home_subtitle']   ?? ''; }
   get homeBg(): string     { return this.resolveColor((this.config() as Cfg)?.['home_background'] ?? ''); }
   get fDesc(): string      { return (this.config() as Cfg)?.['footer_description'] ?? ''; }
-  get fLogoSvg(): string   { return (this.config() as Cfg)?.['footer_logo_svg']    ?? ''; }
   get fSocials(): Cfg[]    { return (this.config() as Cfg)?.['footer_socials']      ?? []; }
   get fBtmLinks(): Cfg[]   { return (this.config() as Cfg)?.['footer_bottom_links'] ?? []; }
   get showLang(): boolean  { return (this.config() as Cfg)?.['showLangSelector'] !== false; }

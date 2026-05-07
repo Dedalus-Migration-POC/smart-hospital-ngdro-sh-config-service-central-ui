@@ -144,7 +144,41 @@
                 </mat-form-field>
               </div>
               <p class="smh-editor__section-title" style="font-size: 0.7rem; margin-top: 4px">{{ 'webAppConfig.logo' | translate }}</p>
-              <app-svg-upload-field formControlName="logo_svg" />
+              <mat-button-toggle-group formControlName="logo_type" class="smh-editor__img-type-toggle">
+                <mat-button-toggle value="inlineSvg">SVG inline</mat-button-toggle>
+                <mat-button-toggle value="url">URL</mat-button-toggle>
+                <mat-button-toggle value="file">File</mat-button-toggle>
+                <mat-button-toggle value="base64">Base64</mat-button-toggle>
+              </mat-button-toggle-group>
+              @switch (form.get('logo_type')?.value) {
+                @case ('inlineSvg') {
+                  <app-svg-upload-field formControlName="logo_value" />
+                }
+                @case ('url') {
+                  <mat-form-field appearance="outline" class="smh-editor__text-field">
+                    <mat-label>{{ 'webAppConfig.logoImageUrl' | translate }}</mat-label>
+                    <input matInput formControlName="logo_value" placeholder="https://esempio.com/logo.png" />
+                  </mat-form-field>
+                }
+                @case ('file') {
+                  <mat-form-field appearance="outline" class="smh-editor__text-field">
+                    <mat-label>{{ 'webAppConfig.logoImageFilePath' | translate }}</mat-label>
+                    <input matInput formControlName="logo_value" placeholder="assets/images/logo.svg" />
+                  </mat-form-field>
+                }
+                @case ('base64') {
+                  <div class="smh-editor__base64-upload">
+                    <button mat-stroked-button type="button" (click)="logoFileInput.click()">
+                      <mat-icon>upload_file</mat-icon> {{ 'webAppConfig.logoImageUploadBase64' | translate }}
+                    </button>
+                    <input #logoFileInput type="file" accept="image/*" style="display:none"
+                      (change)="handleBase64Upload('logo_value', $event)" />
+                    @if (form.get('logo_value')?.value) {
+                      <img [src]="form.get('logo_value')?.value" class="smh-editor__img-preview" alt="Preview logo" />
+                    }
+                  </div>
+                }
+              }
               <mat-form-field appearance="outline" class="smh-editor__text-field">
                 <mat-label>{{ 'webAppConfig.logoActionUrl' | translate }}</mat-label>
                 <input matInput formControlName="logo_url" placeholder="https://..." />
@@ -238,7 +272,41 @@
                 <textarea matInput formControlName="footer_description" rows="2"></textarea>
               </mat-form-field>
               <p class="smh-editor__section-title" style="font-size: 0.7rem">{{ 'webAppConfig.logo' | translate }}</p>
-              <app-svg-upload-field formControlName="footer_logo_svg" />
+              <mat-button-toggle-group formControlName="footer_logo_type" class="smh-editor__img-type-toggle">
+                <mat-button-toggle value="inlineSvg">SVG inline</mat-button-toggle>
+                <mat-button-toggle value="url">URL</mat-button-toggle>
+                <mat-button-toggle value="file">File</mat-button-toggle>
+                <mat-button-toggle value="base64">Base64</mat-button-toggle>
+              </mat-button-toggle-group>
+              @switch (form.get('footer_logo_type')?.value) {
+                @case ('inlineSvg') {
+                  <app-svg-upload-field formControlName="footer_logo_value" />
+                }
+                @case ('url') {
+                  <mat-form-field appearance="outline" class="smh-editor__text-field">
+                    <mat-label>{{ 'webAppConfig.logoImageUrl' | translate }}</mat-label>
+                    <input matInput formControlName="footer_logo_value" placeholder="https://esempio.com/logo.png" />
+                  </mat-form-field>
+                }
+                @case ('file') {
+                  <mat-form-field appearance="outline" class="smh-editor__text-field">
+                    <mat-label>{{ 'webAppConfig.logoImageFilePath' | translate }}</mat-label>
+                    <input matInput formControlName="footer_logo_value" placeholder="assets/images/logo.svg" />
+                  </mat-form-field>
+                }
+                @case ('base64') {
+                  <div class="smh-editor__base64-upload">
+                    <button mat-stroked-button type="button" (click)="footerLogoFileInput.click()">
+                      <mat-icon>upload_file</mat-icon> {{ 'webAppConfig.logoImageUploadBase64' | translate }}
+                    </button>
+                    <input #footerLogoFileInput type="file" accept="image/*" style="display:none"
+                      (change)="handleBase64Upload('footer_logo_value', $event)" />
+                    @if (form.get('footer_logo_value')?.value) {
+                      <img [src]="form.get('footer_logo_value')?.value" class="smh-editor__img-preview" alt="Preview logo footer" />
+                    }
+                  </div>
+                }
+              }
               <p class="smh-editor__section-title" style="font-size: 0.7rem; margin-top: 4px">{{ 'webAppConfig.socials' | translate }}</p>
               @for (ctrl of footerSocialsArray.controls; track $index) {
                 <div class="smh-editor__drag-item smh-editor__drag-item--item" [formGroup]="asFormGroup(ctrl)">

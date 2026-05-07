@@ -1,4 +1,4 @@
-import { WebEditorModel } from './web-app-config-types';
+import { ImageType, WebEditorModel } from './web-app-config-types';
 
 // ── Extractors ────────────────────────────────────────────────────────────────
 
@@ -24,11 +24,14 @@ function getEnabled(items: Record<string, unknown>[], type: string): boolean {
   return item ? item['enabled'] !== false : true;
 }
 
-function extractImageSvg(items: Record<string, unknown>[]): string {
+function extractImage(items: Record<string, unknown>[]): { type: string; value: string } {
   const img = items.find(i => i['type'] === 'IMAGE_BLOCK') as Record<string, unknown> | undefined;
   const props = img?.['props'] as Record<string, unknown> | undefined;
   const image = props?.['image'] as Record<string, unknown> | undefined;
-  return image?.['type'] === 'inlineSvg' ? (image['value'] as string) ?? '' : '';
+  return {
+    type: (image?.['type'] as string) ?? 'inlineSvg',
+    value: (image?.['value'] as string) ?? '',
+  };
 }
 
 function extractImageUrl(items: Record<string, unknown>[]): string {
@@ -118,7 +121,8 @@ export function extractModel(v: Record<string, unknown>): WebEditorModel {
 
     main_height:     (main['height']     as string) ?? '88px',
     main_background: (main['background'] as string) ?? 'primary',
-    logo_svg: extractImageSvg(mainStartItems),
+    logo_type:  extractImage(mainStartItems).type as ImageType,
+    logo_value: extractImage(mainStartItems).value,
     logo_url: extractImageUrl(mainStartItems),
     header_socials: extractSocials(mainEndItems),
 
@@ -129,7 +133,8 @@ export function extractModel(v: Record<string, unknown>): WebEditorModel {
     footer_main_height:     (fMain['height']     as string) ?? '150px',
     footer_main_background: (fMain['background'] as string) ?? 'primary',
     footer_description: extractFirstTextIt(fMainStartItems),
-    footer_logo_svg:    extractImageSvg(fMainStartItems),
+    footer_logo_type:  extractImage(fMainStartItems).type as ImageType,
+    footer_logo_value: extractImage(fMainStartItems).value,
     footer_socials:     extractSocials(fMainEndItems),
 
     footer_bottom_height:     (fBtm['height']     as string) ?? '48px',
@@ -227,19 +232,14 @@ function setEnabledInItems(
   return items.map(i => i['type'] === type ? { ...i, enabled } : i);
 }
 
-function patchImageSvgInItems(
+function patchImageInItems(
   items: Record<string, unknown>[],
-  svg: string,
-  url: string,
+  imgType: string,
+  imgValue: string,
+  actionUrl: string,
 ): Record<string, unknown>[] {
-  const hasInlineSvg = items.some(i => {
-    if (i['type'] !== 'IMAGE_BLOCK') return false;
-    const image = ((i['props'] as Record<string, unknown> | undefined)?.['image']) as Record<string, unknown> | undefined;
-    return image?.['type'] === 'inlineSvg';
-  });
-
-  if (!hasInlineSvg) {
-    if (!svg) return items;
+  if (!items.some(i => i['type'] === 'IMAGE_BLOCK')) {
+    if (!imgValue) return items;
     return [
       ...items,
       {
@@ -248,26 +248,27 @@ function patchImageSvgInItems(
         enabled: true,
         props: {
           id: 'logo',
-          image: { type: 'inlineSvg', value: svg, decorative: false, alt: { it: 'Logo', en: 'Logo' } },
-          clickable: !!url,
-          action: url ? { type: 'externalLink', url, target: '_self' } : undefined,
+          image: { type: imgType, value: imgValue, decorative: false, alt: { it: 'Logo', en: 'Logo' } },
+          clickable: !!actionUrl,
+          action: actionUrl ? { type: 'externalLink', url: actionUrl, target: '_self' } : undefined,
         },
       },
     ];
   }
+  // Aggiorna solo il PRIMO IMAGE_BLOCK; gli altri (loghi istituzionali file-based) rimangono intatti
+  let first = true;
   return items.map(item => {
-    if (item['type'] !== 'IMAGE_BLOCK') return item;
+    if (item['type'] !== 'IMAGE_BLOCK' || !first) return item;
+    first = false;
     const props = (item['props'] as Record<string, unknown>) ?? {};
     const image = (props['image'] as Record<string, unknown>) ?? {};
-    // Aggiorna solo i blocchi con inlineSvg; i file-based (type: 'file') vengono preservati intatti
-    if (image['type'] !== 'inlineSvg') return item;
     const action = (props['action'] as Record<string, unknown>) ?? {};
     return {
       ...item,
       props: {
         ...props,
-        image: { ...image, value: svg || image['value'] },
-        action: { ...action, url: url || action['url'] },
+        image: { ...image, type: imgType, value: imgValue || image['value'] },
+        action: { ...action, url: actionUrl || action['url'] },
       },
     };
   });
@@ -410,9 +411,10 @@ export function patchToJson(
   ensureAreas(main);
   const mainAreas = main['areas'] as Record<string, unknown>;
   const mainStart = (mainAreas['start'] as Record<string, unknown>);
-  mainStart['items'] = patchImageSvgInItems(
+  mainStart['items'] = patchImageInItems(
     (mainStart['items'] as Record<string, unknown>[]) ?? [],
-    model.logo_svg,
+    model.logo_type,
+    model.logo_value,
     model.logo_url,
   );
   const mainEnd = (mainAreas['end'] as Record<string, unknown>);
@@ -447,9 +449,10 @@ export function patchToJson(
   const fMainAreas = fMain['areas'] as Record<string, unknown>;
   const fMainStart = (fMainAreas['start'] as Record<string, unknown>);
   fMainStart['items'] = patchFirstTextInItems(
-    patchImageSvgInItems(
+    patchImageInItems(
       (fMainStart['items'] as Record<string, unknown>[]) ?? [],
-      model.footer_logo_svg,
+      model.footer_logo_type,
+      model.footer_logo_value,
       '',
     ),
     model.footer_description,
