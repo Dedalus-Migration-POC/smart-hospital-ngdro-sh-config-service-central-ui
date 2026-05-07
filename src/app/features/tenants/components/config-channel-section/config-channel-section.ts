@@ -76,6 +76,11 @@ import {
   SmhSpidProviderJson,
 } from '../../dialogs/smh-spid-provider-editor-dialog/smh-spid-provider-editor-dialog';
 import {
+  SmhThemeDataEditorDialog,
+  SmhThemeDataEditorDialogData,
+  SmhThemeDataJson,
+} from '../../dialogs/smh-theme-data-editor-dialog/smh-theme-data-editor-dialog';
+import {
   SmhTutorialEditorDialog,
   SmhTutorialEditorDialogData,
   SmhTutorialJson,
@@ -241,6 +246,9 @@ export class ConfigChannelSection {
           return a.localeCompare(b);
         });
         this.entities.set(sorted);
+        if (channelId === 'mobile') {
+          this.prefetchMobilePreviewCaches(tenantId);
+        }
       },
       error: () => {
         const base = new Set<string>(['base']);
@@ -251,8 +259,24 @@ export class ConfigChannelSection {
           const merged = new Set([...list, ...base]);
           return [...merged].sort((a, b) => (a === 'base' ? -1 : b === 'base' ? 1 : a.localeCompare(b)));
         });
+        if (channelId === 'mobile') {
+          this.prefetchMobilePreviewCaches(tenantId);
+        }
       },
     });
+  }
+
+  private prefetchMobilePreviewCaches(tenantId: string): void {
+    this.tenantService.getConfig(tenantId, 'mobile', 'local', 'smh_ui_render')
+      .pipe(catchError(() => of(null)))
+      .subscribe((cfg) => {
+        if (cfg) this.cachedUiRenderJson.set(cfg.configJson as SmhUiRenderJson);
+      });
+    this.tenantService.getConfig(tenantId, 'mobile', 'local', 'smh_theme_data')
+      .pipe(catchError(() => of(null)))
+      .subscribe((cfg) => {
+        if (cfg) this.cachedThemeDataJson.set(cfg.configJson as SmhThemeDataJson);
+      });
   }
 
   selectEntity(e: string): void {
@@ -301,6 +325,12 @@ export class ConfigChannelSection {
           ? JSON.stringify(active.configJson, null, 2)
           : '';
         this.configControl.reset(pretty);
+        if (channelId === 'mobile' && entity === 'smh_ui_render') {
+          this.cachedUiRenderJson.set(active.configJson as SmhUiRenderJson);
+        }
+        if (channelId === 'mobile' && entity === 'smh_theme_data') {
+          this.cachedThemeDataJson.set(active.configJson as SmhThemeDataJson);
+        }
         this.loading.set(false);
         this.initialized.set(true);
         this.loadHistory(tenantId, channelId, entity);
@@ -520,12 +550,14 @@ export class ConfigChannelSection {
   readonly isSmhServiceConfig = computed(() => this.entity() === 'smh_service_config');
   readonly isSmhMinAppVersion = computed(() => this.entity() === 'smh_min_app_version');
   readonly isSmhNews = computed(() => this.entity() === 'smh_news');
-  readonly isSmhTutorial = computed(() => this.entity() === 'smh_tutorial');
-  readonly isWebBase     = computed(() => this.channelId() === 'web' && this.entity() === 'base');
+  readonly isSmhTutorial   = computed(() => this.entity() === 'smh_tutorial');
+  readonly isSmhThemeData  = computed(() => this.entity() === 'smh_theme_data');
+  readonly isWebBase       = computed(() => this.channelId() === 'web' && this.entity() === 'base');
 
   private static readonly GRAPHIC_EDITOR_ENTITIES = new Set([
     'smh_ui_render', 'smh_spid_provider', 'smh_faq',
     'smh_service_config', 'smh_min_app_version', 'smh_news', 'smh_tutorial',
+    'smh_theme_data',
   ]);
 
   private static readonly MOBILE_MANDATORY_ENTITIES = [
@@ -537,6 +569,7 @@ export class ConfigChannelSection {
     'smh_min_app_version',
     'smh_news',
     'smh_tutorial',
+    'smh_theme_data',
   ];
 
   private static readonly ENTITY_DEFAULTS: Record<string, unknown> = {
@@ -556,6 +589,34 @@ export class ConfigChannelSection {
     smh_min_app_version: { ios: '1.0', android: '1.0' },
     smh_news: [],
     smh_tutorial: { cdnBaseUrl: '', youtubePlaylistUrl: '' },
+    smh_theme_data: {
+      primaryColor: '#19509A',
+      primarySwatch: 'blue',
+      scaffoldBackgroundColor: '#E9F1FC',
+      colorScheme: {
+        primary: '#19509A', onPrimary: '#FFFFFF',
+        secondary: '#065170', onSecondary: '#FFFFFF',
+        error: '#FF0000', onError: '#FFFFFF',
+        brightness: 'light', surface: '#FFFFFF', onSurface: '#000000',
+      },
+      textTheme: {
+        fontFamily: 'TitilliumWeb',
+        titleLarge: { fontWeight: 'w600', fontSize: 24 },
+        bodyMedium: { fontWeight: 'w600', fontSize: 18 },
+        bodySmall:  { fontWeight: 'normal', fontSize: 16 },
+        labelSmall: { fontWeight: 'w700', fontSize: 16 },
+      },
+      tabBarTheme: {
+        dividerColor: '#1A1A1A',
+        labelStyle:           { fontSize: 16, fontWeight: 'w600', color: '#19509A' },
+        unselectedLabelStyle: { fontSize: 16, fontWeight: 'w600', color: '#9E9E9E' },
+      },
+      cardTheme: {
+        elevation: 5,
+        shape: { type: 'RoundedRectangleBorder', borderRadius: 5.0 },
+        color: '#FFFFFF',
+      },
+    },
   };
 
   hasGraphicEditor(entity: string): boolean {
@@ -568,13 +629,31 @@ export class ConfigChannelSection {
     { initialValue: this.configControl.value },
   );
 
-  readonly showPreview = computed(() => this.isSmhUiRender() && this.channelId() === 'mobile');
+  private readonly cachedUiRenderJson  = signal<SmhUiRenderJson | null>(null);
+  private readonly cachedThemeDataJson = signal<SmhThemeDataJson | null>(null);
+
+  readonly showPreview = computed(() =>
+    this.channelId() === 'mobile' && (this.isSmhUiRender() || this.isSmhThemeData()),
+  );
 
   readonly previewJson = computed((): SmhUiRenderJson | null => {
     if (!this.showPreview()) return null;
-    const raw = this.configValue();
-    if (!raw?.trim()) return null;
-    try { return JSON.parse(raw) as SmhUiRenderJson; } catch { return null; }
+    if (this.isSmhUiRender()) {
+      const raw = this.configValue();
+      if (!raw?.trim()) return this.cachedUiRenderJson();
+      try { return JSON.parse(raw) as SmhUiRenderJson; } catch { return this.cachedUiRenderJson(); }
+    }
+    return this.cachedUiRenderJson();
+  });
+
+  readonly previewThemeJson = computed((): SmhThemeDataJson | null => {
+    if (!this.showPreview()) return null;
+    if (this.isSmhThemeData()) {
+      const raw = this.configValue();
+      if (!raw?.trim()) return this.cachedThemeDataJson();
+      try { return JSON.parse(raw) as SmhThemeDataJson; } catch { return this.cachedThemeDataJson(); }
+    }
+    return this.cachedThemeDataJson();
   });
 
   openGraphicEditor(): void {
@@ -770,6 +849,24 @@ export class ConfigChannelSection {
     const ref = this.dialog.open<SmhTutorialEditorDialog, SmhTutorialEditorDialogData, SmhTutorialJson>(
       SmhTutorialEditorDialog,
       { data, autoFocus: 'first-tabbable', maxWidth: '560px', width: '560px' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === undefined) return;
+      this.configControl.setValue(JSON.stringify(result, null, 2));
+      this.configControl.markAsDirty();
+    });
+  }
+
+  openThemeDataEditor(): void {
+    const raw = this.configControl.value ?? '';
+    let parsed: SmhThemeDataJson = {};
+    if (raw.trim()) {
+      try { parsed = JSON.parse(raw) as SmhThemeDataJson; } catch { /* usa default */ }
+    }
+    const data: SmhThemeDataEditorDialogData = { value: parsed };
+    const ref = this.dialog.open<SmhThemeDataEditorDialog, SmhThemeDataEditorDialogData, SmhThemeDataJson>(
+      SmhThemeDataEditorDialog,
+      { data, autoFocus: 'first-tabbable', maxWidth: '800px', width: '800px' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;

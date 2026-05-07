@@ -1,0 +1,307 @@
+<h2 mat-dialog-title>{{ 'smhThemeData.dialogTitle' | translate }}</h2>
+
+<mat-dialog-content class="smh-editor">
+  <mat-tab-group class="smh-editor__tabs" animationDuration="100ms" [formGroup]="form">
+
+    <!-- ── Tab 1: Colori generali ── -->
+    <mat-tab [label]="'smhThemeData.tabColors' | translate">
+      <div class="smh-editor__tab-content">
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.primaryColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('primaryColor')" (change)="patchColor('primaryColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="primaryColor" placeholder="#19509A" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.primarySwatch' | translate }}</p>
+          <mat-form-field appearance="outline" class="smh-editor__text-field">
+            <input matInput formControlName="primarySwatch" placeholder="blue" />
+          </mat-form-field>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.scaffoldBackground' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('scaffoldBackgroundColor')" (change)="patchColor('scaffoldBackgroundColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="scaffoldBackgroundColor" placeholder="#E9F1FC" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </mat-tab>
+
+    <!-- ── Tab 2: Schema colori ── -->
+    <mat-tab [label]="'smhThemeData.tabColorScheme' | translate">
+      <div class="smh-editor__tab-content" formGroupName="colorScheme">
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.brightness' | translate }}</p>
+          <mat-button-toggle-group formControlName="brightness" aria-label="Brightness">
+            <mat-button-toggle value="light">{{ 'smhThemeData.brightnessLight' | translate }}</mat-button-toggle>
+            <mat-button-toggle value="dark">{{ 'smhThemeData.brightnessDark' | translate }}</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        <div class="smh-editor__section">
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__color-pair">
+
+              <div>
+                <p class="smh-editor__color-group-label">{{ 'smhThemeData.colorPrimary' | translate }}</p>
+                <div class="smh-editor__field-row">
+                  <input type="color" [value]="getColor('colorScheme.primary')" (change)="patchColor('colorScheme.primary', $event)" class="smh-editor__color-swatch" />
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="primary" placeholder="#19509A" />
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div>
+                <p class="smh-editor__color-group-label">{{ 'smhThemeData.colorOnPrimary' | translate }}</p>
+                <div class="smh-editor__field-row">
+                  <input type="color" [value]="getColor('colorScheme.onPrimary')" (change)="patchColor('colorScheme.onPrimary', $event)" class="smh-editor__color-swatch" />
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="onPrimary" placeholder="#FFFFFF" />
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div>
+                <p class="smh-editor__color-group-label">{{ 'smhThemeData.colorSecondary' | translate }}</p>
+                <div class="smh-editor__field-row">
+                  <input type="color" [value]="getColor('colorScheme.secondary')" (change)="patchColor('colorScheme.secondary', $event)" class="smh-editor__color-swatch" />
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="secondary" placeholder="#065170" />
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div>
+                <p class="smh-editor__color-group-label">{{ 'smhThemeData.colorOnSecondary' | translate }}</p>
+                <div class="smh-editor__field-row">
+                  <input type="color" [value]="getColor('colorScheme.onSecondary')" (change)="patchColor('colorScheme.onSecondary', $event)" class="smh-editor__color-swatch" />
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="onSecondary" placeholder="#FFFFFF" />
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div>
+                <p class="smh-editor__color-group-label">{{ 'smhThemeData.colorError' | translate }}</p>
+                <div class="smh-editor__field-row">
+                  <input type="color" [value]="getColor('colorScheme.error')" (change)="patchColor('colorScheme.error', $event)" class="smh-editor__color-swatch" />
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="error" placeholder="#FF0000" />
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div>
+                <p class="smh-editor__color-group-label">{{ 'smhThemeData.colorOnError' | translate }}</p>
+                <div class="smh-editor__field-row">
+                  <input type="color" [value]="getColor('colorScheme.onError')" (change)="patchColor('colorScheme.onError', $event)" class="smh-editor__color-swatch" />
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="onError" placeholder="#FFFFFF" />
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div>
+                <p class="smh-editor__color-group-label">{{ 'smhThemeData.colorSurface' | translate }}</p>
+                <div class="smh-editor__field-row">
+                  <input type="color" [value]="getColor('colorScheme.surface')" (change)="patchColor('colorScheme.surface', $event)" class="smh-editor__color-swatch" />
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="surface" placeholder="#FFFFFF" />
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div>
+                <p class="smh-editor__color-group-label">{{ 'smhThemeData.colorOnSurface' | translate }}</p>
+                <div class="smh-editor__field-row">
+                  <input type="color" [value]="getColor('colorScheme.onSurface')" (change)="patchColor('colorScheme.onSurface', $event)" class="smh-editor__color-swatch" />
+                  <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                    <input matInput formControlName="onSurface" placeholder="#000000" />
+                  </mat-form-field>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </mat-tab>
+
+    <!-- ── Tab 3: Testo ── -->
+    <mat-tab [label]="'smhThemeData.tabText' | translate">
+      <div class="smh-editor__tab-content" formGroupName="textTheme">
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.fontFamily' | translate }}</p>
+          <mat-form-field appearance="outline" class="smh-editor__text-field">
+            <input matInput formControlName="fontFamily" placeholder="TitilliumWeb" />
+          </mat-form-field>
+        </div>
+
+        @for (style of [
+          { key: 'titleLarge',  labelKey: 'smhThemeData.titleLarge' },
+          { key: 'bodyMedium',  labelKey: 'smhThemeData.bodyMedium' },
+          { key: 'bodySmall',   labelKey: 'smhThemeData.bodySmall' },
+          { key: 'labelSmall',  labelKey: 'smhThemeData.labelSmall' }
+        ]; track style.key) {
+          <div class="smh-editor__section" [formGroupName]="style.key">
+            <p class="smh-editor__section-title">{{ style.labelKey | translate }}</p>
+            <div class="smh-editor__section-body">
+              <div class="smh-editor__inline-row">
+                <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                  <mat-label>{{ 'smhThemeData.fontSize' | translate }}</mat-label>
+                  <input matInput type="number" formControlName="fontSize" min="6" max="72" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                  <mat-label>{{ 'smhThemeData.fontWeight' | translate }}</mat-label>
+                  <mat-select formControlName="fontWeight">
+                    @for (fw of fontWeights; track fw) {
+                      <mat-option [value]="fw">{{ fw }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        }
+
+      </div>
+    </mat-tab>
+
+    <!-- ── Tab 4: Tab bar ── -->
+    <mat-tab [label]="'smhThemeData.tabTabBar' | translate">
+      <div class="smh-editor__tab-content" formGroupName="tabBarTheme">
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.tabDividerColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('tabBarTheme.dividerColor')" (change)="patchColor('tabBarTheme.dividerColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="dividerColor" placeholder="#1A1A1A" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section" formGroupName="labelStyle">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.labelStyleActive' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__inline-row">
+              <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                <mat-label>{{ 'smhThemeData.fontSize' | translate }}</mat-label>
+                <input matInput type="number" formControlName="fontSize" min="6" max="72" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <mat-label>{{ 'smhThemeData.fontWeight' | translate }}</mat-label>
+                <mat-select formControlName="fontWeight">
+                  @for (fw of fontWeights; track fw) {
+                    <mat-option [value]="fw">{{ fw }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div class="smh-editor__field-row">
+              <span class="smh-editor__field-label">{{ 'smhThemeData.color' | translate }}</span>
+              <input type="color" [value]="getColor('tabBarTheme.labelStyle.color')" (change)="patchColor('tabBarTheme.labelStyle.color', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="color" placeholder="#19509A" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section" formGroupName="unselectedLabelStyle">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.labelStyleInactive' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__inline-row">
+              <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                <mat-label>{{ 'smhThemeData.fontSize' | translate }}</mat-label>
+                <input matInput type="number" formControlName="fontSize" min="6" max="72" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <mat-label>{{ 'smhThemeData.fontWeight' | translate }}</mat-label>
+                <mat-select formControlName="fontWeight">
+                  @for (fw of fontWeights; track fw) {
+                    <mat-option [value]="fw">{{ fw }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div class="smh-editor__field-row">
+              <span class="smh-editor__field-label">{{ 'smhThemeData.color' | translate }}</span>
+              <input type="color" [value]="getColor('tabBarTheme.unselectedLabelStyle.color')" (change)="patchColor('tabBarTheme.unselectedLabelStyle.color', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="color" placeholder="#9E9E9E" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </mat-tab>
+
+    <!-- ── Tab 5: Card ── -->
+    <mat-tab [label]="'smhThemeData.tabCard' | translate">
+      <div class="smh-editor__tab-content" formGroupName="cardTheme">
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.cardElevation' | translate }}</p>
+          <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+            <input matInput type="number" formControlName="elevation" min="0" max="24" />
+          </mat-form-field>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.cardColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('cardTheme.color')" (change)="patchColor('cardTheme.color', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="color" placeholder="#FFFFFF" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section" formGroupName="shape">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.cardShapeType' | translate }}</p>
+          <mat-form-field appearance="outline" class="smh-editor__text-field">
+            <input matInput formControlName="type" readonly />
+          </mat-form-field>
+
+          <p class="smh-editor__section-title" style="margin-top: 8px">{{ 'smhThemeData.cardBorderRadius' | translate }}</p>
+          <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+            <input matInput type="number" formControlName="borderRadius" min="0" max="50" step="0.5" />
+          </mat-form-field>
+        </div>
+
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialogRef.close()">{{ 'common.cancel' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="confirm()">
+    {{ 'smhThemeData.apply' | translate }}
+  </button>
+</mat-dialog-actions>

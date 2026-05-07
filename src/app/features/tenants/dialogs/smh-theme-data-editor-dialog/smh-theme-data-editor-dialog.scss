@@ -1,0 +1,28 @@
+@use '../_smh-editor-base' as base;
+
+:host { @include base.smh-editor-styles; }
+
+.smh-editor__color-swatch {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px;
+  background: none;
+  flex-shrink: 0;
+}
+
+.smh-editor__color-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.smh-editor__color-group-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface-variant);
+  margin-bottom: 4px;
+}

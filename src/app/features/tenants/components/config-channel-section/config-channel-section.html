@@ -261,6 +261,17 @@
         </div>
       }
 
+      @if (isSmhThemeData()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">palette</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'smhThemeData.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openThemeDataEditor()">
+            <mat-icon>edit</mat-icon>
+            {{ 'smhThemeData.openEditor' | translate }}
+          </button>
+        </div>
+      }
+
       @if (isWebBase()) {
         <div class="channel__graphic-editor-bar">
           <mat-icon class="channel__graphic-editor-icon">web</mat-icon>
@@ -408,7 +419,7 @@
       <mat-icon class="channel__preview-label-icon">smartphone</mat-icon>
       <span>{{ 'config.previewTitle' | translate }}</span>
     </div>
-    <app-smh-phone-preview [renderData]="previewJson()" />
+    <app-smh-phone-preview [renderData]="previewJson()" [themeData]="previewThemeJson()" />
   </div>
 }
 

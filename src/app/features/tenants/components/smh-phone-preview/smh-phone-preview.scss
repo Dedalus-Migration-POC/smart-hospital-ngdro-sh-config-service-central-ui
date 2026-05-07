@@ -19,7 +19,7 @@ $phone-bg: #ecf0f5;
   height: 544px;
 
   &__status-bar {
-    background: $phone-blue;
+    background: var(--phone-primary, #{$phone-blue});
     color: rgba(255, 255, 255, 0.8);
     font-size: 7.5px;
     padding: 3px 10px 2px;
@@ -30,7 +30,7 @@ $phone-bg: #ecf0f5;
   }
 
   &__app-bar {
-    background: $phone-blue;
+    background: var(--phone-primary, #{$phone-blue});
     padding: 5px 10px 7px;
     display: flex;
     align-items: center;
@@ -73,7 +73,7 @@ $phone-bg: #ecf0f5;
   &__scroll {
     flex: 1;
     overflow-y: auto;
-    background: $phone-bg;
+    background: var(--phone-bg, #{$phone-bg});
     padding: 6px;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
@@ -100,7 +100,7 @@ $phone-bg: #ecf0f5;
   }
 
   &__banner {
-    background: $phone-blue;
+    background: var(--phone-primary, #{$phone-blue});
     color: #fff;
     border-radius: 8px;
     padding: 7px 9px;
@@ -137,7 +137,7 @@ $phone-bg: #ecf0f5;
   &__section-title {
     font-size: 9px;
     font-weight: 700;
-    color: $phone-blue;
+    color: var(--phone-primary, #{$phone-blue});
     margin: 6px 0 3px 1px;
     letter-spacing: 0.02em;
   }
@@ -150,8 +150,8 @@ $phone-bg: #ecf0f5;
   }
 
   &__card {
-    background: #fff;
-    border-radius: 8px;
+    background: var(--phone-card-bg, #fff);
+    border-radius: var(--phone-card-radius, 8px);
     padding: 7px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.09);
     position: relative;
@@ -165,7 +165,7 @@ $phone-bg: #ecf0f5;
     display: flex;
     align-items: center;
     gap: 2px;
-    color: $phone-blue;
+    color: var(--phone-primary, #{$phone-blue});
     opacity: 0.75;
   }
 
@@ -180,8 +180,7 @@ $phone-bg: #ecf0f5;
     height: 32px;
     flex-shrink: 0;
     border-radius: 6px;
-    // stesso blu della app bar, con opacità ridotta
-    background: $phone-blue;
+    background: var(--phone-primary, #{$phone-blue});
     display: flex;
     align-items: center;
     justify-content: center;
@@ -243,7 +242,7 @@ $phone-bg: #ecf0f5;
     &--active {
       .phone__nav-icon,
       .phone__nav-label {
-        color: $phone-blue;
+        color: var(--phone-primary, #{$phone-blue});
         filter: none;
       }
     }

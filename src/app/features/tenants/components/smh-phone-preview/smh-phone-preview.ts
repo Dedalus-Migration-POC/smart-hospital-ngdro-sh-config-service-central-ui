@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SmhUiRenderJson, ServiceItem } from '../../dialogs/smh-ui-render-editor-dialog/smh-ui-render-editor-dialog';
+import { SmhThemeDataJson } from '../../dialogs/smh-theme-data-editor-dialog/smh-theme-data-editor-dialog';
 
 export interface BodyCategory {
   name: string;
@@ -16,6 +17,21 @@ export interface BodyCategory {
 })
 export class SmhPhonePreview {
   readonly renderData = input<SmhUiRenderJson | null>(null);
+  readonly themeData = input<SmhThemeDataJson | null>(null);
+
+  readonly themeVars = computed(() => {
+    const t = this.themeData();
+    if (!t) return {};
+    return {
+      '--phone-primary':     t.colorScheme?.primary     ?? t.primaryColor             ?? '#0D47A1',
+      '--phone-on-primary':  t.colorScheme?.onPrimary   ?? '#FFFFFF',
+      '--phone-bg':          t.scaffoldBackgroundColor  ?? '#ecf0f5',
+      '--phone-card-bg':     t.cardTheme?.color         ?? '#FFFFFF',
+      '--phone-card-radius': `${t.cardTheme?.shape?.borderRadius ?? 8}px`,
+      '--phone-on-surface':  t.colorScheme?.onSurface   ?? '#000000',
+    };
+  });
+
   readonly bodyCategories = computed((): BodyCategory[] => {
     const body = this.renderData()?.home?.body;
     if (!body) return [];
