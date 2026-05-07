@@ -232,7 +232,13 @@ function patchImageSvgInItems(
   svg: string,
   url: string,
 ): Record<string, unknown>[] {
-  if (!items.some(i => i['type'] === 'IMAGE_BLOCK')) {
+  const hasInlineSvg = items.some(i => {
+    if (i['type'] !== 'IMAGE_BLOCK') return false;
+    const image = ((i['props'] as Record<string, unknown> | undefined)?.['image']) as Record<string, unknown> | undefined;
+    return image?.['type'] === 'inlineSvg';
+  });
+
+  if (!hasInlineSvg) {
     if (!svg) return items;
     return [
       ...items,
@@ -253,12 +259,14 @@ function patchImageSvgInItems(
     if (item['type'] !== 'IMAGE_BLOCK') return item;
     const props = (item['props'] as Record<string, unknown>) ?? {};
     const image = (props['image'] as Record<string, unknown>) ?? {};
+    // Aggiorna solo i blocchi con inlineSvg; i file-based (type: 'file') vengono preservati intatti
+    if (image['type'] !== 'inlineSvg') return item;
     const action = (props['action'] as Record<string, unknown>) ?? {};
     return {
       ...item,
       props: {
         ...props,
-        image: { ...image, type: 'inlineSvg', value: svg || image['value'] },
+        image: { ...image, value: svg || image['value'] },
         action: { ...action, url: url || action['url'] },
       },
     };
