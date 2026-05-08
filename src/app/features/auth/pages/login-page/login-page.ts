@@ -10,7 +10,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { from, of, switchMap } from 'rxjs';
 
@@ -38,6 +38,7 @@ import { RecaptchaV3Service } from '../../../../shared/services/recaptcha-v3';
 export class LoginPage {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   private readonly recaptcha = inject(RecaptchaV3Service);
@@ -71,8 +72,10 @@ export class LoginPage {
       .subscribe({
         next: () => {
           this.loading.set(false);
-          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
-          window.location.href = returnUrl;
+          const raw = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
+          // protezione open redirect: accetta solo path interni (inizia con '/' ma non '//')
+          const returnUrl = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
+          void this.router.navigateByUrl(returnUrl);
         },
         error: (err: unknown) => {
           this.loading.set(false);
