@@ -44,7 +44,10 @@ export class PushNotificationService {
     const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     await navigator.serviceWorker.ready;
 
-    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
+    });
     const subJson = sub.toJSON() as {
       endpoint: string;
       keys: { p256dh: string; auth: string };

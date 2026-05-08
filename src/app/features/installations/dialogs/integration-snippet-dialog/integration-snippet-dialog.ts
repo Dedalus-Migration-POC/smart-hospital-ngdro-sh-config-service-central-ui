@@ -56,9 +56,9 @@ export class IntegrationSnippetDialog implements OnInit {
   }
 
   ngOnInit(): void {
-    this.tenantService.list(this.data.installation.id).subscribe({
-      next: (list) => {
-        const active = list.filter(t => t.active);
+    this.tenantService.listByInstallation(this.data.installation.id).subscribe({
+      next: (list: Tenant[]) => {
+        const active = list.filter((t: Tenant) => t.active);
         this.tenants.set(active);
         if (active.length === 1) this.selectedTenantId.set(active[0].id);
         this.loading.set(false);

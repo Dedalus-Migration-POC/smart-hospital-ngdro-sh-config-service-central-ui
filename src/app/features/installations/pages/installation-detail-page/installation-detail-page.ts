@@ -198,7 +198,7 @@ export class InstallationDetailPage {
       title: this.translate.instant('installation.revealApiKeyTitle'),
       message: this.translate.instant('installation.revealApiKeyMessage', { name: inst.name }),
       confirmLabel: this.translate.instant('installation.revealApiKeyConfirm'),
-      isDangerous: true,
+      destructive: true,
     };
     this.dialog
       .open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data: confirmData })

@@ -42,6 +42,32 @@
           <mat-icon>science</mat-icon>
           {{ 'notifications.filterDryRun' | translate }}
         </button>
+
+        <span class="notifications__filters-sep"></span>
+
+        <button
+          mat-stroked-button
+          [class.active]="activeTypeFilter() === 'ALL'"
+          (click)="setTypeFilter('ALL')"
+        >
+          {{ 'notifications.filterType' | translate }}
+        </button>
+        <button
+          mat-stroked-button
+          [class.active]="activeTypeFilter() === 'EMAIL'"
+          (click)="setTypeFilter('EMAIL')"
+        >
+          <mat-icon>email</mat-icon>
+          {{ 'notifications.typeEmail' | translate }}
+        </button>
+        <button
+          mat-stroked-button
+          [class.active]="activeTypeFilter() === 'PUSH'"
+          (click)="setTypeFilter('PUSH')"
+        >
+          <mat-icon>notifications_active</mat-icon>
+          {{ 'notifications.typePush' | translate }}
+        </button>
       </div>
 
       @if (loading()) {
@@ -64,6 +90,15 @@
 
       @if (rows().length > 0) {
         <table mat-table [dataSource]="rows()" class="notifications__table">
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>{{ 'notifications.filterType' | translate }}</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-icon [matTooltip]="row.type === 'PUSH' ? ('notifications.typePush' | translate) : ('notifications.typeEmail' | translate)">
+                {{ row.type === 'PUSH' ? 'notifications_active' : 'email' }}
+              </mat-icon>
+            </td>
+          </ng-container>
+
           <ng-container matColumnDef="status">
             <th mat-header-cell *matHeaderCellDef>{{ 'notifications.colStatus' | translate }}</th>
             <td mat-cell *matCellDef="let row">

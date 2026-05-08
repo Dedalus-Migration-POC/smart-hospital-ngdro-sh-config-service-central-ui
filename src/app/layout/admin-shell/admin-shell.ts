@@ -78,6 +78,7 @@ export class AdminShell {
     { icon: 'notifications', labelKey: 'nav.notifications', path: '/notifications' },
     { icon: 'people', labelKey: 'nav.users', path: '/users', requiredRole: 'ADMIN' },
     { icon: 'receipt_long', labelKey: 'nav.auditLog', path: '/audit', requiredRole: 'ADMIN' },
+    { icon: 'settings', labelKey: 'nav.settings', path: '/settings', requiredRole: 'ADMIN' },
   ];
 
   readonly visibleNavItems = computed(() => {

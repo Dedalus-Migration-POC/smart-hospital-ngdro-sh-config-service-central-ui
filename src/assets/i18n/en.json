@@ -16,7 +16,8 @@
     "auditLog": "Audit log",
     "myCustomer": "My customer",
     "myConfigurations": "Configurations",
-    "notifications": "My notifications"
+    "notifications": "My notifications",
+    "settings": "Settings"
   },
   "common": {
     "save": "Save",
@@ -738,6 +739,38 @@
     "detailBody": "Email body",
     "detailError": "SMTP error",
     "detailDryRunNote": "Email not sent: test mode active (dry-run). Recipient is not in the development whitelist.",
-    "detailTooltip": "View detail"
+    "detailTooltip": "View detail",
+    "typeEmail": "Email",
+    "typePush": "Web push",
+    "filterType": "Filter by type"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "System configuration",
+    "smtp": {
+      "title": "SMTP Configuration",
+      "subtitle": "Parameters for sending emails",
+      "saved": "SMTP configuration saved",
+      "saveError": "Error saving configuration",
+      "saveBtn": "Save configuration"
+    },
+    "email": {
+      "title": "Email sending",
+      "subtitle": "Sending mode and development whitelist",
+      "saved": "Email settings saved",
+      "saveBtn": "Save settings"
+    },
+    "secretPlaceholder": "(unchanged)",
+    "lastUpdated": "Last updated"
+  },
+  "snippet": {
+    "flutterBtn": "Flutter",
+    "angularBtn": "Angular",
+    "javaBtn": "Java (Totem)",
+    "dialogTitle": "Integration snippet",
+    "selectTenant": "Tenant",
+    "copyBtn": "Copy",
+    "copied": "Copied!",
+    "noTenants": "No tenants configured for this installation"
   }
 }

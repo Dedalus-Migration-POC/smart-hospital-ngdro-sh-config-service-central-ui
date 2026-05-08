@@ -1,0 +1,49 @@
+.settings-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  &__header {
+    margin-bottom: 8px;
+  }
+
+  &__subtitle {
+    color: var(--mat-sys-on-surface-variant);
+    margin-top: 4px;
+  }
+
+  &__card {
+    width: 100%;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+
+    mat-form-field {
+      width: 100%;
+    }
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__toggle-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 0;
+  }
+
+  &__hint {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 12px;
+  }
+}

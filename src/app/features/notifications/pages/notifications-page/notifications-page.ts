@@ -50,9 +50,10 @@ export class NotificationsPage {
   readonly totalElements = signal(0);
   readonly currentPage = signal(0);
   readonly activeFilter = signal<'ALL' | 'SENT' | 'FAILED' | 'DRY_RUN'>('ALL');
+  readonly activeTypeFilter = signal<'ALL' | 'EMAIL' | 'PUSH'>('ALL');
 
   readonly pageSize = 20;
-  readonly columns = ['status', 'installationName', 'createdAt', 'actions'];
+  readonly columns = ['type', 'status', 'installationName', 'createdAt', 'actions'];
 
   constructor() {
     this.load(0);
@@ -60,6 +61,11 @@ export class NotificationsPage {
 
   setFilter(f: 'ALL' | 'SENT' | 'FAILED' | 'DRY_RUN'): void {
     this.activeFilter.set(f);
+    this.load(0);
+  }
+
+  setTypeFilter(t: 'ALL' | 'EMAIL' | 'PUSH'): void {
+    this.activeTypeFilter.set(t);
     this.load(0);
   }
 
@@ -79,7 +85,13 @@ export class NotificationsPage {
     this.errorMessage.set(null);
     this.currentPage.set(page);
     const f = this.activeFilter();
-    this.service.getMyNotifications(page, this.pageSize, f === 'ALL' ? undefined : f).subscribe({
+    const t = this.activeTypeFilter();
+    this.service.getMyNotifications(
+      page,
+      this.pageSize,
+      f === 'ALL' ? undefined : f,
+      t === 'ALL' ? undefined : t
+    ).subscribe({
       next: (res) => {
         this.rows.set(res.content);
         this.totalElements.set(res.totalElements);

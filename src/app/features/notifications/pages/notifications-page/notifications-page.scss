@@ -34,6 +34,14 @@
         border-color: var(--mat-sys-secondary);
       }
     }
+
+    &-sep {
+      width: 1px;
+      background: var(--mat-sys-outline-variant);
+      margin: 0 4px;
+      align-self: stretch;
+    }
+    }
   }
 
   &__table {

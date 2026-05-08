@@ -17,7 +17,8 @@
     "auditLog": "Audit log",
     "myCustomer": "Il mio cliente",
     "myConfigurations": "Configurazioni",
-    "notifications": "Le mie notifiche"
+    "notifications": "Le mie notifiche",
+    "settings": "Impostazioni"
   },
   "common": {
     "save": "Salva",
@@ -755,7 +756,10 @@
     "detailBody": "Testo email",
     "detailError": "Errore SMTP",
     "detailDryRunNote": "Email non inviata: modalità test attiva (dry-run). Il destinatario non è nella whitelist di sviluppo.",
-    "detailTooltip": "Vedi dettaglio"
+    "detailTooltip": "Vedi dettaglio",
+    "typeEmail": "Email",
+    "typePush": "Push web",
+    "filterType": "Filtra per tipo"
   },
   "snippet": {
     "cardTitle": "Snippet di integrazione",
@@ -769,5 +773,24 @@
       "web": "Web",
       "totem": "Totem"
     }
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "subtitle": "Configurazione del sistema",
+    "smtp": {
+      "title": "Configurazione SMTP",
+      "subtitle": "Parametri per l'invio delle email",
+      "saved": "Configurazione SMTP salvata",
+      "saveError": "Errore nel salvataggio della configurazione",
+      "saveBtn": "Salva configurazione"
+    },
+    "email": {
+      "title": "Invio email",
+      "subtitle": "Modalità di invio e whitelist di sviluppo",
+      "saved": "Impostazioni email salvate",
+      "saveBtn": "Salva impostazioni"
+    },
+    "secretPlaceholder": "(invariato)",
+    "lastUpdated": "Ultima modifica"
   }
 }
