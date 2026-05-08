@@ -39,7 +39,7 @@ export interface NotificationLog {
   id: string;
   installationId: string;
   installationName: string;
-  status: 'SENT' | 'FAILED';
+  status: 'SENT' | 'FAILED' | 'DRY_RUN';
   errorMessage: string | null;
   createdAt: string;
 }

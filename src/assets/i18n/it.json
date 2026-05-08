@@ -726,6 +726,8 @@
     "colDate": "Data",
     "colError": "Errore",
     "status_SENT": "Inviata",
-    "status_FAILED": "Fallita"
+    "status_FAILED": "Fallita",
+    "status_DRY_RUN": "Test (dry-run)",
+    "filterDryRun": "Test"
   }
 }

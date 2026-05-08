@@ -43,7 +43,7 @@ export class NotificationsPage {
   readonly rows = signal<NotificationLog[]>([]);
   readonly totalElements = signal(0);
   readonly currentPage = signal(0);
-  readonly activeFilter = signal<'ALL' | 'SENT' | 'FAILED'>('ALL');
+  readonly activeFilter = signal<'ALL' | 'SENT' | 'FAILED' | 'DRY_RUN'>('ALL');
 
   readonly pageSize = 20;
   readonly columns = ['status', 'installationName', 'createdAt', 'errorMessage'];
@@ -52,7 +52,7 @@ export class NotificationsPage {
     this.load(0);
   }
 
-  setFilter(f: 'ALL' | 'SENT' | 'FAILED'): void {
+  setFilter(f: 'ALL' | 'SENT' | 'FAILED' | 'DRY_RUN'): void {
     this.activeFilter.set(f);
     this.load(0);
   }
