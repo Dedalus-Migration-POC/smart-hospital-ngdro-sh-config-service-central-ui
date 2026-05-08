@@ -1,13 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { SystemSetting, SystemSettingUpdate } from '../settings/models';
+import { environment } from '../../../../environments/environment';
+import { SystemSetting, SystemSettingUpdate } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiUrl}/settings`;
+  private readonly base = `${environment.apiBaseUrl}/settings`;
 
   list(category?: string): Observable<SystemSetting[]> {
     let params = new HttpParams();
