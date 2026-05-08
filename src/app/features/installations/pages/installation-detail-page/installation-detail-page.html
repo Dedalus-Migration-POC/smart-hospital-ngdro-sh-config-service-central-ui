@@ -124,16 +124,23 @@
               <button
                 mat-icon-button
                 type="button"
-                [matTooltip]="'installation.rotateApiKeyInfo' | translate"
+                [matTooltip]="'installation.revealApiKeyInfo' | translate"
                 matTooltipPosition="above"
                 matTooltipShowDelay="200"
               >
                 <mat-icon>info_outline</mat-icon>
               </button>
-              <button mat-stroked-button type="button" (click)="rotateApiKey()">
-                <mat-icon>autorenew</mat-icon>
-                {{ 'installation.rotate' | translate }}
-              </button>
+              @if (isAdmin()) {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="!i.apiKeyConfigured"
+                  (click)="revealApiKeyToLog()"
+                >
+                  <mat-icon>terminal</mat-icon>
+                  {{ 'installation.revealApiKeyBtn' | translate }}
+                </button>
+              }
             </div>
           </div>
 
@@ -180,6 +187,28 @@
               </button>
             </div>
           </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Snippet di integrazione per canale -->
+      <mat-card appearance="outlined" class="detail__card">
+        <mat-card-header>
+          <mat-card-title>{{ 'snippet.cardTitle' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'snippet.cardSubtitle' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="detail__snippets">
+          <button mat-stroked-button type="button" (click)="openSnippet('mobile')">
+            <mat-icon>phone_android</mat-icon>
+            Flutter (Mobile)
+          </button>
+          <button mat-stroked-button type="button" (click)="openSnippet('web')">
+            <mat-icon>web</mat-icon>
+            Angular (Web)
+          </button>
+          <button mat-stroked-button type="button" (click)="openSnippet('totem')">
+            <mat-icon>computer</mat-icon>
+            Java (Totem)
+          </button>
         </mat-card-content>
       </mat-card>
     }

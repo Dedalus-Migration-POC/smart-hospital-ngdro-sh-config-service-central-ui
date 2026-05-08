@@ -27,6 +27,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
+import { PushNotificationService } from '../../../../core/push/push-notification';
 import {
   ConfirmDialog,
   ConfirmDialogData,
@@ -72,14 +73,17 @@ export class UserDetailPage implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly translate = inject(TranslateService);
+  readonly push = inject(PushNotificationService);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly savingNotifications = signal(false);
+  readonly pushLoading = signal(false);
   readonly deleting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly user = signal<User | null>(null);
   readonly customers = signal<Customer[]>([]);
+  readonly pushSubscribed = signal(false);
 
   readonly availableRoles = AVAILABLE_ROLES;
 
@@ -116,6 +120,10 @@ export class UserDetailPage implements OnInit {
       next: (list) => this.customers.set(list),
       error: () => {},
     });
+
+    if (this.push.isSupported) {
+      void this.push.isCurrentBrowserSubscribed().then((s) => this.pushSubscribed.set(s));
+    }
 
     this.form.controls.role.valueChanges.subscribe((role) => {
       const ctrl = this.form.controls.customerId;
@@ -192,6 +200,30 @@ export class UserDetailPage implements OnInit {
         );
       },
     });
+  }
+
+  async togglePush(): Promise<void> {
+    this.pushLoading.set(true);
+    try {
+      if (this.pushSubscribed()) {
+        await this.push.unsubscribe();
+        this.pushSubscribed.set(false);
+        this.snackbar.open(this.translate.instant('user.pushUnsubscribed'), 'OK', { duration: 3000 });
+      } else {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          this.snackbar.open(this.translate.instant('user.pushDenied'), 'OK', { duration: 5000 });
+          return;
+        }
+        await this.push.subscribe();
+        this.pushSubscribed.set(true);
+        this.snackbar.open(this.translate.instant('user.pushSubscribed'), 'OK', { duration: 3000 });
+      }
+    } catch {
+      this.snackbar.open(this.translate.instant('user.pushError'), 'OK', { duration: 6000 });
+    } finally {
+      this.pushLoading.set(false);
+    }
   }
 
   openChangePassword(): void {

@@ -50,6 +50,10 @@ export class InstallationService {
     );
   }
 
+  revealApiKeyToLog(id: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/installations/${id}/api-key/reveal-to-log`, null);
+  }
+
   /**
    * Ruota la payload master key. Se `req.payloadMasterKey` è null/undefined, il central
    * genera una chiave random; in entrambi i casi la chiave viene restituita in chiaro

@@ -163,6 +163,34 @@
       </mat-card-actions>
     </mat-card>
 
+    @if (isSelf() && push.isSupported) {
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>{{ 'user.pushTitle' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'user.pushSubtitle' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="detail__meta" style="margin-bottom: 16px">{{ 'user.pushDescription' | translate }}</p>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="pushLoading()"
+            (click)="togglePush()"
+          >
+            @if (pushLoading()) {
+              <mat-progress-spinner mode="indeterminate" diameter="20" />
+            } @else if (pushSubscribed()) {
+              <mat-icon>notifications_off</mat-icon>
+              {{ 'user.pushDisable' | translate }}
+            } @else {
+              <mat-icon>notifications_active</mat-icon>
+              {{ 'user.pushEnable' | translate }}
+            }
+          </button>
+        </mat-card-content>
+      </mat-card>
+    }
+
     <mat-card appearance="outlined">
       <mat-card-header>
         <mat-card-title>{{ 'user.security' | translate }}</mat-card-title>        <mat-card-subtitle>

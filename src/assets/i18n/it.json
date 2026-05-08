@@ -183,9 +183,16 @@
     "apiKeyLabel": "API key di scrittura",
     "apiKeyConfigured": "Configurata",
     "apiKeyMissing": "Mancante",
-    "apiKeyConfiguredHint": "Cifrata a riposo, non recuperabile in chiaro.",
+    "apiKeyConfiguredHint": "Cifrata a riposo, non recuperabile in chiaro dall'interfaccia.",
     "apiKeyMissingHint": "L'on-prem non potrà autenticare le scritture finché non viene impostata.",
     "rotate": "Ruota",
+    "revealApiKeyInfo": "Stampa la API key in chiaro nel log del server (visibile solo a chi ha accesso ai log applicativi). Utile per recuperarla senza doverla ruotare.",
+    "revealApiKeyBtn": "Stampa nei log",
+    "revealApiKeyTitle": "Stampa API key nei log",
+    "revealApiKeyMessage": "La API key di «{{ name }}» verrà decifrata e scritta in chiaro nel log del server. L'operazione viene tracciata nell'audit log. Continuare?",
+    "revealApiKeyConfirm": "Stampa nei log",
+    "revealApiKeySuccess": "API key stampata nel log del server. Controlla i log applicativi.",
+    "revealApiKeyError": "Impossibile stampare la API key nel log.",
     "rotateApiKeyInfo": "Ruota la API key di scrittura usata dal central per autenticarsi verso l'on-prem durante il push delle configurazioni. Dopo la rotazione dovrai aggiornare la chiave nel database on-prem.",
     "rotateMasterKeyInfo": "Ruota la chiave AES-256-GCM usata per cifrare i payload delle configurazioni prima del push. Dopo la rotazione dovrai aggiornare CRYPTO_MASTER_KEY nell'on-prem, altrimenti le configurazioni precedentemente pushate non saranno più decifrabili.",
     "payloadMasterKey": "Payload master key",
@@ -414,6 +421,15 @@
     "securityAdmin": "Reset password (admin). Non è richiesta la password attuale.",
     "changePassword": "Cambia password",
     "resetPassword": "Reset password",
+    "pushTitle": "Notifiche push browser",
+    "pushSubtitle": "Ricevi notifiche push su questo browser anche quando non sei sulla pagina.",
+    "pushDescription": "Attivando le notifiche push riceverai un avviso istantaneo ogni volta che un'installazione on-prem risulta irraggiungibile.",
+    "pushEnable": "Attiva notifiche push",
+    "pushDisable": "Disattiva notifiche push",
+    "pushSubscribed": "Notifiche push attivate per questo browser.",
+    "pushUnsubscribed": "Notifiche push disattivate.",
+    "pushDenied": "Il browser ha negato il permesso per le notifiche. Abilitalo nelle impostazioni del browser.",
+    "pushError": "Errore durante la gestione delle notifiche push.",
     "deleteConfirmTitle": "Eliminare l'utente \"{{username}}\"?",
     "deleteConfirmMessage": "L'utente verrà disattivato. Continuare?",
     "deleteConfirmButton": "Elimina",
@@ -739,5 +755,18 @@
     "detailError": "Errore SMTP",
     "detailDryRunNote": "Email non inviata: modalità test attiva (dry-run). Il destinatario non è nella whitelist di sviluppo.",
     "detailTooltip": "Vedi dettaglio"
+  },
+  "snippet": {
+    "cardTitle": "Snippet di integrazione",
+    "cardSubtitle": "Codice di esempio per leggere la configurazione dall'on-prem, suddiviso per canale.",
+    "title": "Integrazione canale",
+    "intro": "Usa questi snippet per richiamare la lettura della configurazione dall'on-prem. L'API key è quella impostata nell'installazione (recuperabile dai log del server).",
+    "selectTenant": "Seleziona tenant",
+    "apiKeyNote": "Sostituisci LA_TUA_API_KEY con il valore dell'API key configurata per questa installazione (recuperabile tramite «Stampa nei log»). L'endpoint punta all'on-prem, non al central.",
+    "channel": {
+      "mobile": "Mobile",
+      "web": "Web",
+      "totem": "Totem"
+    }
   }
 }

@@ -44,6 +44,10 @@ import {
   ShowPayloadMasterKeyDialogData,
 } from '../../dialogs/show-payload-master-key-dialog/show-payload-master-key-dialog';
 import { InstallationTenantsSection } from '../../../tenants/components/installation-tenants-section/installation-tenants-section';
+import {
+  IntegrationSnippetDialog,
+  IntegrationSnippetDialogData,
+} from '../../dialogs/integration-snippet-dialog/integration-snippet-dialog';
 import { Installation, InstallationStats, INSTALLATION_BASE_URL_PATTERN } from '../../models';
 import { InstallationService } from '../../services/installations';
 
@@ -187,6 +191,35 @@ export class InstallationDetailPage {
     });
   }
 
+  revealApiKeyToLog(): void {
+    const inst = this.installation();
+    if (!inst) return;
+    const confirmData: ConfirmDialogData = {
+      title: this.translate.instant('installation.revealApiKeyTitle'),
+      message: this.translate.instant('installation.revealApiKeyMessage', { name: inst.name }),
+      confirmLabel: this.translate.instant('installation.revealApiKeyConfirm'),
+      isDangerous: true,
+    };
+    this.dialog
+      .open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data: confirmData })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.installations.revealApiKeyToLog(inst.id).subscribe({
+          next: () => this.snackbar.open(
+            this.translate.instant('installation.revealApiKeySuccess'),
+            'OK',
+            { duration: 5000 },
+          ),
+          error: (err: unknown) => this.snackbar.open(
+            toUserMessage(err, this.translate.instant('installation.revealApiKeyError')),
+            'OK',
+            { duration: 6000 },
+          ),
+        });
+      });
+  }
+
   rotatePayloadMasterKey(): void {
     const inst = this.installation();
     if (!inst) return;
@@ -251,6 +284,13 @@ export class InstallationDetailPage {
         this.statsError.set(toUserMessage(err, this.translate.instant('installation.statsError')));
       },
     });
+  }
+
+  openSnippet(channel: 'mobile' | 'web' | 'totem'): void {
+    const inst = this.installation();
+    if (!inst) return;
+    const data: IntegrationSnippetDialogData = { installation: inst, channel };
+    this.dialog.open(IntegrationSnippetDialog, { data, width: '680px', maxHeight: '90vh' });
   }
 
   private delete(inst: Installation): void {

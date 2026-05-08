@@ -1,0 +1,76 @@
+<h2 mat-dialog-title>
+  <mat-icon>integration_instructions</mat-icon>
+  {{ 'snippet.title' | translate }} — {{ ('snippet.channel.' + data.channel) | translate }}
+</h2>
+
+<mat-dialog-content>
+  <p class="snippet-intro">{{ 'snippet.intro' | translate }}</p>
+
+  @if (loading()) {
+    <p class="snippet-loading">{{ 'common.loading' | translate }}</p>
+  } @else {
+    @if (tenants().length > 1) {
+      <mat-form-field appearance="outline" class="snippet-tenant-select">
+        <mat-label>{{ 'snippet.selectTenant' | translate }}</mat-label>
+        <mat-select [ngModel]="selectedTenantId()" (ngModelChange)="selectedTenantId.set($event)">
+          @for (t of tenants(); track t.id) {
+            <mat-option [value]="t.id">{{ t.name }} <span class="snippet-slug">({{ t.slug }})</span></mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
+    <mat-tab-group animationDuration="150ms" class="snippet-tabs">
+      <!-- Flutter / Mobile -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">phone_android</mat-icon>
+          Flutter
+        </ng-template>
+        <div class="snippet-code-wrapper">
+          <button mat-icon-button class="snippet-copy" [matTooltip]="'common.copy' | translate" (click)="copySnippet(flutterSnippet)">
+            <mat-icon>content_copy</mat-icon>
+          </button>
+          <pre class="snippet-code lang-dart">{{ flutterSnippet }}</pre>
+        </div>
+      </mat-tab>
+
+      <!-- Angular / Web -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">web</mat-icon>
+          Angular
+        </ng-template>
+        <div class="snippet-code-wrapper">
+          <button mat-icon-button class="snippet-copy" [matTooltip]="'common.copy' | translate" (click)="copySnippet(angularSnippet)">
+            <mat-icon>content_copy</mat-icon>
+          </button>
+          <pre class="snippet-code lang-ts">{{ angularSnippet }}</pre>
+        </div>
+      </mat-tab>
+
+      <!-- Java / Totem -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">computer</mat-icon>
+          Java
+        </ng-template>
+        <div class="snippet-code-wrapper">
+          <button mat-icon-button class="snippet-copy" [matTooltip]="'common.copy' | translate" (click)="copySnippet(javaSnippet)">
+            <mat-icon>content_copy</mat-icon>
+          </button>
+          <pre class="snippet-code lang-java">{{ javaSnippet }}</pre>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+
+    <div class="snippet-note">
+      <mat-icon>info_outline</mat-icon>
+      {{ 'snippet.apiKeyNote' | translate }}
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>{{ 'common.close' | translate }}</button>
+</mat-dialog-actions>
