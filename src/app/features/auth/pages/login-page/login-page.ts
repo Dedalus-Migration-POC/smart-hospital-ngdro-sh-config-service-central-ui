@@ -73,7 +73,14 @@ export class LoginPage {
         next: () => {
           this.loading.set(false);
           const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
-          void this.router.navigateByUrl(returnUrl);
+          this.router.navigateByUrl(returnUrl).then((ok) => {
+            if (!ok) {
+              // navigazione bloccata: forza hard redirect
+              window.location.href = returnUrl;
+            }
+          }).catch((err: unknown) => {
+            this.errorMessage.set('Errore di navigazione: ' + String(err));
+          });
         },
         error: (err: unknown) => {
           this.loading.set(false);
