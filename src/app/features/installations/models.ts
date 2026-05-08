@@ -7,6 +7,8 @@ export interface Installation {
   baseUrl: string;
   /** True se nel backend è memorizzata una API key cifrata (non viene mai esposta in chiaro). */
   apiKeyConfigured: boolean;
+  /** True se la READ key è stata generata e provisionata sull'on-prem. */
+  readApiKeyConfigured: boolean;
   /** True se è memorizzata una payload master key (recuperabile in chiaro via apposito endpoint). */
   payloadMasterKeyConfigured: boolean;
   active: boolean;
@@ -18,14 +20,26 @@ export interface Installation {
   createdAt: string;
 }
 
+export interface ProvisionPackage {
+  adminApiKey: string;
+  targetUrl: string;
+  body: string;
+}
+
 export interface InstallationCreateRequest {
   name: string;
   /** Deve iniziare con http:// o https:// (regex backend ^https?://.+). */
   baseUrl: string;
-  apiKey: string;
   /** Opzionale: se omessa, il central genera una master key random. */
   payloadMasterKey?: string;
 }
+
+export interface InstallationCreateResponse extends Installation {
+  adminKeyProvisionPackage?: ProvisionPackage | null;
+  readKeyProvisionPackage?: ProvisionPackage | null;
+}
+
+export type InstallationReprovisionResponse = InstallationCreateResponse;
 
 export interface InstallationUpdateRequest {
   name: string;
@@ -50,6 +64,12 @@ export interface InstallationPayloadMasterKeyResponse {
 export interface InstallationHealth {
   installationId: string;
   reachable: boolean;
+}
+
+export interface InstallationReadApiKeyResponse {
+  installationId: string;
+  readApiKey: string | null;
+  provisionPackage?: ProvisionPackage | null;
 }
 
 export interface InstallationStats {

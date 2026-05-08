@@ -118,4 +118,156 @@
       </button>
     </mat-card-actions>
   </mat-card>
+
+  <!-- On-prem -->
+  <mat-card class="settings-page__card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>dns</mat-icon>
+      <mat-card-title>{{ 'settings.onprem.title' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'settings.onprem.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="settings-page__grid">
+        @for (s of onpremSettings(); track s.key) {
+          @if (s.key === 'onprem.ssl-trust-all') {
+            <div class="settings-page__toggle-row">
+              <mat-slide-toggle
+                [checked]="isBooleanOnprem(s.key)"
+                (change)="setBooleanOnprem(s.key, $event.checked)">
+                {{ 'settings.onprem.sslTrustAll' | translate }}
+              </mat-slide-toggle>
+              @if (isBooleanOnprem(s.key)) {
+                <mat-chip class="settings-page__warning-chip" highlighted>
+                  <mat-icon matChipLeading>warning</mat-icon>
+                  {{ 'settings.onprem.sslTrustAllWarning' | translate }}
+                </mat-chip>
+              }
+            </div>
+          } @else if (s.key === 'onprem.force-browser-fallback') {
+            <div class="settings-page__toggle-row">
+              <mat-slide-toggle
+                [checked]="isBooleanOnprem(s.key)"
+                (change)="setBooleanOnprem(s.key, $event.checked)">
+                {{ 'settings.onprem.forceBrowserFallback' | translate }}
+              </mat-slide-toggle>
+              @if (s.description) {
+                <span class="settings-page__hint mat-body-small">{{ s.description }}</span>
+              }
+            </div>
+          } @else {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'settings.onprem.setupKey' | translate }}</mat-label>
+              @if (s.secret) {
+                <input matInput
+                  [type]="secretVisible[s.key] ? 'text' : 'password'"
+                  [(ngModel)]="onpremForm[s.key]"
+                  [placeholder]="'settings.secretPlaceholder' | translate"
+                  autocomplete="new-password" />
+                <button mat-icon-button matSuffix
+                  (click)="toggleSecretVisibility(s.key)"
+                  [matTooltip]="secretVisible[s.key] ? 'Nascondi' : 'Mostra'">
+                  <mat-icon>{{ secretVisible[s.key] ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                <mat-hint>{{ 'settings.onprem.setupKeyHint' | translate }}</mat-hint>
+              } @else {
+                <input matInput [(ngModel)]="onpremForm[s.key]" />
+                @if (s.description) {
+                  <mat-hint>{{ s.description }}</mat-hint>
+                }
+              }
+              @if (s.updatedAt) {
+                <mat-hint align="end">{{ 'settings.lastUpdated' | translate }}: {{ s.updatedAt | date:'dd/MM/yyyy HH:mm' }}</mat-hint>
+              }
+            </mat-form-field>
+          }
+        }
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-flat-button color="primary"
+        (click)="saveOnprem()"
+        [disabled]="onpremLoading()">
+        @if (onpremLoading()) {
+          <mat-icon>hourglass_empty</mat-icon>
+        }
+        {{ 'settings.onprem.saveBtn' | translate }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Sicurezza -->
+  <mat-card class="settings-page__card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>lock</mat-icon>
+      <mat-card-title>{{ 'settings.security.title' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'settings.security.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="settings-page__grid">
+        @for (s of securitySettings(); track s.key) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'settings.security.jwtExpiration' | translate }}</mat-label>
+            <input matInput type="number" min="60" [(ngModel)]="securityForm[s.key]" />
+            @if (s.description) {
+              <mat-hint>{{ s.description }}</mat-hint>
+            }
+            @if (s.updatedAt) {
+              <mat-hint align="end">{{ 'settings.lastUpdated' | translate }}: {{ s.updatedAt | date:'dd/MM/yyyy HH:mm' }}</mat-hint>
+            }
+          </mat-form-field>
+        }
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-flat-button color="primary"
+        (click)="saveSecurity()"
+        [disabled]="securityLoading()">
+        @if (securityLoading()) {
+          <mat-icon>hourglass_empty</mat-icon>
+        }
+        {{ 'settings.security.saveBtn' | translate }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Notifiche -->
+  <mat-card class="settings-page__card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>notifications</mat-icon>
+      <mat-card-title>{{ 'settings.notifications.title' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'settings.notifications.subtitle' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="settings-page__grid">
+        @for (s of notificationsSettings(); track s.key) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'settings.notifications.monitorDelay' | translate }}</mat-label>
+            <input matInput type="number" min="10000" [(ngModel)]="notificationsForm[s.key]" />
+            @if (s.description) {
+              <mat-hint>{{ s.description }}</mat-hint>
+            }
+            @if (s.updatedAt) {
+              <mat-hint align="end">{{ 'settings.lastUpdated' | translate }}: {{ s.updatedAt | date:'dd/MM/yyyy HH:mm' }}</mat-hint>
+            }
+          </mat-form-field>
+        }
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-flat-button color="primary"
+        (click)="saveNotifications()"
+        [disabled]="notificationsLoading()">
+        @if (notificationsLoading()) {
+          <mat-icon>hourglass_empty</mat-icon>
+        }
+        {{ 'settings.notifications.saveBtn' | translate }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
 </div>

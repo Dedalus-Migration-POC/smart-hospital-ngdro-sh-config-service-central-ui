@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -29,7 +28,6 @@ export interface IntegrationSnippetDialogData {
     TranslatePipe,
     MatDialogModule,
     MatButtonModule,
-    MatButtonToggleModule,
     MatTabsModule,
     MatIconModule,
     MatSelectModule,
@@ -47,11 +45,9 @@ export class IntegrationSnippetDialog implements OnInit {
 
   readonly tenants = signal<Tenant[]>([]);
   readonly selectedTenantId = signal<string>('');
-  readonly selectedChannel = signal<'mobile' | 'web' | 'totem'>('mobile');
   readonly loading = signal(true);
 
   get baseUrl(): string { return this.data.installation.baseUrl; }
-  get channel(): string { return this.selectedChannel(); }
   get tenantId(): string { return this.selectedTenantId() || '<TENANT_ID>'; }
   get tenantSlug(): string {
     return this.tenants().find(t => t.id === this.selectedTenantId())?.slug || '<TENANT_SLUG>';
@@ -75,15 +71,15 @@ import 'package:http/http.dart' as http;
 
 const String baseUrl = '${this.baseUrl}';
 const String tenantId = '${this.tenantId}';
-const String channel  = '${this.channel}';
-const String apiKey   = 'LA_TUA_API_KEY'; // dalla rotazione chiave
+const String channel  = 'mobile';
+const String apiKey   = 'LA_TUA_READ_API_KEY'; // dalla sezione Sicurezza → READ key
 
 Future<Map<String, dynamic>> fetchConfig() async {
   final uri = Uri.parse(
     '\$baseUrl/api/tenants/\$tenantId/configs/\$channel',
   );
   final response = await http.get(uri, headers: {
-    'Authorization': 'Bearer \$apiKey',
+    'X-API-Key': '\$apiKey',
     'Content-Type': 'application/json',
   });
 
@@ -105,12 +101,12 @@ export class ConfigService {
 
   private readonly baseUrl = '${this.baseUrl}';
   private readonly tenantId = '${this.tenantId}';
-  private readonly channel = '${this.channel}';
-  private readonly apiKey = 'LA_TUA_API_KEY'; // dalla rotazione chiave
+  private readonly channel = 'web';
+  private readonly apiKey = 'LA_TUA_READ_API_KEY'; // dalla sezione Sicurezza → READ key
 
   getConfig(): Observable<unknown> {
     const headers = new HttpHeaders({
-      Authorization: \`Bearer \${this.apiKey}\`,
+      'X-API-Key': this.apiKey,
     });
     return this.http.get(
       \`\${this.baseUrl}/api/tenants/\${this.tenantId}/configs/\${this.channel}\`,
@@ -130,14 +126,14 @@ public class ConfigClient {
 
     private static final String BASE_URL  = "${this.baseUrl}";
     private static final String TENANT_ID = "${this.tenantId}";
-    private static final String CHANNEL   = "${this.channel}";
-    private static final String API_KEY   = "LA_TUA_API_KEY"; // dalla rotazione chiave
+    private static final String CHANNEL   = "totem";
+    private static final String API_KEY   = "LA_TUA_READ_API_KEY"; // dalla sezione Sicurezza → READ key
 
     public String fetchConfig() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(BASE_URL + "/api/tenants/" + TENANT_ID + "/configs/" + CHANNEL))
-            .header("Authorization", "Bearer " + API_KEY)
+            .header("X-API-Key", API_KEY)
             .header("Content-Type", "application/json")
             .GET()
             .build();

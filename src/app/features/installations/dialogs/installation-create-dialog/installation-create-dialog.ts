@@ -17,7 +17,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { toUserMessage } from '../../../../core/http/api-error';
-import { Installation, INSTALLATION_BASE_URL_PATTERN } from '../../models';
+import { BrowserProvisionService } from '../../../../core/provision/browser-provision';
+import { Installation, InstallationCreateResponse, INSTALLATION_BASE_URL_PATTERN, ProvisionPackage } from '../../models';
 import { InstallationService } from '../../services/installations';
 
 export interface InstallationCreateDialogData {
@@ -57,6 +58,7 @@ export class InstallationCreateDialog {
   private readonly fb = inject(FormBuilder);
   private readonly installations = inject(InstallationService);
   private readonly translate = inject(TranslateService);
+  private readonly browserProvision = inject(BrowserProvisionService);
   private readonly ref = inject<
     MatDialogRef<InstallationCreateDialog, InstallationCreateDialogResult | undefined>
   >(MatDialogRef);
@@ -67,18 +69,12 @@ export class InstallationCreateDialog {
       '',
       [Validators.required, Validators.maxLength(500), Validators.pattern(INSTALLATION_BASE_URL_PATTERN)],
     ],
-    apiKey: ['', [Validators.required]],
     payloadMasterKey: [''],
   });
 
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
-  readonly showApiKey = signal(false);
   readonly showMasterKey = signal(false);
-
-  toggleApiKey(): void {
-    this.showApiKey.update((v) => !v);
-  }
 
   toggleMasterKey(): void {
     this.showMasterKey.update((v) => !v);
@@ -97,15 +93,18 @@ export class InstallationCreateDialog {
     const body = {
       name: v.name,
       baseUrl: v.baseUrl,
-      apiKey: v.apiKey,
       ...(ownMasterKey ? { payloadMasterKey: ownMasterKey } : {}),
     };
 
     this.installations.create(this.data.customerId, body).subscribe({
-      next: (created) => {
+      next: async (created: InstallationCreateResponse) => {
         this.saving.set(false);
-        // Se l'utente non ha fornito la master key, il central ne ha generata una.
-        // La recupero subito per poterla restituire al chiamante e mostrarla.
+        if (created.adminKeyProvisionPackage) {
+          await this.handleBrowserProvision(created.adminKeyProvisionPackage);
+        }
+        if (created.readKeyProvisionPackage) {
+          await this.handleBrowserProvision(created.readKeyProvisionPackage);
+        }
         if (!ownMasterKey) {
           this.installations.getPayloadMasterKey(created.id).subscribe({
             next: (res) => {
@@ -115,7 +114,6 @@ export class InstallationCreateDialog {
               });
             },
             error: () => {
-              // L'installation è stata creata; recupero chiave fallito → chiudo lo stesso.
               this.ref.close({ installation: created, generatedPayloadMasterKey: null });
             },
           });
@@ -128,5 +126,9 @@ export class InstallationCreateDialog {
         this.errorMessage.set(toUserMessage(err, this.translate.instant('installation.createError')));
       },
     });
+  }
+
+  private async handleBrowserProvision(pkg: ProvisionPackage): Promise<void> {
+    return this.browserProvision.provision(pkg);
   }
 }

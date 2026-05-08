@@ -32,7 +32,7 @@ Apre `http://localhost:4200/` con hot reload. Le chiamate API andranno a `http:/
 Credenziali admin di default sul backend locale:
 
 ```
-username: admin
+username: emiliano.auricchio@dedalus.com
 password: DedalUs4$!
 ```
 
@@ -80,7 +80,7 @@ src/
     │   │   ├── services/installations.ts
     │   │   ├── pages/installation-detail-page/
     │   │   ├── components/customer-installations-section/
-    │   │   └── dialogs/{installation-create,rotate-api-key,rotate-payload-master-key,show-payload-master-key}-dialog/
+    │   │   └── dialogs/{installation-create,rotate-api-key,rotate-read-api-key,rotate-payload-master-key,show-payload-master-key}-dialog/
     │   └── tenants/               # configurazioni per tenant/canale/entity
     │       ├── models.ts
     │       ├── services/tenants.ts
@@ -156,6 +156,48 @@ Nella lista installation del dettaglio customer: colonna **"Stato on-prem"** con
 - Pallino rosso = timeout o connection refused
 
 I controlli partono in parallelo al caricamento della lista e si aggiornano progressivamente.
+
+### Provisioning installazione (zero-touch)
+
+Il flusso di setup di una nuova installazione on-prem dalla UI:
+
+1. Avviare l'on-prem (solo config DB necessaria) — il `DataInitializer` genera la **ADMIN key** e la stampa nei log.
+2. Nel central UI: aprire il dettaglio del customer → sezione "Installazioni" → pulsante "Nuova installazione".
+3. Inserire nome, `baseUrl` dell'on-prem e la ADMIN key copiata dai log.
+4. Il central provisiona automaticamente la **READ key** sull'on-prem e crea il collegamento.
+
+La sezione **Sicurezza** nella pagina di dettaglio di ogni installazione espone:
+
+| Voce | Azione disponibile | Descrizione |
+|------|--------------------|-------------|
+| API key (ADMIN key) | Mostra, Ruota | Chiave usata dal central per push/provisioning verso l'on-prem |
+| READ key client | Mostra, Ri-provisiona, Ruota | Chiave usata dai client app (mobile/web/totem) per `GET /config/...` direttamente sull'on-prem |
+| Payload master key | Mostra | Chiave AES-256 per cifratura payload in transito; deve corrispondere a `CRYPTO_MASTER_KEY` sull'on-prem |
+
+I client leggono le config direttamente dall'on-prem:
+```
+GET {onPremBaseUrl}/api/v1/config/{tenantSlug}/{channelId}?entity=base
+X-API-Key: <READ key>
+```
+
+### Browser fallback (VPN / on-prem behind NAT)
+
+Se il server centrale non raggiunge l'on-prem del cliente (es. behind VPN), il browser dell'admin — già in VPN — funge da proxy di rete per due tipi di operazioni:
+
+**Push configurazioni (`PushPackage`)** — implementato in `config-channel-section.ts`:
+1. Il central tenta il push → fallisce → salva la config come `DRAFT` + ritorna `pushPackage: { encryptedPayload, apiKey, targetUrl, baseUrl }`
+2. Il FE fa un health check dal browser verso `{baseUrl}/actuator/health`
+3. Se raggiungibile: dialog di conferma → `fetch(targetUrl, PUT)` con `X-API-Key: apiKey` → `POST .../push-confirm` al central per aggiornare lo stato a `SYNCED`
+
+**Provisioning risorse (`ProvisionPackage`)** — implementato in `installation-detail-page.ts` e `tenant-create-dialog.ts`:
+1. Il central tenta il provisioning (READ key o tenant) → fallisce → salva la risorsa nel proprio DB + ritorna `provisionPackage: { adminApiKey, targetUrl, body }`
+2. Il FE fa health check, dialog di conferma, poi `fetch(targetUrl, POST, { X-API-Key: adminApiKey, body })`
+3. **Nessun confirm verso il central** — la risorsa è già salvata nel DB centrale
+
+Casi di provisioning via browser:
+- `POST .../read-api-key/provision` → fallback: `POST {baseUrl}/v1/admin/api-keys/read`
+- `POST .../read-api-key/rotate` → fallback: stesso endpoint (con nuova key)
+- `POST .../tenants` (creazione tenant) → fallback: `POST {baseUrl}/v1/admin/tenants`
 
 ## Auth
 

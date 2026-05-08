@@ -42,31 +42,6 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>{{ 'installation.createApiKeyLabel' | translate }}</mat-label>
-      <input
-        matInput
-        formControlName="apiKey"
-        [type]="showApiKey() ? 'text' : 'password'"
-        autocomplete="off"
-        spellcheck="false"
-        required
-      />
-      <button
-        mat-icon-button
-        matSuffix
-        type="button"
-        (click)="toggleApiKey()"
-        [attr.aria-label]="showApiKey() ? ('common.close' | translate) : ('installation.show' | translate)"
-      >
-        <mat-icon>{{ showApiKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
-      </button>
-      <mat-hint>{{ 'installation.createApiKeyHint' | translate }}</mat-hint>
-      @if (form.controls.apiKey.hasError('required') && form.controls.apiKey.touched) {
-        <mat-error>{{ 'installation.createApiKeyRequired' | translate }}</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
       <mat-label>{{ 'installation.createMasterKeyLabel' | translate }}</mat-label>
       <input
         matInput

@@ -18,7 +18,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { toUserMessage } from '../../../../core/http/api-error';
-import { Tenant, TENANT_SLUG_PATTERN } from '../../models';
+import { BrowserProvisionService } from '../../../../core/provision/browser-provision';
+import { ProvisionPackage, Tenant, TENANT_SLUG_PATTERN } from '../../models';
 import { TenantService } from '../../services/tenants';
 
 export interface TenantCreateDialogData {
@@ -47,6 +48,7 @@ export class TenantCreateDialog {
   private readonly fb = inject(FormBuilder);
   private readonly tenants = inject(TenantService);
   private readonly translate = inject(TranslateService);
+  private readonly browserProvision = inject(BrowserProvisionService);
 
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -72,9 +74,12 @@ export class TenantCreateDialog {
     const v = this.form.getRawValue();
 
     this.tenants.create(this.data.installationId, { slug: v.slug, name: v.name }).subscribe({
-      next: (tenant) => {
+      next: async (tenant) => {
         this.saving.set(false);
-        this.ref.close(tenant);
+        if (tenant.provisionPackage) {
+          await this.handleBrowserProvision(tenant.provisionPackage);
+        }
+        this.ref.close({ ...tenant, provisionPackage: undefined });
       },
       error: (err: unknown) => {
         this.saving.set(false);
@@ -85,5 +90,9 @@ export class TenantCreateDialog {
 
   cancel(): void {
     this.ref.close();
+  }
+
+  private async handleBrowserProvision(pkg: ProvisionPackage): Promise<void> {
+    return this.browserProvision.provision(pkg);
   }
 }

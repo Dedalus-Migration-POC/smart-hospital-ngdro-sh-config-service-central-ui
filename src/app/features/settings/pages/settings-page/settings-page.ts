@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatChipsModule } from '@angular/material/chips';
 import { SettingsService } from '../../services/settings';
 import { SystemSetting, SystemSettingUpdate } from '../../models';
 import { toUserMessage } from '../../../../core/http/api-error';
@@ -20,7 +21,7 @@ import { toUserMessage } from '../../../../core/http/api-error';
   imports: [
     CommonModule, FormsModule, TranslateModule,
     MatCardModule, MatFormFieldModule, MatInputModule,
-    MatButtonModule, MatIconModule, MatTooltipModule, MatSlideToggleModule,
+    MatButtonModule, MatIconModule, MatTooltipModule, MatSlideToggleModule, MatChipsModule,
   ],
   templateUrl: './settings-page.html',
   styleUrl: './settings-page.scss',
@@ -31,20 +32,43 @@ export class SettingsPage implements OnInit {
 
   smtpSettings = signal<SystemSetting[]>([]);
   emailSettings = signal<SystemSetting[]>([]);
+  onpremSettings = signal<SystemSetting[]>([]);
+  securitySettings = signal<SystemSetting[]>([]);
+  notificationsSettings = signal<SystemSetting[]>([]);
+
   smtpForm: Record<string, string> = {};
   emailForm: Record<string, string> = {};
+  onpremForm: Record<string, string> = {};
+  securityForm: Record<string, string> = {};
+  notificationsForm: Record<string, string> = {};
+
   smtpLoading = signal(false);
   emailLoading = signal(false);
+  onpremLoading = signal(false);
+  securityLoading = signal(false);
+  notificationsLoading = signal(false);
+
   secretVisible: Record<string, boolean> = {};
 
   ngOnInit() {
     this.service.list().subscribe(all => {
       const smtp = all.filter(s => s.category === 'smtp');
       const email = all.filter(s => s.category === 'email');
+      const onprem = all.filter(s => s.category === 'onprem');
+      const security = all.filter(s => s.category === 'security');
+      const notifications = all.filter(s => s.category === 'notifications');
+
       this.smtpSettings.set(smtp);
       this.emailSettings.set(email);
+      this.onpremSettings.set(onprem);
+      this.securitySettings.set(security);
+      this.notificationsSettings.set(notifications);
+
       smtp.forEach(s => { this.smtpForm[s.key] = s.value ?? ''; });
       email.forEach(s => { this.emailForm[s.key] = s.value ?? ''; });
+      onprem.forEach(s => { this.onpremForm[s.key] = s.value ?? ''; });
+      security.forEach(s => { this.securityForm[s.key] = s.value ?? ''; });
+      notifications.forEach(s => { this.notificationsForm[s.key] = s.value ?? ''; });
     });
   }
 
@@ -84,6 +108,60 @@ export class SettingsPage implements OnInit {
     });
   }
 
+  saveOnprem() {
+    this.onpremLoading.set(true);
+    const updates: SystemSettingUpdate[] = this.onpremSettings().map(s => ({
+      key: s.key,
+      value: s.secret && !this.onpremForm[s.key] ? null : this.onpremForm[s.key],
+    }));
+    this.service.updateAll(updates).subscribe({
+      next: () => {
+        this.onpremLoading.set(false);
+        this.snack.open('Impostazioni on-prem salvate', 'OK', { duration: 3000 });
+      },
+      error: err => {
+        this.onpremLoading.set(false);
+        this.snack.open(toUserMessage(err, 'Errore nel salvataggio'), 'OK', { duration: 6000 });
+      },
+    });
+  }
+
+  saveSecurity() {
+    this.securityLoading.set(true);
+    const updates: SystemSettingUpdate[] = this.securitySettings().map(s => ({
+      key: s.key,
+      value: this.securityForm[s.key],
+    }));
+    this.service.updateAll(updates).subscribe({
+      next: () => {
+        this.securityLoading.set(false);
+        this.snack.open('Impostazioni sicurezza salvate', 'OK', { duration: 3000 });
+      },
+      error: err => {
+        this.securityLoading.set(false);
+        this.snack.open(toUserMessage(err, 'Errore nel salvataggio'), 'OK', { duration: 6000 });
+      },
+    });
+  }
+
+  saveNotifications() {
+    this.notificationsLoading.set(true);
+    const updates: SystemSettingUpdate[] = this.notificationsSettings().map(s => ({
+      key: s.key,
+      value: this.notificationsForm[s.key],
+    }));
+    this.service.updateAll(updates).subscribe({
+      next: () => {
+        this.notificationsLoading.set(false);
+        this.snack.open('Impostazioni notifiche salvate', 'OK', { duration: 3000 });
+      },
+      error: err => {
+        this.notificationsLoading.set(false);
+        this.snack.open(toUserMessage(err, 'Errore nel salvataggio'), 'OK', { duration: 6000 });
+      },
+    });
+  }
+
   toggleSecretVisibility(key: string) {
     this.secretVisible[key] = !this.secretVisible[key];
   }
@@ -103,5 +181,13 @@ export class SettingsPage implements OnInit {
   setSslEnabled(val: boolean) {
     this.smtpForm['smtp.ssl'] = String(val);
     this.smtpForm['smtp.port'] = val ? '465' : '587';
+  }
+
+  isBooleanOnprem(key: string): boolean {
+    return this.onpremForm[key] === 'true';
+  }
+
+  setBooleanOnprem(key: string, val: boolean) {
+    this.onpremForm[key] = String(val);
   }
 }

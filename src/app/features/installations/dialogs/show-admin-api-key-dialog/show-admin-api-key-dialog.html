@@ -1,0 +1,28 @@
+<h2 mat-dialog-title>{{ 'installation.showAdminKeyTitle' | translate }}</h2>
+
+<mat-dialog-content>
+  <p class="show-key__intro">
+    {{ 'installation.showAdminKeyIntroPre' | translate }} <strong>{{ data.installationName }}</strong>.
+    {{ 'installation.showAdminKeyIntroHint' | translate }}
+  </p>
+
+  @if (loading()) {
+    <div class="show-key__loading">
+      <mat-progress-spinner mode="indeterminate" diameter="24" />
+      <span>{{ 'installation.showAdminKeyLoading' | translate }}</span>
+    </div>
+  } @else if (errorMessage(); as err) {
+    <p class="show-key__error" role="alert">{{ err }}</p>
+  } @else if (key(); as k) {
+    <div class="show-key__value">
+      <code>{{ k }}</code>
+      <button mat-icon-button type="button" (click)="copyKey()" [attr.aria-label]="'common.copy' | translate">
+        <mat-icon>content_copy</mat-icon>
+      </button>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close type="button">{{ 'common.close' | translate }}</button>
+</mat-dialog-actions>

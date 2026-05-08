@@ -5,6 +5,7 @@ export interface Tenant {
   name: string;
   active: boolean;
   createdAt: string;
+  provisionPackage?: ProvisionPackage | null;
 }
 
 export interface TenantCreateRequest {
@@ -32,6 +33,20 @@ export interface PushPackage {
   apiKey: string;
   targetUrl: string;
   baseUrl: string;
+}
+
+/**
+ * Package per il provisioning browser-assisted di risorse on-prem.
+ * Usato quando il central non riesce a raggiungere l'on-prem (es. behind VPN).
+ * Il browser deve fare:
+ *   POST targetUrl
+ *   Headers: Content-Type: application/json, X-API-Key: adminApiKey
+ *   Body: body
+ */
+export interface ProvisionPackage {
+  adminApiKey: string;
+  targetUrl: string;
+  body: string;
 }
 
 export interface AppConfigVersion {

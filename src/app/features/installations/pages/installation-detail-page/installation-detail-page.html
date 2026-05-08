@@ -104,6 +104,8 @@
           <mat-card-subtitle>{{ 'installation.securitySubtitle' | translate }}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content class="detail__security">
+
+          <!-- ADMIN key (usata dal central per push verso l'on-prem) -->
           <div class="security__row">
             <div class="security__label">
               <mat-icon>vpn_key</mat-icon>
@@ -132,13 +134,21 @@
               </button>
               @if (isAdmin()) {
                 <button
-                  mat-stroked-button
+                  mat-button
                   type="button"
                   [disabled]="!i.apiKeyConfigured"
-                  (click)="revealApiKeyToLog()"
+                  (click)="showAdminApiKey()"
                 >
-                  <mat-icon>terminal</mat-icon>
-                  {{ 'installation.revealApiKeyBtn' | translate }}
+                  <mat-icon>visibility</mat-icon>
+                  {{ 'installation.show' | translate }}
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="rotateApiKey()"
+                >
+                  <mat-icon>autorenew</mat-icon>
+                  {{ 'installation.rotateApiKeyBtn' | translate }}
                 </button>
               }
             </div>
@@ -146,6 +156,68 @@
 
           <mat-divider />
 
+          <!-- READ key (usata dai client mobile/web/totem per leggere le config dall'on-prem) -->
+          <div class="security__row">
+            <div class="security__label">
+              <mat-icon>key</mat-icon>
+              <div>
+                <div class="security__title">{{ 'installation.readApiKeyLabel' | translate }}</div>
+                <div class="security__hint">
+                  @if (i.readApiKeyConfigured) {
+                    <span class="chip chip--ok">{{ 'installation.readApiKeyConfigured' | translate }}</span>
+                    {{ 'installation.readApiKeyConfiguredHint' | translate }}
+                  } @else {
+                    <span class="chip chip--off">{{ 'installation.readApiKeyMissing' | translate }}</span>
+                    {{ 'installation.readApiKeyMissingHint' | translate }}
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="security__actions">
+              <button
+                mat-icon-button
+                type="button"
+                [matTooltip]="'installation.readApiKeyInfo' | translate"
+                matTooltipPosition="above"
+                matTooltipShowDelay="200"
+              >
+                <mat-icon>info_outline</mat-icon>
+              </button>
+              @if (isAdmin()) {
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="!i.readApiKeyConfigured"
+                  (click)="showReadApiKey()"
+                >
+                  <mat-icon>visibility</mat-icon>
+                  {{ 'installation.show' | translate }}
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="!i.readApiKeyConfigured"
+                  (click)="provisionReadApiKey()"
+                >
+                  <mat-icon>sync</mat-icon>
+                  {{ 'installation.provisionReadKeyBtn' | translate }}
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="!i.readApiKeyConfigured"
+                  (click)="rotateReadApiKey()"
+                >
+                  <mat-icon>autorenew</mat-icon>
+                  {{ 'installation.rotateReadKeyBtn' | translate }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <mat-divider />
+
+          <!-- Payload master key (cifra le config in transito tra central e on-prem) -->
           <div class="security__row">
             <div class="security__label">
               <mat-icon>enhanced_encryption</mat-icon>
@@ -185,6 +257,18 @@
           </div>
         </mat-card-content>
         <mat-card-actions align="end">
+          @if (isAdmin()) {
+            <button
+              mat-stroked-button
+              color="primary"
+              type="button"
+              (click)="reprovision()"
+              [disabled]="reprovisioning()"
+            >
+              <mat-icon>sync</mat-icon>
+              {{ 'installation.reprovisionButton' | translate }}
+            </button>
+          }
           <button mat-stroked-button type="button" (click)="openSnippet()">
             <mat-icon>integration_instructions</mat-icon>
             {{ 'snippet.btn' | translate }}

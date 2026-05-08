@@ -35,8 +35,11 @@ Path: `../backend/sh-config-service-central/`
 /customers                                          # CRUD clienti
 /customers/{id}/installations                       # CRUD installation per customer
 /installations/{id}                                 # GET/PUT/DELETE installation
-/installations/{id}/api-key                         # PUT rotazione API key on-prem
+/installations/{id}/api-key                         # PUT rotazione API key on-prem (ADMIN key)
 /installations/{id}/payload-master-key              # GET (in chiaro!) + PUT rotazione
+
+/installations/{id}/read-api-key/provision          # POST provisiona READ key su on-prem → InstallationReadApiKeyResponse
+/installations/{id}/read-api-key/rotate             # POST ruota + provisiona READ key → InstallationReadApiKeyResponse
 
 /installations/{id}/tenants                         # CRUD tenant per installation
 /tenants/{id}                                       # GET/PUT/DELETE tenant
@@ -117,7 +120,7 @@ branch: main
 ## Credenziali dev (backend locale)
 
 ```
-username: admin
+username: emiliano.auricchio@dedalus.com
 password: DedalUs4$!
 base URL: http://localhost:8081/api
 ```
@@ -135,9 +138,76 @@ DB locale: customer "asl-latina", installation "localdev" (→ on-prem `:8080`),
 - [x] Users + Audit log (ADMIN-only)
 - [x] Editor grafico canale web (`base`): dialog 5 tab + anteprima live `WebPagePreview`
 - [x] Editor web: supporto multi-tipo immagine logo (`url | inlineSvg | file | base64`)
+- [x] Zero-touch provisioning: ADMIN key → central crea install → READ key auto-provisionata su on-prem → tenant provisionati al volo
+- [x] Browser fallback push config (`PushPackage`): se central non raggiunge on-prem, il browser fa il fetch diretto e poi `pushConfirm`
+- [x] Browser fallback provisioning (`ProvisionPackage`): se central non raggiunge on-prem per provision/rotate READ key o per crea tenant, il browser fa il POST diretto sull'on-prem
 - [ ] Build produzione + Dockerfile + Jenkinsfile
 
 ## Note implementative importanti
+
+### Zero-touch provisioning
+
+Flusso completo per collegare una nuova istanza on-prem:
+
+1. Avviare l'on-prem (solo config DB nello `yml`). `DataInitializer` genera una ADMIN key random e la stampa nei log una sola volta.
+2. Nel central UI: Customer → Installazioni → Nuova installazione: inserire nome, `baseUrl` e la ADMIN key copiata dai log.
+3. Il central genera automaticamente una **READ key**, la provisiona sull'on-prem (`POST /v1/admin/api-keys/read`) e la salva cifrata nel proprio DB.
+4. I tenant creati nel central vengono provisionati istantaneamente sull'on-prem (`POST /v1/admin/tenants`).
+5. Le config pushate dal central arrivano sull'on-prem (`PUT /v1/config/{slug}/{channelId}`).
+
+I client (app mobile/web/totem) leggono le config direttamente dall'on-prem:
+```
+GET {onPremBaseUrl}/api/v1/config/{tenantSlug}/{channelId}?entity=base
+X-API-Key: <READ key>
+```
+
+### Browser fallback — Push config (`PushPackage`)
+
+Se il central non raggiunge l'on-prem (es. behind VPN), il browser dell'admin — già in VPN — funge da proxy di rete:
+
+1. `PUT /tenants/{id}/configs/{channelId}` → config salvata su central ma on-prem irraggiungibile → risposta con `syncStatus: "DRAFT"` + `pushPackage: { encryptedPayload, apiKey, targetUrl, baseUrl }`
+2. `config-channel-section.ts` rileva `pushPackage` → health check `GET {baseUrl}/actuator/health` (mode: no-cors)
+3. Se raggiungibile: dialog di conferma → `fetch(targetUrl, PUT, { X-API-Key: apiKey, body: encryptedPayload })` → `POST .../push-confirm` al central per aggiornare `syncStatus = SYNCED`
+4. Se non raggiungibile: snackbar di errore
+
+Pattern implementato in `config-channel-section.ts` metodo `handleBrowserPush()` (righe ~464-543).
+
+### Browser fallback — Provisioning (`ProvisionPackage`)
+
+Stesso pattern del push config ma per il provisioning (READ key e tenant). Non serve `pushConfirm` perché il central ha già salvato i dati prima di tentare la chiamata on-prem.
+
+DTO `ProvisionPackage` (in `push/ProvisionPackage.java` lato BE, in `tenants/models.ts` e `installations/models.ts` lato FE):
+```json
+{
+  "adminApiKey": "<ADMIN key in chiaro>",
+  "targetUrl": "http://on-prem:8080/api/v1/admin/api-keys/read",
+  "body": "{\"key\":\"<read-key>\"}"
+}
+```
+Il browser fa semplicemente:
+```js
+fetch(pkg.targetUrl, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'X-API-Key': pkg.adminApiKey },
+  body: pkg.body,
+  signal: AbortSignal.timeout(15000)
+})
+```
+
+**Quando viene ritornato `provisionPackage`:**
+- `POST /installations/{id}/read-api-key/provision` → `InstallationReadApiKeyResponse` con `provisionPackage` se on-prem irraggiungibile
+- `POST /installations/{id}/read-api-key/rotate` → `InstallationReadApiKeyResponse` con `readApiKey` (nuova key) + `provisionPackage` se irraggiungibile
+- `POST /installations/{id}/tenants` → `TenantResponse` con `provisionPackage` se on-prem irraggiungibile
+
+**Target URL per ciascun caso:**
+- Provision READ key: `{baseUrl}/v1/admin/api-keys/read`  — body: `{"key":"<read-key>"}`
+- Provision tenant: `{baseUrl}/v1/admin/tenants`  — body: `{"slug":"...","name":"..."}`
+
+La `adminApiKey` è sicura da mandare al browser: l'utente è già admin autenticato via JWT, e il pattern è lo stesso di `PushPackage` che manda la WRITE key.
+
+Metodi che gestiscono il fallback:
+- `installation-detail-page.ts`: `handleBrowserProvision(pkg: ProvisionPackage)` — per provision/rotate READ key
+- `tenant-create-dialog.ts`: `handleBrowserProvision(pkg: ProvisionPackage)` — per la creazione tenant
 
 ### Editor grafico canale web (`web-app-config-editor-dialog`)
 

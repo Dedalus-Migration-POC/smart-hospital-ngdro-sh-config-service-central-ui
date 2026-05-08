@@ -46,4 +46,10 @@
     color: var(--mat-sys-on-surface-variant);
     font-size: 12px;
   }
+
+  &__warning-chip {
+    background-color: #ff9800 !important;
+    color: white !important;
+    font-size: 12px;
+  }
 }

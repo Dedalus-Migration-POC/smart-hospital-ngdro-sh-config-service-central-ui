@@ -7,7 +7,8 @@
     "logout": "Logout",
     "comingSoon": "coming soon",
     "footerCompany": "Dedalus Italia S.p.A · Via di Collodi, 6/C · 50141 Florence · VAT 05994810488",
-    "footerCookies": "This site uses only technical cookies strictly necessary for the service to function."
+    "footerCookies": "This site uses only technical cookies strictly necessary for the service to function.",
+    "myProfile": "My profile"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -181,11 +182,11 @@
     "delete": "Delete",
     "security": "Security",
     "securitySubtitle": "Credentials for the central → on-premise channel.",
-    "apiKeyLabel": "Write API key",
+    "apiKeyLabel": "API key (on-prem ADMIN key)",
     "apiKeyConfigured": "Configured",
     "apiKeyMissing": "Missing",
-    "apiKeyConfiguredHint": "Encrypted at rest, not retrievable in plain text.",
-    "apiKeyMissingHint": "The on-premise server will not be able to authenticate writes until this is set.",
+    "apiKeyConfiguredHint": "Key used by central to authenticate to the on-prem during push.",
+    "apiKeyMissingHint": "The on-prem will not receive pushes until this is set.",
     "rotate": "Rotate",
     "rotateApiKeyInfo": "Rotates the write API key used by the central to authenticate against the on-prem during configuration pushes. After rotation you must update the key in the on-prem database.",
     "rotateMasterKeyInfo": "Rotates the AES-256-GCM key used to encrypt configuration payloads before pushing. After rotation you must update CRYPTO_MASTER_KEY on the on-prem, otherwise previously pushed configurations will no longer be decryptable.",
@@ -211,9 +212,6 @@
     "createTitle": "New installation",
     "createSuccess": "Installation \"{{name}}\" created.",
     "createIntro": "Add an on-premise installation for customer",
-    "createApiKeyLabel": "Write API key",
-    "createApiKeyHint": "Encrypted at rest on the central, no longer retrievable in plain text.",
-    "createApiKeyRequired": "API key is required.",
     "createMasterKeyLabel": "Payload master key (optional)",
     "createMasterKeyHint": "Leave blank to generate a random one; you can retrieve it immediately after.",
     "createError": "Unable to create the installation.",
@@ -251,7 +249,41 @@
     "statsByEvent": "By event type",
     "statsByChannel": "By channel",
     "statsGeneratedAt": "Generated at",
-    "statsError": "Unable to retrieve statistics from the on-prem."
+    "statsError": "Unable to retrieve statistics from the on-prem.",
+    "revealApiKeyInfo": "Show the ADMIN key used by central for on-prem push.",
+    "revealApiKeyBtn": "Print to log",
+    "rotateApiKeyBtn": "Rotate",
+    "showAdminKeyTitle": "On-prem ADMIN key",
+    "showAdminKeyIntroPre": "ADMIN key currently configured for",
+    "showAdminKeyIntroHint": "Used by central to authenticate to the on-prem during config push.",
+    "showAdminKeyLoading": "Loading…",
+    "showAdminKeyError": "Unable to retrieve the key.",
+    "readApiKeyLabel": "Client READ key",
+    "readApiKeyConfigured": "Configured",
+    "readApiKeyMissing": "Not provisioned",
+    "readApiKeyConfiguredHint": "Provisioned by central on the on-prem. Clients use it to read configs.",
+    "readApiKeyMissingHint": "Auto-generated at installation creation; click Re-provision if the on-prem was reset.",
+    "readApiKeyInfo": "Key used by clients (mobile/web/totem) to read configs from the on-prem via X-API-Key header.",
+    "showReadKeyTitle": "Client READ key",
+    "showReadKeyIntroPre": "READ key currently configured for",
+    "showReadKeyIntroHint": "Distribute to clients (mobile/web/totem) for reading configs from the on-prem. Use the X-API-Key header.",
+    "showReadKeyLoading": "Loading…",
+    "showReadKeyError": "Unable to retrieve the key.",
+    "provisionReadKeyBtn": "Re-provision",
+    "provisionReadKeySuccess": "READ key re-provisioned on the on-prem.",
+    "provisionReadKeyError": "Unable to re-provision the READ key.",
+    "rotateReadKeyBtn": "Rotate",
+    "rotateReadKeySuccess": "READ key rotated and provisioned on the on-prem.",
+    "rotateReadKeyError": "Unable to rotate the READ key.",
+    "readKeyProvisionSuccess": "READ key provisioned on the on-prem.",
+    "reprovisionButton": "Re-provision on-prem",
+    "reprovisionSuccess": "On-prem provisioned successfully.",
+    "reprovisionError": "Error during on-prem re-provisioning.",
+    "revealApiKeyTitle": "Print API Key to Logs",
+    "revealApiKeyMessage": "The API key for \"{{ name }}\" will be decrypted and written in plain text to the server log. The operation is recorded in the audit log. Continue?",
+    "revealApiKeyConfirm": "Print to logs",
+    "revealApiKeySuccess": "API key printed to server log. Check the application logs.",
+    "revealApiKeyError": "Unable to print the API key to the log."
   },
   "product": {
     "title": "Products",
@@ -466,7 +498,16 @@
     "notifColDate": "Date",
     "notifColError": "Error",
     "notifStatus_SENT": "Sent",
-    "notifStatus_FAILED": "Failed"
+    "notifStatus_FAILED": "Failed",
+    "pushTitle": "Browser push notifications",
+    "pushSubtitle": "Receive push notifications on this browser even when you are not on the page.",
+    "pushDescription": "By enabling push notifications you will receive an instant alert whenever an on-prem installation is unreachable.",
+    "pushEnable": "Enable push notifications",
+    "pushDisable": "Disable push notifications",
+    "pushSubscribed": "Push notifications enabled for this browser.",
+    "pushUnsubscribed": "Push notifications disabled.",
+    "pushDenied": "The browser denied permission for notifications. Enable it in the browser settings.",
+    "pushError": "Error while managing push notifications."
   },
   "audit": {
     "title": "Audit log",
@@ -761,7 +802,32 @@
       "saveBtn": "Save settings"
     },
     "secretPlaceholder": "(unchanged)",
-    "lastUpdated": "Last updated"
+    "lastUpdated": "Last updated",
+    "onprem": {
+      "title": "On-prem",
+      "subtitle": "Parameters for communication with on-prem instances",
+      "setupKey": "Provisioning setup key",
+      "setupKeyHint": "Used for zero-touch provisioning of new on-prem installations",
+      "sslTrustAll": "Accept invalid SSL certificates (self-signed)",
+      "sslTrustAllWarning": "⚠ Active — test/staging environments only",
+      "forceBrowserFallback": "Force browser fallback provisioning",
+      "saved": "On-prem settings saved",
+      "saveBtn": "Save settings"
+    },
+    "security": {
+      "title": "Security",
+      "subtitle": "Authentication and authorization parameters",
+      "jwtExpiration": "JWT token expiration (seconds)",
+      "saved": "Security settings saved",
+      "saveBtn": "Save settings"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "subtitle": "Installation monitoring configuration",
+      "monitorDelay": "Notification polling interval (ms)",
+      "saved": "Notification settings saved",
+      "saveBtn": "Save settings"
+    }
   },
   "snippet": {
     "flutterBtn": "Flutter",
@@ -772,6 +838,31 @@
     "copyBtn": "Copy",
     "copied": "Copied!",
     "noTenants": "No tenants configured for this installation",
-    "btn": "Client snippets"
+    "btn": "Client snippets",
+    "cardTitle": "Integration snippet",
+    "cardSubtitle": "Sample code to read the configuration from the on-prem, split by channel.",
+    "title": "Channel integration",
+    "intro": "Use these snippets to call the configuration read from the on-prem. The API key is the one set in the installation (retrievable from the server logs).",
+    "apiKeyNote": "Replace YOUR_API_KEY with the API key value configured for this installation (retrievable via \"Print to logs\"). The endpoint points to the on-prem, not the central.",
+    "channel": {
+      "mobile": "Mobile",
+      "web": "Web",
+      "totem": "Totem"
+    }
+  },
+  "provision": {
+    "browserFallbackChecking": "Checking on-prem reachability from the browser...",
+    "browserFallbackUnreachable": "On-prem not reachable even from the browser. Check your VPN connection.",
+    "browserFallbackConfirmTitle": "Provisioning via browser",
+    "browserFallbackConfirmMessage": "The central server cannot reach the on-prem. The browser will perform provisioning directly.",
+    "browserFallbackConfirmButton": "Provision via browser",
+    "browserFallbackInProgress": "Provisioning in progress via browser...",
+    "browserFallbackSynced": "Provisioning completed via browser.",
+    "browserFallbackFailed": "Provisioning failed even via browser.",
+    "sslCertTitle": "Invalid SSL Certificate",
+    "sslCertMessage": "The on-prem instance uses an SSL certificate not recognized by the browser (self-signed). To proceed:\n1. Open the on-prem in a new tab\n2. Accept the certificate\n3. Return here and retry.\n\nURL: {{url}}",
+    "sslCertOpenButton": "Open on-prem",
+    "sslCertClose": "Close",
+    "browserFallbackSslError": "Provisioning failed: the on-prem SSL certificate may not have been accepted by the browser. Open the on-prem in a new tab, accept the certificate and retry."
   }
 }

@@ -24,9 +24,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
+import { BrowserProvisionService } from '../../../../core/provision/browser-provision';
 import {
   ConfirmDialog,
   ConfirmDialogData,
@@ -40,6 +42,14 @@ import {
   RotatePayloadMasterKeyDialogData,
 } from '../../dialogs/rotate-payload-master-key-dialog/rotate-payload-master-key-dialog';
 import {
+  ShowAdminApiKeyDialog,
+  ShowAdminApiKeyDialogData,
+} from '../../dialogs/show-admin-api-key-dialog/show-admin-api-key-dialog';
+import {
+  ShowReadApiKeyDialog,
+  ShowReadApiKeyDialogData,
+} from '../../dialogs/show-read-api-key-dialog/show-read-api-key-dialog';
+import {
   ShowPayloadMasterKeyDialog,
   ShowPayloadMasterKeyDialogData,
 } from '../../dialogs/show-payload-master-key-dialog/show-payload-master-key-dialog';
@@ -48,7 +58,7 @@ import {
   IntegrationSnippetDialog,
   IntegrationSnippetDialogData,
 } from '../../dialogs/integration-snippet-dialog/integration-snippet-dialog';
-import { Installation, InstallationStats, INSTALLATION_BASE_URL_PATTERN } from '../../models';
+import { Installation, InstallationStats, INSTALLATION_BASE_URL_PATTERN, ProvisionPackage } from '../../models';
 import { InstallationService } from '../../services/installations';
 
 @Component({
@@ -85,12 +95,14 @@ export class InstallationDetailPage {
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly browserProvision = inject(BrowserProvisionService);
 
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
 
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly deleting = signal(false);
+  readonly reprovisioning = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly installation = signal<Installation | null>(null);
 
@@ -252,6 +264,113 @@ export class InstallationDetailPage {
     );
   }
 
+  showAdminApiKey(): void {
+    const inst = this.installation();
+    if (!inst) return;
+    const data: ShowAdminApiKeyDialogData = {
+      installationId: inst.id,
+      installationName: inst.name,
+    };
+    this.dialog.open<ShowAdminApiKeyDialog, ShowAdminApiKeyDialogData, void>(
+      ShowAdminApiKeyDialog,
+      { data },
+    );
+  }
+
+  showReadApiKey(): void {
+    const inst = this.installation();
+    if (!inst) return;
+    const data: ShowReadApiKeyDialogData = {
+      installationId: inst.id,
+      installationName: inst.name,
+    };
+    this.dialog.open<ShowReadApiKeyDialog, ShowReadApiKeyDialogData, void>(
+      ShowReadApiKeyDialog,
+      { data },
+    );
+  }
+
+  rotateReadApiKey(): void {
+    const inst = this.installation();
+    if (!inst) return;
+    this.installations.rotateReadApiKey(inst.id).subscribe({
+      next: async (result) => {
+        this.load(inst.id);
+        if (result.provisionPackage) {
+          await this.handleBrowserProvision(result.provisionPackage);
+        } else {
+          this.snackbar.open(
+            this.translate.instant('installation.rotateReadKeySuccess'),
+            'OK',
+            { duration: 3000 },
+          );
+        }
+      },
+      error: (err: unknown) => this.snackbar.open(
+        toUserMessage(err, this.translate.instant('installation.rotateReadKeyError')),
+        'OK',
+        { duration: 6000 },
+      ),
+    });
+  }
+
+  provisionReadApiKey(): void {
+    const inst = this.installation();
+    if (!inst) return;
+    this.installations.provisionReadApiKey(inst.id).subscribe({
+      next: async (result) => {
+        if (result.provisionPackage) {
+          await this.handleBrowserProvision(result.provisionPackage);
+        } else {
+          this.snackbar.open(
+            this.translate.instant('installation.readKeyProvisionSuccess'),
+            'OK',
+            { duration: 3000 },
+          );
+        }
+      },
+      error: (err: unknown) => this.snackbar.open(
+        toUserMessage(err, this.translate.instant('installation.provisionReadKeyError')),
+        'OK',
+        { duration: 6000 },
+      ),
+    });
+  }
+
+  async reprovision(): Promise<void> {
+    const inst = this.installation();
+    if (!inst || this.reprovisioning()) return;
+    this.reprovisioning.set(true);
+    try {
+      const result = await firstValueFrom(this.installations.reprovision(inst.id));
+      if (result.adminKeyProvisionPackage) {
+        await this.handleBrowserProvision(result.adminKeyProvisionPackage);
+      }
+      if (result.readKeyProvisionPackage) {
+        await this.handleBrowserProvision(result.readKeyProvisionPackage);
+      }
+      if (!result.adminKeyProvisionPackage && !result.readKeyProvisionPackage) {
+        this.snackbar.open(
+          this.translate.instant('installation.reprovisionSuccess'),
+          'OK',
+          { duration: 3000 },
+        );
+      }
+    } catch (err: unknown) {
+      this.snackbar.open(
+        toUserMessage(err, this.translate.instant('installation.reprovisionError')),
+        'OK',
+        { duration: 6000 },
+      );
+    } finally {
+      this.reprovisioning.set(false);
+    }
+  }
+
+  private async handleBrowserProvision(pkg: ProvisionPackage): Promise<void> {
+    return this.browserProvision.provision(pkg);
+  }
+
   confirmDelete(): void {
     const inst = this.installation();
     if (!inst) return;
@@ -290,7 +409,7 @@ export class InstallationDetailPage {
     const inst = this.installation();
     if (!inst) return;
     const data: IntegrationSnippetDialogData = { installation: inst };
-    this.dialog.open(IntegrationSnippetDialog, { data, width: '680px', maxHeight: '90vh' });
+    this.dialog.open(IntegrationSnippetDialog, { data, width: '900px', maxWidth: '95vw', maxHeight: '90vh' });
   }
 
   private delete(inst: Installation): void {

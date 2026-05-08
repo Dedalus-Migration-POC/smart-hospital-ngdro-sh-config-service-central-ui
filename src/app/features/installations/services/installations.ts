@@ -7,9 +7,12 @@ import {
   Installation,
   InstallationApiKeyUpdateRequest,
   InstallationCreateRequest,
+  InstallationCreateResponse,
   InstallationHealth,
   InstallationPayloadMasterKeyResponse,
   InstallationPayloadMasterKeyUpdateRequest,
+  InstallationReadApiKeyResponse,
+  InstallationReprovisionResponse,
   InstallationStats,
   InstallationUpdateRequest,
 } from '../models';
@@ -32,8 +35,8 @@ export class InstallationService {
     return this.http.get<Installation>(`${this.baseUrl}/installations/${id}`);
   }
 
-  create(customerId: string, req: InstallationCreateRequest): Observable<Installation> {
-    return this.http.post<Installation>(
+  create(customerId: string, req: InstallationCreateRequest): Observable<InstallationCreateResponse> {
+    return this.http.post<InstallationCreateResponse>(
       `${this.baseUrl}/customers/${customerId}/installations`,
       req,
     );
@@ -52,6 +55,36 @@ export class InstallationService {
 
   revealApiKeyToLog(id: string): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/installations/${id}/api-key/reveal-to-log`, null);
+  }
+
+  /** Recupera la ADMIN key (usata dal central per push) in chiaro. */
+  getAdminApiKey(id: string): Observable<{ installationId: string; apiKey: string }> {
+    return this.http.get<{ installationId: string; apiKey: string }>(
+      `${this.baseUrl}/installations/${id}/api-key/reveal`,
+    );
+  }
+
+  /** Recupera la READ key (da usare dai client mobile/web/totem) in chiaro. */
+  getReadApiKey(id: string): Observable<InstallationReadApiKeyResponse> {
+    return this.http.get<InstallationReadApiKeyResponse>(
+      `${this.baseUrl}/installations/${id}/read-api-key/reveal`,
+    );
+  }
+
+  /** Re-provisiona la READ key sull'on-prem senza rigenerarla. */
+  provisionReadApiKey(id: string): Observable<InstallationReadApiKeyResponse> {
+    return this.http.post<InstallationReadApiKeyResponse>(
+      `${this.baseUrl}/installations/${id}/read-api-key/provision`,
+      null,
+    );
+  }
+
+  /** Ruota la READ key: genera una nuova e la provisiona sull'on-prem. */
+  rotateReadApiKey(id: string): Observable<InstallationReadApiKeyResponse> {
+    return this.http.post<InstallationReadApiKeyResponse>(
+      `${this.baseUrl}/installations/${id}/read-api-key/rotate`,
+      null,
+    );
   }
 
   /**
@@ -84,6 +117,14 @@ export class InstallationService {
   /** GET /installations/{id}/stats — ADMIN only, pull on-demand dall'on-prem. */
   getStats(id: string): Observable<InstallationStats> {
     return this.http.get<InstallationStats>(`${this.baseUrl}/installations/${id}/stats`);
+  }
+
+  /** Ri-provisiona entrambe le chiavi (ADMIN + READ) sull'on-prem. */
+  reprovision(id: string): Observable<InstallationReprovisionResponse> {
+    return this.http.post<InstallationReprovisionResponse>(
+      `${this.baseUrl}/installations/${id}/provision`,
+      {},
+    );
   }
 
   /** DELETE /installations/{id} — soft-delete (active=false). */
