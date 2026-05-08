@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,7 +18,6 @@ import { TenantService } from '../../../tenants/services/tenants';
 
 export interface IntegrationSnippetDialogData {
   installation: Installation;
-  channel: 'mobile' | 'web' | 'totem';
 }
 
 @Component({
@@ -29,6 +29,7 @@ export interface IntegrationSnippetDialogData {
     TranslatePipe,
     MatDialogModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatTabsModule,
     MatIconModule,
     MatSelectModule,
@@ -46,10 +47,11 @@ export class IntegrationSnippetDialog implements OnInit {
 
   readonly tenants = signal<Tenant[]>([]);
   readonly selectedTenantId = signal<string>('');
+  readonly selectedChannel = signal<'mobile' | 'web' | 'totem'>('mobile');
   readonly loading = signal(true);
 
   get baseUrl(): string { return this.data.installation.baseUrl; }
-  get channel(): string { return this.data.channel; }
+  get channel(): string { return this.selectedChannel(); }
   get tenantId(): string { return this.selectedTenantId() || '<TENANT_ID>'; }
   get tenantSlug(): string {
     return this.tenants().find(t => t.id === this.selectedTenantId())?.slug || '<TENANT_SLUG>';

@@ -1,10 +1,25 @@
 <h2 mat-dialog-title>
   <mat-icon>integration_instructions</mat-icon>
-  {{ 'snippet.title' | translate }} — {{ ('snippet.channel.' + data.channel) | translate }}
+  {{ 'snippet.title' | translate }}
 </h2>
 
 <mat-dialog-content>
   <p class="snippet-intro">{{ 'snippet.intro' | translate }}</p>
+
+  <mat-button-toggle-group
+    [ngModel]="selectedChannel()"
+    (ngModelChange)="selectedChannel.set($event)"
+    class="snippet-channel-toggle">
+    <mat-button-toggle value="mobile">
+      <mat-icon>phone_android</mat-icon> Mobile
+    </mat-button-toggle>
+    <mat-button-toggle value="web">
+      <mat-icon>web</mat-icon> Web
+    </mat-button-toggle>
+    <mat-button-toggle value="totem">
+      <mat-icon>computer</mat-icon> Totem
+    </mat-button-toggle>
+  </mat-button-toggle-group>
 
   @if (loading()) {
     <p class="snippet-loading">{{ 'common.loading' | translate }}</p>

@@ -184,28 +184,12 @@
             </div>
           </div>
         </mat-card-content>
-      </mat-card>
-
-      <!-- Snippet di integrazione per canale -->
-      <mat-card appearance="outlined" class="detail__card">
-        <mat-card-header>
-          <mat-card-title>{{ 'snippet.cardTitle' | translate }}</mat-card-title>
-          <mat-card-subtitle>{{ 'snippet.cardSubtitle' | translate }}</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content class="detail__snippets">
-          <button mat-stroked-button type="button" (click)="openSnippet('mobile')">
-            <mat-icon>phone_android</mat-icon>
-            Flutter (Mobile)
+        <mat-card-actions align="end">
+          <button mat-stroked-button type="button" (click)="openSnippet()">
+            <mat-icon>integration_instructions</mat-icon>
+            {{ 'snippet.btn' | translate }}
           </button>
-          <button mat-stroked-button type="button" (click)="openSnippet('web')">
-            <mat-icon>web</mat-icon>
-            Angular (Web)
-          </button>
-          <button mat-stroked-button type="button" (click)="openSnippet('totem')">
-            <mat-icon>computer</mat-icon>
-            Java (Totem)
-          </button>
-        </mat-card-content>
+        </mat-card-actions>
       </mat-card>
     }
 

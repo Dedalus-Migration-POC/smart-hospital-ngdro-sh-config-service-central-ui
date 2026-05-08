@@ -286,10 +286,10 @@ export class InstallationDetailPage {
     });
   }
 
-  openSnippet(channel: 'mobile' | 'web' | 'totem'): void {
+  openSnippet(): void {
     const inst = this.installation();
     if (!inst) return;
-    const data: IntegrationSnippetDialogData = { installation: inst, channel };
+    const data: IntegrationSnippetDialogData = { installation: inst };
     this.dialog.open(IntegrationSnippetDialog, { data, width: '680px', maxHeight: '90vh' });
   }
 

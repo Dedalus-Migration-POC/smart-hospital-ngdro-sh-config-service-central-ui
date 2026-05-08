@@ -772,7 +772,8 @@
       "mobile": "Mobile",
       "web": "Web",
       "totem": "Totem"
-    }
+    },
+    "btn": "Snippet per client"
   },
   "settings": {
     "title": "Impostazioni",

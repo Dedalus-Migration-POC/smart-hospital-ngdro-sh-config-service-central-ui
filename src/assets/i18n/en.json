@@ -771,6 +771,7 @@
     "selectTenant": "Tenant",
     "copyBtn": "Copy",
     "copied": "Copied!",
-    "noTenants": "No tenants configured for this installation"
+    "noTenants": "No tenants configured for this installation",
+    "btn": "Client snippets"
   }
 }

@@ -2,6 +2,18 @@
   display: block;
 }
 
+.snippet-channel-toggle {
+  display: flex;
+  margin-bottom: 16px;
+
+  mat-button-toggle {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
 h2[mat-dialog-title] {
   display: flex;
   align-items: center;
