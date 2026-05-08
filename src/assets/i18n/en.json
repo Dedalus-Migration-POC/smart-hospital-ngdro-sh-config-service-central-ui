@@ -15,7 +15,8 @@
     "users": "Users",
     "auditLog": "Audit log",
     "myCustomer": "My customer",
-    "myConfigurations": "Configurations"
+    "myConfigurations": "Configurations",
+    "notifications": "My notifications"
   },
   "common": {
     "save": "Save",
@@ -710,5 +711,21 @@
     "pageBackground": "Background image (path)",
     "pageBackgroundColor": "Background color",
     "footerDescription": "Footer description text"
+  },
+  "notifications": {
+    "title": "My notifications",
+    "subtitle": "History of email notifications sent and failed for your account.",
+    "cardTitle": "Notification history",
+    "filterAll": "All",
+    "filterSent": "Sent",
+    "filterFailed": "Failed",
+    "empty": "No notifications recorded yet.",
+    "loadError": "Unable to load notifications.",
+    "colStatus": "Status",
+    "colInstallation": "Installation",
+    "colDate": "Date",
+    "colError": "Error",
+    "status_SENT": "Sent",
+    "status_FAILED": "Failed"
   }
 }

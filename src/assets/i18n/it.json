@@ -15,7 +15,8 @@
     "users": "Utenti",
     "auditLog": "Audit log",
     "myCustomer": "Il mio cliente",
-    "myConfigurations": "Configurazioni"
+    "myConfigurations": "Configurazioni",
+    "notifications": "Le mie notifiche"
   },
   "common": {
     "save": "Salva",
@@ -710,5 +711,21 @@
     "pageBackground": "Immagine di sfondo (percorso)",
     "pageBackgroundColor": "Colore di sfondo",
     "footerDescription": "Testo descrittivo footer"
+  },
+  "notifications": {
+    "title": "Le mie notifiche",
+    "subtitle": "Storico delle notifiche email inviate e non inviate per il tuo account.",
+    "cardTitle": "Storico notifiche",
+    "filterAll": "Tutte",
+    "filterSent": "Inviate",
+    "filterFailed": "Fallite",
+    "empty": "Nessuna notifica ancora registrata.",
+    "loadError": "Impossibile caricare le notifiche.",
+    "colStatus": "Stato",
+    "colInstallation": "Installazione",
+    "colDate": "Data",
+    "colError": "Errore",
+    "status_SENT": "Inviata",
+    "status_FAILED": "Fallita"
   }
 }

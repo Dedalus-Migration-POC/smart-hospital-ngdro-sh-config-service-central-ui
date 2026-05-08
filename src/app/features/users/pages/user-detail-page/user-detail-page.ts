@@ -12,18 +12,15 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -40,7 +37,7 @@ import {
 } from '../../dialogs/change-password-dialog/change-password-dialog';
 import { Customer } from '../../../customers/models';
 import { CustomerService } from '../../../customers/services/customers';
-import { AVAILABLE_ROLES, NotificationLog, User } from '../../models';
+import { AVAILABLE_ROLES, User } from '../../models';
 import { UserService } from '../../services/users';
 
 @Component({
@@ -52,7 +49,6 @@ import { UserService } from '../../services/users';
     RouterLink,
     ReactiveFormsModule,
     MatCardModule,
-    MatChipsModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -61,8 +57,6 @@ import { UserService } from '../../services/users';
     MatSlideToggleModule,
     MatProgressBarModule,
     MatProgressSpinnerModule,
-    MatTableModule,
-    MatPaginatorModule,
     TranslatePipe,
   ],
   templateUrl: './user-detail-page.html',
@@ -87,14 +81,7 @@ export class UserDetailPage implements OnInit {
   readonly user = signal<User | null>(null);
   readonly customers = signal<Customer[]>([]);
 
-  readonly notificationLogs = signal<NotificationLog[]>([]);
-  readonly notificationLogsTotalElements = signal(0);
-  readonly notificationLogsPage = signal(0);
-  readonly notificationLogsPageSize = 10;
-  readonly loadingNotifications = signal(false);
-
   readonly availableRoles = AVAILABLE_ROLES;
-  readonly notificationLogColumns = ['status', 'installationName', 'createdAt', 'errorMessage'];
 
   readonly isSelf = computed(() => {
     const u = this.user();
@@ -164,7 +151,6 @@ export class UserDetailPage implements OnInit {
           this.form.controls.customerId.updateValueAndValidity();
         }
         this.loading.set(false);
-        this.loadNotificationHistory(user.id, 0);
       },
       error: (err: unknown) => {
         this.user.set(null);
@@ -256,24 +242,6 @@ export class UserDetailPage implements OnInit {
         );
       },
     });
-  }
-
-  loadNotificationHistory(userId: string, page: number): void {
-    this.loadingNotifications.set(true);
-    this.userService.getNotificationHistory(userId, page, this.notificationLogsPageSize).subscribe({
-      next: (res) => {
-        this.notificationLogs.set(res.content);
-        this.notificationLogsTotalElements.set(res.totalElements);
-        this.notificationLogsPage.set(res.number);
-        this.loadingNotifications.set(false);
-      },
-      error: () => this.loadingNotifications.set(false),
-    });
-  }
-
-  onNotificationPageChange(event: PageEvent): void {
-    const u = this.user();
-    if (u) this.loadNotificationHistory(u.id, event.pageIndex);
   }
 
   confirmDelete(): void {    const u = this.user();
