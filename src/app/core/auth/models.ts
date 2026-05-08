@@ -10,12 +10,14 @@ export interface LoginResponse {
 }
 
 export interface MeResponse {
+  id: string;
   username: string;
   role: string | null;
   customerId?: string | null;
 }
 
 export interface CurrentUser {
+  id: string;
   username: string;
   role: string | null;
   customerId?: string | null;
