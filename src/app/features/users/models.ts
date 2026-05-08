@@ -6,6 +6,7 @@ export interface User {
   active: boolean;
   notificationsEnabled: boolean;
   notificationCustomerIds: string[];
+  notificationPollIntervalMinutes: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +32,24 @@ export interface UserPasswordUpdateRequest {
 export interface UserNotificationRequest {
   notificationsEnabled: boolean;
   notificationCustomerIds: string[];
+  pollIntervalMinutes: number;
+}
+
+export interface NotificationLog {
+  id: string;
+  installationId: string;
+  installationName: string;
+  status: 'SENT' | 'FAILED';
+  errorMessage: string | null;
+  createdAt: string;
+}
+
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
 }
 
 export const AVAILABLE_ROLES = ['ADMIN', 'CUSTOMER'] as const;

@@ -52,3 +52,24 @@
 .detail__actions {
   gap: 8px;
 }
+
+.detail__empty {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+  padding: 8px 0;
+}
+
+.notification-table {
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.chip-sent {
+  --mdc-chip-label-text-color: var(--mat-sys-on-tertiary-container);
+  background-color: var(--mat-sys-tertiary-container) !important;
+}
+
+.chip-failed {
+  --mdc-chip-label-text-color: var(--mat-sys-on-error-container);
+  background-color: var(--mat-sys-error-container) !important;
+}

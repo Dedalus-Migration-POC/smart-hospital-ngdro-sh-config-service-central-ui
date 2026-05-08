@@ -451,7 +451,20 @@
     "notificationCustomersLabel": "Customer da monitorare",
     "notificationCustomersHint": "Riceverai notifiche per le installazioni dei customer selezionati.",
     "notificationsSaveSuccess": "Preferenze notifiche salvate.",
-    "notificationsSaveError": "Impossibile salvare le preferenze notifiche."
+    "notificationsSaveError": "Impossibile salvare le preferenze notifiche.",
+    "notificationPollIntervalLabel": "Controlla ogni (minuti)",
+    "notificationPollIntervalHint": "Frequenza con cui verificare la raggiungibilità. Minimo 5 minuti.",
+    "notificationPollIntervalMin": "Il minimo è 5 minuti.",
+    "notificationPollIntervalMax": "Il massimo è 1440 minuti (24 ore).",
+    "notificationHistory": "Storico notifiche",
+    "notificationHistorySubtitle": "Notifiche inviate e non inviate (solo le tue).",
+    "notificationHistoryEmpty": "Nessuna notifica ancora inviata.",
+    "notifColStatus": "Stato",
+    "notifColInstallation": "Installazione",
+    "notifColDate": "Data",
+    "notifColError": "Errore",
+    "notifStatus_SENT": "Inviata",
+    "notifStatus_FAILED": "Fallita"
   },
   "audit": {
     "title": "Audit log",

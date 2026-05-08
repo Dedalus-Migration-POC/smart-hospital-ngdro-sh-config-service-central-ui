@@ -451,7 +451,20 @@
     "notificationCustomersLabel": "Customers to monitor",
     "notificationCustomersHint": "You will receive notifications for installations of selected customers.",
     "notificationsSaveSuccess": "Notification preferences saved.",
-    "notificationsSaveError": "Failed to save notification preferences."
+    "notificationsSaveError": "Failed to save notification preferences.",
+    "notificationPollIntervalLabel": "Check every (minutes)",
+    "notificationPollIntervalHint": "How often to check reachability. Minimum 5 minutes.",
+    "notificationPollIntervalMin": "Minimum is 5 minutes.",
+    "notificationPollIntervalMax": "Maximum is 1440 minutes (24 hours).",
+    "notificationHistory": "Notification history",
+    "notificationHistorySubtitle": "Sent and failed notifications (yours only).",
+    "notificationHistoryEmpty": "No notifications sent yet.",
+    "notifColStatus": "Status",
+    "notifColInstallation": "Installation",
+    "notifColDate": "Date",
+    "notifColError": "Error",
+    "notifStatus_SENT": "Sent",
+    "notifStatus_FAILED": "Failed"
   },
   "audit": {
     "title": "Audit log",

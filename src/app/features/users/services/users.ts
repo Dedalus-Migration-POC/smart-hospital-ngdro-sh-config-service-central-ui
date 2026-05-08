@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import {
+  NotificationLog,
+  Page,
   User,
   UserCreateRequest,
   UserNotificationRequest,
@@ -39,6 +41,11 @@ export class UserService {
 
   updateNotifications(id: string, req: UserNotificationRequest): Observable<User> {
     return this.http.put<User>(`${this.baseUrl}/users/${id}/notifications`, req);
+  }
+
+  getNotificationHistory(id: string, page = 0, size = 20): Observable<Page<NotificationLog>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<NotificationLog>>(`${this.baseUrl}/users/${id}/notifications`, { params });
   }
 
   delete(id: string): Observable<void> {
