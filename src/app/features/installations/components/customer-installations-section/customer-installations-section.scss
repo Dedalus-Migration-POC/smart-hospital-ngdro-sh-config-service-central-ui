@@ -123,7 +123,9 @@ code {
 }
 
 .chip {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.7rem;
   padding: 2px 8px;
   border-radius: 999px;
@@ -131,6 +133,12 @@ code {
   letter-spacing: 0.02em;
   text-transform: uppercase;
   margin-right: 4px;
+
+  &__icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
 }
 
 .chip--ok {
@@ -143,17 +151,12 @@ code {
   color: var(--mat-sys-on-error-container);
 }
 
+.chip--err {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
 .chip--off {
   background: var(--mat-sys-surface-container-high);
   color: var(--mat-sys-on-surface-variant);
-}
-
-.health-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-
-  &--up   { background: #2e7d32; }
-  &--down { background: var(--mat-sys-error); }
 }

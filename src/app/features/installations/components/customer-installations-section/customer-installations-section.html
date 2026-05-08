@@ -124,10 +124,16 @@
                 <mat-progress-spinner mode="indeterminate" diameter="14" />
               }
               @case ('up') {
-                <span class="health-dot health-dot--up" [matTooltip]="'installation.healthUp' | translate"></span>
+                <span class="chip chip--ok">
+                  <mat-icon class="chip__icon">check_circle</mat-icon>
+                  {{ 'installation.healthUp' | translate }}
+                </span>
               }
               @case ('down') {
-                <span class="health-dot health-dot--down" [matTooltip]="'installation.healthDown' | translate"></span>
+                <span class="chip chip--err">
+                  <mat-icon class="chip__icon">cancel</mat-icon>
+                  {{ 'installation.healthDown' | translate }}
+                </span>
               }
             }
           </td>
