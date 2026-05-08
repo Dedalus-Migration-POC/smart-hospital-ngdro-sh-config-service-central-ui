@@ -51,7 +51,10 @@
     "copy": "Copia",
     "createdAt": "Creato il",
     "copySuccess": "Copiato negli appunti.",
-    "copyError": "Copia non riuscita: copia manualmente il valore."
+    "copyError": "Copia non riuscita: copia manualmente il valore.",
+    "show": "Mostra",
+    "hide": "Nascondi",
+    "loadError": "Impossibile caricare i dati."
   },
   "auth": {
     "brandSubtitle": "SmartHospital · Configuratore centrale",
@@ -826,21 +829,24 @@
       "sslTrustAllWarning": "⚠ Attivo — solo ambienti di test/staging",
       "forceBrowserFallback": "Forza browser fallback provisioning",
       "saved": "Impostazioni on-prem salvate",
-      "saveBtn": "Salva impostazioni"
+      "saveBtn": "Salva impostazioni",
+      "forceBrowserFallback_hint": "Solo per test: simula on-prem irraggiungibile dal server"
     },
     "security": {
       "title": "Sicurezza",
       "subtitle": "Parametri di autenticazione e autorizzazione",
       "jwtExpiration": "Scadenza token JWT (secondi)",
       "saved": "Impostazioni sicurezza salvate",
-      "saveBtn": "Salva impostazioni"
+      "saveBtn": "Salva impostazioni",
+      "jwtExpiration_hint": "Durata del token JWT in secondi. Modificare richiede il rinnovo dei token attivi"
     },
     "notifications": {
       "title": "Notifiche",
       "subtitle": "Configurazione del monitoraggio installazioni",
       "monitorDelay": "Intervallo polling notifiche (ms)",
       "saved": "Impostazioni notifiche salvate",
-      "saveBtn": "Salva impostazioni"
+      "saveBtn": "Salva impostazioni",
+      "monitorDelay_hint": "Millisecondi tra un ciclo di controllo raggiungibilità installazioni"
     }
   },
   "provision": {
@@ -857,5 +863,25 @@
     "sslCertOpenButton": "Apri on-prem",
     "sslCertClose": "Chiudi",
     "browserFallbackSslError": "Provisioning fallito: probabilmente il certificato SSL dell'on-prem non è stato accettato dal browser. Apri l'on-prem in una nuova scheda, accetta il certificato e riprova."
+  },
+  "smtp": {
+    "host": "Server SMTP",
+    "host_hint": "Hostname del server SMTP",
+    "port": "Porta SMTP",
+    "port_hint": "Porta del server SMTP (es. 465 per SSL, 587 per STARTTLS)",
+    "username": "Username SMTP",
+    "username_hint": "Credenziale di accesso al server SMTP",
+    "password": "Password SMTP",
+    "password_hint": "Password o app-password per l'autenticazione SMTP",
+    "from": "Indirizzo mittente",
+    "from_hint": "Indirizzo email che appare come mittente",
+    "ssl": "SSL abilitato",
+    "ssl_hint": "Connessione SSL diretta (porta 465)"
+  },
+  "email": {
+    "enabled": "Invio email attivo",
+    "enabled_hint": "Disattivato = dry-run, le email vengono solo loggate",
+    "dev_whitelist": "Whitelist sviluppo",
+    "dev_whitelist_hint": "Indirizzi che ricevono email reali anche in dry-run (separati da virgola)"
   }
 }

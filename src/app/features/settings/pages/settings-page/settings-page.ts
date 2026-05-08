@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -29,6 +29,7 @@ import { toUserMessage } from '../../../../core/http/api-error';
 export class SettingsPage implements OnInit {
   private readonly service = inject(SettingsService);
   private readonly snack = inject(MatSnackBar);
+  private readonly t = inject(TranslateService);
 
   smtpSettings = signal<SystemSetting[]>([]);
   emailSettings = signal<SystemSetting[]>([]);
@@ -49,6 +50,16 @@ export class SettingsPage implements OnInit {
   notificationsLoading = signal(false);
 
   secretVisible: Record<string, boolean> = {};
+  private readonly revealedValues: Record<string, string> = {};
+
+  private getForm(key: string): Record<string, string> {
+    const cat = key.split('.')[0];
+    if (cat === 'smtp') return this.smtpForm;
+    if (cat === 'email') return this.emailForm;
+    if (cat === 'onprem') return this.onpremForm;
+    if (cat === 'security') return this.securityForm;
+    return this.notificationsForm;
+  }
 
   ngOnInit() {
     this.service.list().subscribe(all => {
@@ -81,11 +92,11 @@ export class SettingsPage implements OnInit {
     this.service.updateAll(updates).subscribe({
       next: () => {
         this.smtpLoading.set(false);
-        this.snack.open('Configurazione SMTP salvata', 'OK', { duration: 3000 });
+        this.snack.open(this.t.instant('settings.smtp.saved'), 'OK', { duration: 3000 });
       },
       error: err => {
         this.smtpLoading.set(false);
-        this.snack.open(toUserMessage(err, 'Errore nel salvataggio'), 'OK', { duration: 6000 });
+        this.snack.open(toUserMessage(err, this.t.instant('common.saveError')), 'OK', { duration: 6000 });
       },
     });
   }
@@ -99,11 +110,11 @@ export class SettingsPage implements OnInit {
     this.service.updateAll(updates).subscribe({
       next: () => {
         this.emailLoading.set(false);
-        this.snack.open('Impostazioni email salvate', 'OK', { duration: 3000 });
+        this.snack.open(this.t.instant('settings.email.saved'), 'OK', { duration: 3000 });
       },
       error: err => {
         this.emailLoading.set(false);
-        this.snack.open(toUserMessage(err, 'Errore nel salvataggio'), 'OK', { duration: 6000 });
+        this.snack.open(toUserMessage(err, this.t.instant('common.saveError')), 'OK', { duration: 6000 });
       },
     });
   }
@@ -117,11 +128,11 @@ export class SettingsPage implements OnInit {
     this.service.updateAll(updates).subscribe({
       next: () => {
         this.onpremLoading.set(false);
-        this.snack.open('Impostazioni on-prem salvate', 'OK', { duration: 3000 });
+        this.snack.open(this.t.instant('settings.onprem.saved'), 'OK', { duration: 3000 });
       },
       error: err => {
         this.onpremLoading.set(false);
-        this.snack.open(toUserMessage(err, 'Errore nel salvataggio'), 'OK', { duration: 6000 });
+        this.snack.open(toUserMessage(err, this.t.instant('common.saveError')), 'OK', { duration: 6000 });
       },
     });
   }
@@ -135,11 +146,11 @@ export class SettingsPage implements OnInit {
     this.service.updateAll(updates).subscribe({
       next: () => {
         this.securityLoading.set(false);
-        this.snack.open('Impostazioni sicurezza salvate', 'OK', { duration: 3000 });
+        this.snack.open(this.t.instant('settings.security.saved'), 'OK', { duration: 3000 });
       },
       error: err => {
         this.securityLoading.set(false);
-        this.snack.open(toUserMessage(err, 'Errore nel salvataggio'), 'OK', { duration: 6000 });
+        this.snack.open(toUserMessage(err, this.t.instant('common.saveError')), 'OK', { duration: 6000 });
       },
     });
   }
@@ -153,17 +164,44 @@ export class SettingsPage implements OnInit {
     this.service.updateAll(updates).subscribe({
       next: () => {
         this.notificationsLoading.set(false);
-        this.snack.open('Impostazioni notifiche salvate', 'OK', { duration: 3000 });
+        this.snack.open(this.t.instant('settings.notifications.saved'), 'OK', { duration: 3000 });
       },
       error: err => {
         this.notificationsLoading.set(false);
-        this.snack.open(toUserMessage(err, 'Errore nel salvataggio'), 'OK', { duration: 6000 });
+        this.snack.open(toUserMessage(err, this.t.instant('common.saveError')), 'OK', { duration: 6000 });
       },
     });
   }
 
   toggleSecretVisibility(key: string) {
-    this.secretVisible[key] = !this.secretVisible[key];
+    if (!this.secretVisible[key]) {
+      // Prima rivelazione: chiama il backend
+      if (this.revealedValues[key] !== undefined) {
+        this.getForm(key)[key] = this.revealedValues[key];
+        this.secretVisible[key] = true;
+      } else {
+        this.service.reveal(key).subscribe({
+          next: ({ value }) => {
+            this.revealedValues[key] = value;
+            this.getForm(key)[key] = value;
+            this.secretVisible[key] = true;
+          },
+          error: err => this.snack.open(toUserMessage(err, this.t.instant('common.loadError')), 'OK', { duration: 6000 }),
+        });
+      }
+    } else {
+      this.secretVisible[key] = false;
+    }
+  }
+
+  /** Converte una chiave setting (es. email.dev-whitelist) nella chiave i18n del label */
+  settingLabel(key: string): string {
+    return key.replace(/-/g, '_');
+  }
+
+  /** Converte una chiave setting nella chiave i18n dell'hint */
+  settingHint(key: string): string {
+    return key.replace(/-/g, '_') + '_hint';
   }
 
   isEmailEnabled(): boolean {

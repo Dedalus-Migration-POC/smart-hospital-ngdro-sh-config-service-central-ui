@@ -18,4 +18,8 @@ export class SettingsService {
   updateAll(updates: SystemSettingUpdate[]): Observable<void> {
     return this.http.put<void>(this.base, updates);
   }
+
+  reveal(key: string): Observable<{ value: string }> {
+    return this.http.get<{ value: string }>(`${this.base}/${encodeURIComponent(key)}/reveal`);
+  }
 }

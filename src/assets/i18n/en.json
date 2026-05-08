@@ -51,7 +51,10 @@
     "copy": "Copy",
     "createdAt": "Created on",
     "copySuccess": "Copied to clipboard.",
-    "copyError": "Copy failed: please copy the value manually."
+    "copyError": "Copy failed: please copy the value manually.",
+    "show": "Show",
+    "hide": "Hide",
+    "loadError": "Unable to load data."
   },
   "auth": {
     "brandSubtitle": "SmartHospital · Central Configurator",
@@ -812,21 +815,24 @@
       "sslTrustAllWarning": "⚠ Active — test/staging environments only",
       "forceBrowserFallback": "Force browser fallback provisioning",
       "saved": "On-prem settings saved",
-      "saveBtn": "Save settings"
+      "saveBtn": "Save settings",
+      "forceBrowserFallback_hint": "Test only: simulates on-prem unreachable from server"
     },
     "security": {
       "title": "Security",
       "subtitle": "Authentication and authorization parameters",
       "jwtExpiration": "JWT token expiration (seconds)",
       "saved": "Security settings saved",
-      "saveBtn": "Save settings"
+      "saveBtn": "Save settings",
+      "jwtExpiration_hint": "JWT token duration in seconds. Changes require renewal of active tokens"
     },
     "notifications": {
       "title": "Notifications",
       "subtitle": "Installation monitoring configuration",
       "monitorDelay": "Notification polling interval (ms)",
       "saved": "Notification settings saved",
-      "saveBtn": "Save settings"
+      "saveBtn": "Save settings",
+      "monitorDelay_hint": "Milliseconds between installation reachability check cycles"
     }
   },
   "snippet": {
@@ -864,5 +870,25 @@
     "sslCertOpenButton": "Open on-prem",
     "sslCertClose": "Close",
     "browserFallbackSslError": "Provisioning failed: the on-prem SSL certificate may not have been accepted by the browser. Open the on-prem in a new tab, accept the certificate and retry."
+  },
+  "smtp": {
+    "host": "SMTP Server",
+    "host_hint": "SMTP server hostname",
+    "port": "SMTP Port",
+    "port_hint": "SMTP port (e.g. 465 for SSL, 587 for STARTTLS)",
+    "username": "SMTP Username",
+    "username_hint": "SMTP server login credential",
+    "password": "SMTP Password",
+    "password_hint": "Password or app-password for SMTP authentication",
+    "from": "Sender address",
+    "from_hint": "Email address shown as sender",
+    "ssl": "SSL enabled",
+    "ssl_hint": "Direct SSL connection (port 465)"
+  },
+  "email": {
+    "enabled": "Email sending active",
+    "enabled_hint": "Disabled = dry-run, emails are only logged",
+    "dev_whitelist": "Development whitelist",
+    "dev_whitelist_hint": "Addresses that receive real emails even in dry-run (comma-separated)"
   }
 }

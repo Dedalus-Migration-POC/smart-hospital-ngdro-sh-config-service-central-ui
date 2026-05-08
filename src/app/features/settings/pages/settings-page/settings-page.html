@@ -20,34 +20,30 @@
               <mat-slide-toggle
                 [checked]="isSslEnabled()"
                 (change)="setSslEnabled($event.checked)">
-                {{ s.label || s.key }}
+                {{ settingLabel(s.key) | translate }}
               </mat-slide-toggle>
-              @if (s.description) {
-                <span class="settings-page__hint mat-body-small">{{ s.description }}</span>
-              }
+              <span class="settings-page__hint mat-body-small">{{ settingHint(s.key) | translate }}</span>
             </div>
           } @else if (s.key === 'smtp.auth') {
             <!-- skip, sempre true -->
           } @else {
             <mat-form-field appearance="outline">
-              <mat-label>{{ s.label || s.key }}</mat-label>
+              <mat-label>{{ settingLabel(s.key) | translate }}</mat-label>
               @if (s.secret) {
                 <input matInput
                   [type]="secretVisible[s.key] ? 'text' : 'password'"
                   [(ngModel)]="smtpForm[s.key]"
                   [placeholder]="'settings.secretPlaceholder' | translate"
                   autocomplete="new-password" />
-                <button mat-icon-button matSuffix
+                <button mat-icon-button matSuffix type="button" tabindex="-1"
                   (click)="toggleSecretVisibility(s.key)"
-                  [matTooltip]="secretVisible[s.key] ? 'Nascondi' : 'Mostra'">
+                  [matTooltip]="(secretVisible[s.key] ? 'common.hide' : 'common.show') | translate">
                   <mat-icon>{{ secretVisible[s.key] ? 'visibility_off' : 'visibility' }}</mat-icon>
                 </button>
               } @else {
                 <input matInput [(ngModel)]="smtpForm[s.key]" />
               }
-              @if (s.description) {
-                <mat-hint>{{ s.description }}</mat-hint>
-              }
+              <mat-hint>{{ settingHint(s.key) | translate }}</mat-hint>
               @if (s.updatedAt) {
                 <mat-hint align="end">{{ 'settings.lastUpdated' | translate }}: {{ s.updatedAt | date:'dd/MM/yyyy HH:mm' }}</mat-hint>
               }
@@ -85,19 +81,15 @@
               <mat-slide-toggle
                 [checked]="isEmailEnabled()"
                 (change)="setEmailEnabled($event.checked)">
-                {{ s.label || s.key }}
+                {{ settingLabel(s.key) | translate }}
               </mat-slide-toggle>
-              @if (s.description) {
-                <span class="settings-page__hint mat-body-small">{{ s.description }}</span>
-              }
+              <span class="settings-page__hint mat-body-small">{{ settingHint(s.key) | translate }}</span>
             </div>
           } @else {
             <mat-form-field appearance="outline">
-              <mat-label>{{ s.label || s.key }}</mat-label>
+              <mat-label>{{ settingLabel(s.key) | translate }}</mat-label>
               <input matInput [(ngModel)]="emailForm[s.key]" />
-              @if (s.description) {
-                <mat-hint>{{ s.description }}</mat-hint>
-              }
+              <mat-hint>{{ settingHint(s.key) | translate }}</mat-hint>
               @if (s.updatedAt) {
                 <mat-hint align="end">{{ 'settings.lastUpdated' | translate }}: {{ s.updatedAt | date:'dd/MM/yyyy HH:mm' }}</mat-hint>
               }
@@ -151,9 +143,7 @@
                 (change)="setBooleanOnprem(s.key, $event.checked)">
                 {{ 'settings.onprem.forceBrowserFallback' | translate }}
               </mat-slide-toggle>
-              @if (s.description) {
-                <span class="settings-page__hint mat-body-small">{{ s.description }}</span>
-              }
+              <span class="settings-page__hint mat-body-small">{{ 'settings.onprem.forceBrowserFallback_hint' | translate }}</span>
             </div>
           } @else {
             <mat-form-field appearance="outline">
@@ -164,17 +154,14 @@
                   [(ngModel)]="onpremForm[s.key]"
                   [placeholder]="'settings.secretPlaceholder' | translate"
                   autocomplete="new-password" />
-                <button mat-icon-button matSuffix
+                <button mat-icon-button matSuffix type="button" tabindex="-1"
                   (click)="toggleSecretVisibility(s.key)"
-                  [matTooltip]="secretVisible[s.key] ? 'Nascondi' : 'Mostra'">
+                  [matTooltip]="(secretVisible[s.key] ? 'common.hide' : 'common.show') | translate">
                   <mat-icon>{{ secretVisible[s.key] ? 'visibility_off' : 'visibility' }}</mat-icon>
                 </button>
                 <mat-hint>{{ 'settings.onprem.setupKeyHint' | translate }}</mat-hint>
               } @else {
                 <input matInput [(ngModel)]="onpremForm[s.key]" />
-                @if (s.description) {
-                  <mat-hint>{{ s.description }}</mat-hint>
-                }
               }
               @if (s.updatedAt) {
                 <mat-hint align="end">{{ 'settings.lastUpdated' | translate }}: {{ s.updatedAt | date:'dd/MM/yyyy HH:mm' }}</mat-hint>
@@ -211,9 +198,7 @@
           <mat-form-field appearance="outline">
             <mat-label>{{ 'settings.security.jwtExpiration' | translate }}</mat-label>
             <input matInput type="number" min="60" [(ngModel)]="securityForm[s.key]" />
-            @if (s.description) {
-              <mat-hint>{{ s.description }}</mat-hint>
-            }
+            <mat-hint>{{ 'settings.security.jwtExpiration_hint' | translate }}</mat-hint>
             @if (s.updatedAt) {
               <mat-hint align="end">{{ 'settings.lastUpdated' | translate }}: {{ s.updatedAt | date:'dd/MM/yyyy HH:mm' }}</mat-hint>
             }
