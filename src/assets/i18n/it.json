@@ -728,6 +728,16 @@
     "status_SENT": "Inviata",
     "status_FAILED": "Fallita",
     "status_DRY_RUN": "Test (dry-run)",
-    "filterDryRun": "Test"
+    "filterDryRun": "Test",
+    "detailTitle": "Dettaglio notifica",
+    "detailStatus": "Stato",
+    "detailDate": "Data",
+    "detailInstallation": "Installazione",
+    "detailRecipient": "Destinatario",
+    "detailSubject": "Oggetto email",
+    "detailBody": "Testo email",
+    "detailError": "Errore SMTP",
+    "detailDryRunNote": "Email non inviata: modalità test attiva (dry-run). Il destinatario non è nella whitelist di sviluppo.",
+    "detailTooltip": "Vedi dettaglio"
   }
 }

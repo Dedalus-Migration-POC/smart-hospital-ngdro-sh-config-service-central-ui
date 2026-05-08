@@ -83,16 +83,12 @@
             <td mat-cell *matCellDef="let row">{{ row.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
           </ng-container>
 
-          <ng-container matColumnDef="errorMessage">
-            <th mat-header-cell *matHeaderCellDef>{{ 'notifications.colError' | translate }}</th>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let row">
-              @if (row.errorMessage) {
-                <span [matTooltip]="row.errorMessage" class="notifications__error-cell">
-                  {{ row.errorMessage }}
-                </span>
-              } @else {
-                <span class="notifications__dash">—</span>
-              }
+              <button mat-icon-button [matTooltip]="'notifications.detailTooltip' | translate" (click)="openDetail(row)">
+                <mat-icon>info_outline</mat-icon>
+              </button>
             </td>
           </ng-container>
 

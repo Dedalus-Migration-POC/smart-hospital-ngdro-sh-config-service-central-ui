@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -13,6 +14,10 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { toUserMessage } from '../../../../core/http/api-error';
 import { NotificationLog } from '../../../users/models';
+import {
+  NotificationDetailDialog,
+  NotificationDetailDialogData,
+} from '../../dialogs/notification-detail-dialog/notification-detail-dialog';
 import { NotificationsService } from '../../services/notifications';
 
 @Component({
@@ -37,6 +42,7 @@ import { NotificationsService } from '../../services/notifications';
 export class NotificationsPage {
   private readonly service = inject(NotificationsService);
   private readonly translate = inject(TranslateService);
+  private readonly dialog = inject(MatDialog);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -46,7 +52,7 @@ export class NotificationsPage {
   readonly activeFilter = signal<'ALL' | 'SENT' | 'FAILED' | 'DRY_RUN'>('ALL');
 
   readonly pageSize = 20;
-  readonly columns = ['status', 'installationName', 'createdAt', 'errorMessage'];
+  readonly columns = ['status', 'installationName', 'createdAt', 'actions'];
 
   constructor() {
     this.load(0);
@@ -59,6 +65,13 @@ export class NotificationsPage {
 
   onPage(event: PageEvent): void {
     this.load(event.pageIndex);
+  }
+
+  openDetail(row: NotificationLog): void {
+    this.dialog.open<NotificationDetailDialog, NotificationDetailDialogData>(
+      NotificationDetailDialog,
+      { data: row, width: '640px' }
+    );
   }
 
   private load(page: number): void {
