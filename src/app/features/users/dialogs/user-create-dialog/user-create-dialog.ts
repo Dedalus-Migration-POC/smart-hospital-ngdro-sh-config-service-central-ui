@@ -23,7 +23,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Customer } from '../../../customers/models';
 import { CustomerService } from '../../../customers/services/customers';
 import { toUserMessage } from '../../../../core/http/api-error';
-import { AVAILABLE_ROLES, User, USERNAME_PATTERN } from '../../models';
+import { AVAILABLE_ROLES, User } from '../../models';
 import { UserService } from '../../services/users';
 
 export type UserCreateDialogData = Record<string, never>;
@@ -62,7 +62,7 @@ export class UserCreateDialog implements OnInit {
   readonly form = this.fb.nonNullable.group({
     username: [
       '',
-      [Validators.required, Validators.maxLength(100), Validators.pattern(USERNAME_PATTERN)],
+      [Validators.required, Validators.maxLength(254), Validators.email],
     ],
     password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]],
     role: ['ADMIN', [Validators.required]],

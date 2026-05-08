@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import {
   User,
   UserCreateRequest,
+  UserNotificationRequest,
   UserPasswordUpdateRequest,
   UserUpdateRequest,
 } from '../models';
@@ -34,6 +35,10 @@ export class UserService {
 
   changePassword(id: string, req: UserPasswordUpdateRequest): Observable<User> {
     return this.http.put<User>(`${this.baseUrl}/users/${id}/password`, req);
+  }
+
+  updateNotifications(id: string, req: UserNotificationRequest): Observable<User> {
+    return this.http.put<User>(`${this.baseUrl}/users/${id}/notifications`, req);
   }
 
   delete(id: string): Observable<void> {

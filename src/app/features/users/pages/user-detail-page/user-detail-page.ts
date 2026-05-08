@@ -39,7 +39,6 @@ import { Customer } from '../../../customers/models';
 import { CustomerService } from '../../../customers/services/customers';
 import { AVAILABLE_ROLES, User } from '../../models';
 import { UserService } from '../../services/users';
-
 @Component({
   selector: 'app-user-detail-page',
   standalone: true,
@@ -75,6 +74,7 @@ export class UserDetailPage implements OnInit {
 
   readonly loading = signal(false);
   readonly saving = signal(false);
+  readonly savingNotifications = signal(false);
   readonly deleting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly user = signal<User | null>(null);
@@ -89,11 +89,17 @@ export class UserDetailPage implements OnInit {
   });
 
   readonly isCustomerRole = computed(() => this.form.controls.role.value === 'CUSTOMER');
+  readonly isUserAdmin = computed(() => this.user()?.role === 'ADMIN');
 
   readonly form = this.fb.nonNullable.group({
     role: ['ADMIN', [Validators.required]],
     active: [true],
     customerId: [null as string | null],
+  });
+
+  readonly notificationForm = this.fb.nonNullable.group({
+    notificationsEnabled: [false],
+    notificationCustomerIds: [[] as string[]],
   });
 
   constructor() {
@@ -131,6 +137,10 @@ export class UserDetailPage implements OnInit {
           role: user.role,
           active: user.active,
           customerId: user.customerId ?? null,
+        });
+        this.notificationForm.reset({
+          notificationsEnabled: user.notificationsEnabled,
+          notificationCustomerIds: user.notificationCustomerIds ?? [],
         });
         // imposta validator customerId in base al ruolo caricato
         if (user.role === 'CUSTOMER') {
@@ -197,6 +207,35 @@ export class UserDetailPage implements OnInit {
       if (changed) {
         this.snackbar.open(this.translate.instant('user.changePasswordSuccess'), 'OK', { duration: 3000 });
       }
+    });
+  }
+
+  saveNotifications(): void {
+    const u = this.user();
+    if (!u || this.savingNotifications()) return;
+    this.savingNotifications.set(true);
+    const v = this.notificationForm.getRawValue();
+    this.userService.updateNotifications(u.id, {
+      notificationsEnabled: v.notificationsEnabled,
+      notificationCustomerIds: u.role === 'ADMIN' ? v.notificationCustomerIds : [],
+    }).subscribe({
+      next: (updated) => {
+        this.user.set(updated);
+        this.notificationForm.reset({
+          notificationsEnabled: updated.notificationsEnabled,
+          notificationCustomerIds: updated.notificationCustomerIds ?? [],
+        });
+        this.savingNotifications.set(false);
+        this.snackbar.open(this.translate.instant('user.notificationsSaveSuccess'), 'OK', { duration: 3000 });
+      },
+      error: (err: unknown) => {
+        this.savingNotifications.set(false);
+        this.snackbar.open(
+          toUserMessage(err, this.translate.instant('user.notificationsSaveError')),
+          'OK',
+          { duration: 6000 },
+        );
+      },
     });
   }
 

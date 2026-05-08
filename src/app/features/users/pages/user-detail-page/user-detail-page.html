@@ -108,8 +108,48 @@
 
     <mat-card appearance="outlined">
       <mat-card-header>
-        <mat-card-title>{{ 'user.security' | translate }}</mat-card-title>
-        <mat-card-subtitle>
+        <mat-card-title>{{ 'user.notifications' | translate }}</mat-card-title>
+        <mat-card-subtitle>{{ 'user.notificationsSubtitle' | translate }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="notificationForm" (ngSubmit)="saveNotifications()" id="notification-form" class="detail__form">
+          <mat-slide-toggle formControlName="notificationsEnabled">
+            {{ 'user.notificationsToggle' | translate }}
+          </mat-slide-toggle>
+
+          @if (isUserAdmin() && notificationForm.controls.notificationsEnabled.value) {
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'user.notificationCustomersLabel' | translate }}</mat-label>
+              <mat-select formControlName="notificationCustomerIds" multiple>
+                @for (c of customers(); track c.id) {
+                  <mat-option [value]="c.id">{{ c.name }} ({{ c.slug }})</mat-option>
+                }
+              </mat-select>
+              <mat-hint>{{ 'user.notificationCustomersHint' | translate }}</mat-hint>
+            </mat-form-field>
+          }
+        </form>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          form="notification-form"
+          [disabled]="savingNotifications() || notificationForm.pristine"
+        >
+          @if (savingNotifications()) {
+            <mat-progress-spinner mode="indeterminate" diameter="20" />
+          } @else {
+            {{ 'common.save' | translate }}
+          }
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>{{ 'user.security' | translate }}</mat-card-title>        <mat-card-subtitle>
           @if (isSelf()) {
             {{ 'user.securitySelf' | translate }}
           } @else {

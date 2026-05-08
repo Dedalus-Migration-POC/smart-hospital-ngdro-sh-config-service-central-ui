@@ -8,15 +8,15 @@
   <form [formGroup]="form" (ngSubmit)="submit()" id="user-create-form" class="dialog-form">
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>{{ 'user.usernameLabel' | translate }}</mat-label>
-      <input matInput formControlName="username" required maxlength="100" autocomplete="off" />
+      <input matInput formControlName="username" required maxlength="254" autocomplete="off" type="email" />
       <mat-hint>{{ 'user.usernameCreateHint' | translate }}</mat-hint>
       @if (form.controls.username.touched) {
         @if (form.controls.username.hasError('required')) {
           <mat-error>{{ 'user.usernameRequired' | translate }}</mat-error>
         } @else if (form.controls.username.hasError('maxlength')) {
           <mat-error>{{ 'user.usernameMax' | translate }}</mat-error>
-        } @else if (form.controls.username.hasError('pattern')) {
-          <mat-error>{{ 'user.usernamePattern' | translate }}</mat-error>
+        } @else if (form.controls.username.hasError('email')) {
+          <mat-error>{{ 'user.usernameEmail' | translate }}</mat-error>
         }
       }
     </mat-form-field>

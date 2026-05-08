@@ -4,6 +4,8 @@ export interface User {
   role: string;
   customerId?: string | null;
   active: boolean;
+  notificationsEnabled: boolean;
+  notificationCustomerIds: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -26,7 +28,10 @@ export interface UserPasswordUpdateRequest {
   newPassword: string;
 }
 
+export interface UserNotificationRequest {
+  notificationsEnabled: boolean;
+  notificationCustomerIds: string[];
+}
+
 export const AVAILABLE_ROLES = ['ADMIN', 'CUSTOMER'] as const;
 export type UserRole = (typeof AVAILABLE_ROLES)[number];
-
-export const USERNAME_PATTERN = /^[a-zA-Z0-9._-]+$/;
