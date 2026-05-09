@@ -142,14 +142,6 @@
                   <mat-icon>visibility</mat-icon>
                   {{ 'installation.show' | translate }}
                 </button>
-                <button
-                  mat-stroked-button
-                  type="button"
-                  (click)="rotateApiKey()"
-                >
-                  <mat-icon>autorenew</mat-icon>
-                  {{ 'installation.rotateApiKeyBtn' | translate }}
-                </button>
               }
             </div>
           </div>
@@ -201,15 +193,6 @@
                 >
                   <mat-icon>sync</mat-icon>
                   {{ 'installation.provisionReadKeyBtn' | translate }}
-                </button>
-                <button
-                  mat-stroked-button
-                  type="button"
-                  [disabled]="!i.readApiKeyConfigured"
-                  (click)="rotateReadApiKey()"
-                >
-                  <mat-icon>autorenew</mat-icon>
-                  {{ 'installation.rotateReadKeyBtn' | translate }}
                 </button>
               }
             </div>

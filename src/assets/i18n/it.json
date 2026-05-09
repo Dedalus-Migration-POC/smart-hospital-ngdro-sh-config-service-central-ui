@@ -113,7 +113,11 @@
     "statusActive": "Attiva",
     "statusInactive": "Inattiva",
     "healthUp": "On-prem raggiungibile",
-    "healthDown": "On-prem non raggiungibile"
+    "healthDown": "On-prem non raggiungibile",
+    "draftDismiss": "Ignora questa configurazione",
+    "draftDismissTitle": "Ignora configurazione",
+    "draftDismissMessage": "La configurazione {{ channel }} del tenant {{ tenant }} verrà contrassegnata come ignorata e non apparirà più in questa lista. L'operazione è reversibile ripubblicando la configurazione.",
+    "draftDismissed": "Configurazione ignorata"
   },
   "customer": {
     "title": "Customer",

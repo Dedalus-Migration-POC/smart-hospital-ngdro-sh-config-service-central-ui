@@ -113,7 +113,11 @@
     "statusActive": "Active",
     "statusInactive": "Inactive",
     "healthUp": "On-prem reachable",
-    "healthDown": "On-prem unreachable"
+    "healthDown": "On-prem unreachable",
+    "draftDismiss": "Dismiss this configuration",
+    "draftDismissTitle": "Dismiss configuration",
+    "draftDismissMessage": "The {{ channel }} configuration for tenant {{ tenant }} will be marked as dismissed and will no longer appear in this list. You can undo this by republishing the configuration.",
+    "draftDismissed": "Configuration dismissed"
   },
   "customer": {
     "title": "Customers",

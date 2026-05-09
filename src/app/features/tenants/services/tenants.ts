@@ -118,6 +118,14 @@ export class TenantService {
     );
   }
 
+  dismissConfig(tenantId: string, channelId: string, entity = 'base'): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}/dismiss`,
+      {},
+      { params: new HttpParams().set('entity', entity) },
+    );
+  }
+
   getDraftConfigs(): Observable<DraftConfigSummary[]> {
     return this.http.get<DraftConfigSummary[]>(`${this.baseUrl}/configs/draft`);
   }

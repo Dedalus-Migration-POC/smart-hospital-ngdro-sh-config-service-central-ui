@@ -11,9 +11,12 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe, SlicePipe } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
@@ -35,6 +38,8 @@ import { AuditLog } from '../../../audit/models';
 import { User } from '../../../users/models';
 import { Installation } from '../../../installations/models';
 import { DraftConfigSummary } from '../../../tenants/models';
+import { ConfirmDialog } from '../../../../shared/dialogs/confirm-dialog/confirm-dialog';
+import { toUserMessage } from '../../../../core/http/api-error';
 
 Chart.register(...registerables);
 
@@ -50,6 +55,7 @@ interface KpiData {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    MatButtonModule,
     DatePipe,
     SlicePipe,
     RouterLink,
@@ -64,6 +70,8 @@ interface KpiData {
   styleUrl: './home-page.scss',
 })
 export class HomePage implements AfterViewInit, OnDestroy {
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
   private readonly customerService = inject(CustomerService);
   private readonly userService = inject(UserService);
@@ -80,7 +88,7 @@ export class HomePage implements AfterViewInit, OnDestroy {
   readonly loading = signal(true);
   readonly kpi = signal<KpiData | null>(null);
   readonly draftConfigs = signal<DraftConfigSummary[]>([]);
-  readonly draftColumns = ['customer', 'installation', 'tenant', 'channel', 'entity', 'version', 'error', 'go'] as const;
+  readonly draftColumns = ['customer', 'installation', 'tenant', 'channel', 'entity', 'version', 'error', 'go', 'dismiss'] as const;
 
   readonly onPremTotal = signal(0);
   readonly onPremOnline = signal(0);
@@ -110,6 +118,37 @@ export class HomePage implements AfterViewInit, OnDestroy {
   @ViewChild('actionChart') actionChartRef!: ElementRef<HTMLCanvasElement>;
 
   private charts: Chart[] = [];
+
+  dismissConfig(row: DraftConfigSummary): void {
+    const title = this.translate.instant('home.draftDismissTitle');
+    const message = this.translate.instant('home.draftDismissMessage', {
+      channel: row.channelId,
+      tenant: row.tenantSlug,
+    });
+    this.dialog.open(ConfirmDialog, {
+      data: { title, message, destructive: true },
+      width: '480px',
+    }).afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
+      this.tenantService.dismissConfig(row.tenantId, row.channelId, row.entity).subscribe({
+        next: () => {
+          this.draftConfigs.update(list => list.filter(c => c.configId !== row.configId));
+          this.snackBar.open(
+            this.translate.instant('home.draftDismissed'),
+            undefined,
+            { duration: 3000 },
+          );
+        },
+        error: err => {
+          this.snackBar.open(
+            toUserMessage(err, this.translate.instant('common.errorGeneric')),
+            undefined,
+            { duration: 6000 },
+          );
+        },
+      });
+    });
+  }
 
   ngAfterViewInit(): void {
     if (!this.isAdmin()) return;
