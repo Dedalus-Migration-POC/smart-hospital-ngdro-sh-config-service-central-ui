@@ -55,6 +55,7 @@
             <mat-form-field appearance="outline">
               <mat-label>{{ 'installation.baseUrlLabel' | translate }}</mat-label>
               <input matInput formControlName="baseUrl" required maxlength="500" />
+              <mat-hint>{{ 'installation.baseUrlHint' | translate }}</mat-hint>
               @if (form.controls.baseUrl.touched) {
                 @if (form.controls.baseUrl.hasError('required')) {
                   <mat-error>{{ 'installation.baseUrlRequired' | translate }}</mat-error>

@@ -5,7 +5,6 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
   expiresAt: string;
 }
 
@@ -22,6 +21,3 @@ export interface CurrentUser {
   role: string | null;
   customerId?: string | null;
 }
-
-export const AUTH_TOKEN_KEY = 'sh.cs.authToken';
-export const AUTH_TOKEN_EXPIRES_AT_KEY = 'sh.cs.authTokenExpiresAt';

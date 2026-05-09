@@ -183,7 +183,7 @@
     "baseUrlRequired": "Base URL is required.",
     "baseUrlPattern": "URL must start with http:// or https://.",
     "baseUrlMax": "Maximum 500 characters.",
-    "baseUrlHint": "Must start with http:// or https://.",
+    "baseUrlHint": "E.g. http://myserver:8080/api — include the context path up to /api.",
     "activeToggle": "Active",
     "createdAt": "Created on",
     "delete": "Delete",

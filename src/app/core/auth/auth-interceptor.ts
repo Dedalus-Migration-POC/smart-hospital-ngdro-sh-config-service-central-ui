@@ -7,13 +7,11 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from './auth';
 
 /**
- * Interceptor JWT.
+ * Interceptor API.
  *
- * - Attacca `Authorization: Bearer <token>` a tutte le chiamate verso
- *   l'apiBaseUrl, eccetto la login (che il token non ce l'ha ancora).
- * - Su 401 di una chiamata autenticata pulisce lo stato e redirige a /login,
- *   passando il path corrente come query param `returnUrl`. Sulla login
- *   stessa il 401 indica credenziali ko: lo lasciamo passare al chiamante.
+ * - Aggiunge `withCredentials: true` a tutte le chiamate verso l'apiBaseUrl
+ *   in modo che il browser invii automaticamente il cookie HttpOnly `sh_jwt`.
+ * - Su 401 di una chiamata autenticata pulisce lo stato e redirige a /login.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
@@ -22,15 +20,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const isApi = req.url.startsWith(environment.apiBaseUrl);
   const isLogin = isApi && req.url.endsWith('/auth/login');
 
-  let outgoing = req;
-  if (isApi && !isLogin) {
-    const token = auth.getToken();
-    if (token) {
-      outgoing = req.clone({
-        setHeaders: { Authorization: `Bearer ${token}` },
-      });
-    }
-  }
+  const outgoing = isApi ? req.clone({ withCredentials: true }) : req;
 
   return next(outgoing).pipe(
     catchError((err: unknown) => {
