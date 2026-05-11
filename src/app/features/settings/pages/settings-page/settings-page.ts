@@ -57,7 +57,7 @@ export class SettingsPage implements OnInit {
     if (cat === 'smtp') return this.smtpForm;
     if (cat === 'email') return this.emailForm;
     if (cat === 'onprem') return this.onpremForm;
-    if (cat === 'security') return this.securityForm;
+    if (cat === 'security' || cat === 'recaptcha') return this.securityForm;
     return this.notificationsForm;
   }
 
