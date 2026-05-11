@@ -304,7 +304,25 @@
     "factoryResetSuccess": "Factory reset completed. Backup downloaded.",
     "factoryResetSuccessNoBackup": "Factory reset completed.",
     "factoryResetUnreachable": "On-prem unreachable — perform the reset manually",
-    "factoryResetError": "Error during factory reset"
+    "factoryResetError": "Error during factory reset",
+    "recoveryTitle": "On-prem recovery",
+    "recoveryStep0Title": "Reset summary",
+    "recoveryStep0Body": "The following data has been removed from the on-prem:",
+    "recoveryTenants": "tenants",
+    "recoveryConfigs": "configurations",
+    "recoveryApiKeys": "API keys",
+    "recoveryBackupOk": "Backup downloaded successfully",
+    "recoveryStep1Title": "API key restore",
+    "recoveryStep1Body": "Regenerate the API keys on the on-prem using the original setup key.",
+    "recoveryStep1Btn": "Run Provisioning",
+    "recoveryStep1Success": "ADMIN and READ API keys recreated",
+    "recoveryStep2Title": "Re-publish configurations",
+    "recoveryStep2Body": "Re-publish all active configurations to the on-prem.",
+    "recoveryStep2Btn": "Run Resync",
+    "recoveryStep2Success": "configurations synchronised",
+    "recoveryStep2Errors": "Errors during resync",
+    "recoveryClose": "Close",
+    "recoveryNext": "Next"
   },
   "product": {
     "title": "Products",
@@ -344,8 +362,8 @@
     "channelTotem": "Totem"
   },
   "config": {
-    "hint401Title": "Product not registered on the on-premise server (401)",
-    "hint401Body": "The product may not yet be present in the tenant table of the on-premise database, or a WRITE API key may be missing. Check in the on-premise DB that the product exists with the corresponding slug and has an active WRITE API key.",
+    "hint401Title": "Push rejected by on-premise server (401 — unauthorized)",
+    "hint401Body": "The on-premise server rejected the request. Common causes: (1) installation never provisioned or was factory-reset — use the \"Provisioning\" button on the installation page to regenerate API keys; (2) API key in the central is outdated after a manual change on the on-premise — rotate the API key from the installation page; (3) tenant not yet registered on the on-premise — re-provision the installation, then use \"Resync\" to republish configurations.",
     "addEntity": "Add entity",
     "addEntityLabel": "Entity name",
     "addEntityPlaceholder": "e.g. patient-card",

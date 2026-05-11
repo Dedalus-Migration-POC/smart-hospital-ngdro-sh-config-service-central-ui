@@ -63,6 +63,10 @@ import {
   FactoryResetDialogData,
   FactoryResetDialogResult,
 } from '../../dialogs/factory-reset-dialog/factory-reset-dialog';
+import {
+  FactoryResetRecoveryDialog,
+  FactoryResetRecoveryDialogData,
+} from '../../dialogs/factory-reset-recovery-dialog/factory-reset-recovery-dialog';
 import { Installation, InstallationStats, INSTALLATION_BASE_URL_PATTERN, ProvisionPackage, ResyncAllPendingPush } from '../../models';
 import { InstallationService } from '../../services/installations';
 import { TenantService } from '../../../tenants/services/tenants';
@@ -518,10 +522,25 @@ export class InstallationDetailPage {
         a.download = `backup-${inst.id}-${ts}.json`;
         a.click();
         URL.revokeObjectURL(url);
-        this.snackbar.open(
-          this.translate.instant('installation.factoryResetSuccess'),
-          'OK',
-          { duration: 4000 },
+
+        let backupSummary = { tenants: 0, configs: 0, apiKeys: 0, timestamp: new Date().toISOString() };
+        try {
+          const backup = JSON.parse(json) as { tenants?: unknown[]; configs?: unknown[]; apiKeys?: unknown[]; timestamp?: string };
+          backupSummary = {
+            tenants: backup.tenants?.length ?? 0,
+            configs: backup.configs?.length ?? 0,
+            apiKeys: backup.apiKeys?.length ?? 0,
+            timestamp: backup.timestamp ?? new Date().toISOString(),
+          };
+        } catch { /* usa i valori di default */ }
+
+        const recoveryData: FactoryResetRecoveryDialogData = {
+          installation: inst,
+          backupSummary,
+        };
+        this.dialog.open<FactoryResetRecoveryDialog, FactoryResetRecoveryDialogData>(
+          FactoryResetRecoveryDialog,
+          { data: recoveryData, disableClose: true, width: '560px', maxWidth: '95vw' },
         );
       } else if (res.provisionPackage) {
         this.snackbar.open(

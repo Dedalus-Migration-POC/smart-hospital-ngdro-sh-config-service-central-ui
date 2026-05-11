@@ -1,0 +1,161 @@
+<h2 mat-dialog-title>{{ 'installation.recoveryTitle' | translate }}</h2>
+
+<mat-dialog-content>
+  <mat-stepper linear orientation="vertical" #stepper>
+
+    <!-- Step 0 — Riepilogo reset -->
+    <mat-step [completed]="step0Done()" label="{{ 'installation.recoveryStep0Title' | translate }}">
+      <div class="step-body">
+        <p>{{ 'installation.recoveryStep0Body' | translate }}</p>
+        <ul class="backup-summary">
+          <li>
+            <mat-icon class="summary-icon">people</mat-icon>
+            <strong>{{ data.backupSummary.tenants }}</strong>&nbsp;{{ 'installation.recoveryTenants' | translate }}
+          </li>
+          <li>
+            <mat-icon class="summary-icon">settings</mat-icon>
+            <strong>{{ data.backupSummary.configs }}</strong>&nbsp;{{ 'installation.recoveryConfigs' | translate }}
+          </li>
+          <li>
+            <mat-icon class="summary-icon">key</mat-icon>
+            <strong>{{ data.backupSummary.apiKeys }}</strong>&nbsp;{{ 'installation.recoveryApiKeys' | translate }}
+          </li>
+        </ul>
+
+        <div class="backup-badge">
+          <mat-icon class="badge-icon">cloud_download</mat-icon>
+          <span>{{ 'installation.recoveryBackupOk' | translate }}</span>
+        </div>
+
+        <div class="step-actions">
+          <button mat-flat-button color="primary" matStepperNext (click)="proceedToProvisioning()">
+            {{ 'installation.recoveryNext' | translate }}
+          </button>
+        </div>
+      </div>
+    </mat-step>
+
+    <!-- Step 1 — Provisioning API key -->
+    <mat-step
+      [completed]="step1State() === 'success'"
+      [hasError]="step1State() === 'error'"
+      label="{{ 'installation.recoveryStep1Title' | translate }}"
+    >
+      <div class="step-body">
+        <p>{{ 'installation.recoveryStep1Body' | translate }}</p>
+
+        @if (step1State() === 'loading') {
+          <div class="status-row">
+            <mat-spinner diameter="20"></mat-spinner>
+          </div>
+        }
+
+        @if (step1State() === 'success') {
+          <div class="status-row success-row">
+            <mat-icon color="primary">check_circle</mat-icon>
+            <span>{{ 'installation.recoveryStep1Success' | translate }} ✓</span>
+          </div>
+        }
+
+        @if (step1State() === 'error') {
+          <div class="status-row error-row">
+            <mat-icon color="warn">error</mat-icon>
+            <span>{{ step1Error() }}</span>
+          </div>
+        }
+
+        <div class="step-actions">
+          @if (step1State() !== 'success') {
+            <button
+              mat-flat-button
+              color="primary"
+              [disabled]="step1State() === 'loading'"
+              (click)="runProvisioning()"
+            >
+              @if (step1State() === 'loading') {
+                <mat-spinner diameter="18"></mat-spinner>
+              }
+              {{ 'installation.recoveryStep1Btn' | translate }}
+            </button>
+          }
+          @if (step1State() === 'success') {
+            <button mat-flat-button color="primary" matStepperNext>
+              {{ 'installation.recoveryNext' | translate }}
+            </button>
+          }
+        </div>
+      </div>
+    </mat-step>
+
+    <!-- Step 2 — Resync configurazioni -->
+    <mat-step
+      [completed]="step2State() === 'success'"
+      [hasError]="step2State() === 'error'"
+      label="{{ 'installation.recoveryStep2Title' | translate }}"
+    >
+      <div class="step-body">
+        <p>{{ 'installation.recoveryStep2Body' | translate }}</p>
+
+        @if (step2State() === 'loading') {
+          <div class="status-row">
+            <mat-spinner diameter="20"></mat-spinner>
+          </div>
+        }
+
+        @if (step2State() === 'success' && step2Result(); as result) {
+          <div class="status-row success-row">
+            <mat-icon color="primary">check_circle</mat-icon>
+            <span>
+              {{ result.synced }}/{{ result.total }}&nbsp;{{ 'installation.recoveryStep2Success' | translate }} ✓
+            </span>
+          </div>
+
+          @if (result.failed > 0) {
+            <mat-expansion-panel class="errors-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <mat-icon color="warn">warning</mat-icon>
+                  {{ 'installation.recoveryStep2Errors' | translate }} ({{ result.failed }})
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <ul class="error-list">
+                @for (err of result.errors; track err) {
+                  <li>{{ err }}</li>
+                }
+              </ul>
+            </mat-expansion-panel>
+          }
+        }
+
+        @if (step2State() === 'error') {
+          <div class="status-row error-row">
+            <mat-icon color="warn">error</mat-icon>
+            <span>{{ step2Error() }}</span>
+          </div>
+        }
+
+        <div class="step-actions">
+          @if (step2State() !== 'success') {
+            <button
+              mat-flat-button
+              color="primary"
+              [disabled]="step2State() === 'loading'"
+              (click)="runResync()"
+            >
+              @if (step2State() === 'loading') {
+                <mat-spinner diameter="18"></mat-spinner>
+              }
+              {{ 'installation.recoveryStep2Btn' | translate }}
+            </button>
+          }
+          @if (step2State() === 'success' || step2State() === 'error') {
+            <button mat-flat-button color="primary" (click)="close()">
+              {{ 'installation.recoveryClose' | translate }}
+            </button>
+          }
+        </div>
+      </div>
+    </mat-step>
+
+  </mat-stepper>
+</mat-dialog-content>

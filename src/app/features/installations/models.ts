@@ -111,3 +111,10 @@ export interface FactoryResetResponse {
   message: string;
   provisionPackage?: ProvisionPackage;
 }
+
+export interface ResyncAllResult {
+  total: number;
+  synced: number;
+  failed: number;
+  errors: string[];
+}

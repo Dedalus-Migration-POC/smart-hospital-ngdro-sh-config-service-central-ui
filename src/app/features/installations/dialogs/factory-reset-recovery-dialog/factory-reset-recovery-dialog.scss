@@ -1,0 +1,96 @@
+:host {
+  display: block;
+}
+
+.step-body {
+  padding: 8px 0 16px;
+}
+
+.backup-summary {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+  }
+}
+
+.summary-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--mat-sys-primary, #1976d2);
+}
+
+.backup-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--mat-sys-primary-container, #e3f2fd);
+  color: var(--mat-sys-on-primary-container, #0d47a1);
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.badge-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.step-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+
+  button mat-spinner {
+    display: inline-block;
+    margin-right: 6px;
+  }
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+
+.success-row {
+  color: var(--mat-sys-primary, #1976d2);
+}
+
+.error-row {
+  color: var(--mat-sys-error, #d32f2f);
+}
+
+.errors-panel {
+  margin: 12px 0;
+}
+
+.errors-panel mat-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.error-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+
+  li {
+    margin-bottom: 4px;
+  }
+}

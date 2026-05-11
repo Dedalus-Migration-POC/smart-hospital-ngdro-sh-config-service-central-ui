@@ -304,7 +304,25 @@
     "factoryResetSuccess": "Factory reset eseguito. Backup scaricato.",
     "factoryResetSuccessNoBackup": "Factory reset eseguito.",
     "factoryResetUnreachable": "On-prem non raggiungibile — eseguire il reset manualmente",
-    "factoryResetError": "Errore durante il factory reset"
+    "factoryResetError": "Errore durante il factory reset",
+    "recoveryTitle": "Ripristino on-prem",
+    "recoveryStep0Title": "Riepilogo reset",
+    "recoveryStep0Body": "Sono stati eliminati dall'on-prem:",
+    "recoveryTenants": "tenant",
+    "recoveryConfigs": "configurazioni",
+    "recoveryApiKeys": "API key",
+    "recoveryBackupOk": "Backup scaricato con successo",
+    "recoveryStep1Title": "Ripristino API key",
+    "recoveryStep1Body": "Rigenera le API key sull'on-prem usando la setup key originale.",
+    "recoveryStep1Btn": "Esegui Provisioning",
+    "recoveryStep1Success": "API key ADMIN e READ ricreate",
+    "recoveryStep2Title": "Ripubblica configurazioni",
+    "recoveryStep2Body": "Ripubblica tutte le configurazioni attive sull'on-prem.",
+    "recoveryStep2Btn": "Esegui Resync",
+    "recoveryStep2Success": "configurazioni sincronizzate",
+    "recoveryStep2Errors": "Errori durante il resync",
+    "recoveryClose": "Chiudi",
+    "recoveryNext": "Avanti"
   },
   "product": {
     "title": "Prodotti",
@@ -344,8 +362,8 @@
     "channelTotem": "Totem"
   },
   "config": {
-    "hint401Title": "Prodotto non registrato sull'on-prem (401)",
-    "hint401Body": "Il prodotto potrebbe non essere ancora presente nella tabella tenant del database on-prem oppure manca una API key di tipo WRITE associata. Verifica sul DB on-prem che il prodotto esista con slug corrispondente e che abbia una API key WRITE attiva.",
+    "hint401Title": "Push rifiutato dall'on-prem (401 — non autorizzato)",
+    "hint401Body": "L'on-prem ha rifiutato la richiesta. Le cause più comuni sono: (1) installazione mai provisionata o resettata — usa il pulsante \"Provisioning\" nella pagina installazione per rigenerare le API key; (2) API key nel central non aggiornata dopo un cambio manuale sull'on-prem — ruota la API key dall'installazione; (3) tenant non ancora registrato sull'on-prem — ri-provisiona l'installazione e poi usa \"Resync\" per ripubblicare le configurazioni.",
     "addEntity": "Aggiungi entity",
     "addEntityLabel": "Nome entity",
     "addEntityPlaceholder": "es. patient-card",
