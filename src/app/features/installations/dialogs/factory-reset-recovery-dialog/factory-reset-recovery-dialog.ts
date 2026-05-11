@@ -11,7 +11,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 
 import { toUserMessage } from '../../../../core/http/api-error';
-import { Installation, ResyncAllResult } from '../../models';
+import { Installation, ProvisionPackage, ResyncAllPendingPush, ResyncAllResult } from '../../models';
 import { InstallationService } from '../../services/installations';
 
 export interface FactoryResetRecoveryDialogData {
@@ -67,7 +67,14 @@ export class FactoryResetRecoveryDialog {
     this.step1State.set('loading');
     this.step1Error.set(null);
     try {
-      await firstValueFrom(this.installations.reprovision(this.data.installation.id));
+      const inst = await firstValueFrom(this.installations.reprovision(this.data.installation.id));
+
+      // Fallback browser: central non ha raggiunto l'on-prem → il browser prova direttamente
+      const pkgs = [inst.adminKeyProvisionPackage, inst.readKeyProvisionPackage].filter(Boolean) as ProvisionPackage[];
+      if (pkgs.length > 0) {
+        await this.browserProvision(pkgs);
+      }
+
       this.step1State.set('success');
     } catch (err: unknown) {
       this.step1State.set('error');
@@ -81,15 +88,23 @@ export class FactoryResetRecoveryDialog {
     this.step2Error.set(null);
     try {
       const res = await firstValueFrom(this.installations.resyncAll(this.data.installation.id));
-      const failed = res.totalCount - res.syncedCount;
-      const errors = res.pendingBrowserPush.map(
-        (p) => `${p.tenantSlug}:${p.channelId} — richiede push browser`,
-      );
+
+      let browserFailed = 0;
+      const browserErrors: string[] = [];
+
+      // Fallback browser per le config che il centrale non è riuscito a pushare
+      if (res.pendingBrowserPush.length > 0) {
+        const results = await this.browserPushConfigs(res.pendingBrowserPush);
+        browserFailed = results.failed;
+        browserErrors.push(...results.errors);
+      }
+
+      const totalFailed = (res.totalCount - res.syncedCount - res.pendingBrowserPush.length) + browserFailed;
       const result: ResyncAllResult = {
         total: res.totalCount,
-        synced: res.syncedCount,
-        failed,
-        errors,
+        synced: res.syncedCount + (res.pendingBrowserPush.length - browserFailed),
+        failed: totalFailed,
+        errors: browserErrors,
       };
       this.step2Result.set(result);
       this.step2State.set('success');
@@ -101,5 +116,80 @@ export class FactoryResetRecoveryDialog {
 
   close(): void {
     this.ref.close();
+  }
+
+  /**
+   * Esegue il provisioning direttamente dal browser verso l'on-prem.
+   * Usato quando il central non riesce a raggiungere l'on-prem (behind VPN).
+   */
+  private async browserProvision(packages: ProvisionPackage[]): Promise<void> {
+    for (const pkg of packages) {
+      const res = await fetch(pkg.targetUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': pkg.adminApiKey },
+        body: pkg.body,
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) {
+        throw new Error(`Browser provisioning fallito: on-prem ha risposto ${res.status}`);
+      }
+    }
+  }
+
+  /**
+   * Esegue il push delle config direttamente dal browser verso l'on-prem.
+   * Chiamato quando resync-all ritorna pendingBrowserPush non vuoto.
+   */
+  private async browserPushConfigs(
+    pending: ResyncAllPendingPush[],
+  ): Promise<{ failed: number; errors: string[] }> {
+    let failed = 0;
+    const errors: string[] = [];
+
+    for (const item of pending) {
+      if (!item.pushPackage) continue;
+      const pkg = item.pushPackage;
+      try {
+        const res = await fetch(pkg.targetUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': pkg.apiKey },
+          body: JSON.stringify({ payload: pkg.encryptedPayload }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (res.ok) {
+          const data = await res.json() as { version?: number };
+          await firstValueFrom(
+            this.installations.resyncAllPushConfirm(
+              this.data.installation.id,
+              item.tenantId,
+              item.channelId,
+              item.entity,
+              true,
+              (data.version ?? null),
+              null,
+            ),
+          );
+        } else {
+          failed++;
+          errors.push(`${item.tenantSlug}:${item.channelId} — on-prem ha risposto ${res.status}`);
+          await firstValueFrom(
+            this.installations.resyncAllPushConfirm(
+              this.data.installation.id,
+              item.tenantId,
+              item.channelId,
+              item.entity,
+              false,
+              null,
+              `On-prem ha risposto ${res.status}`,
+            ),
+          );
+        }
+      } catch (e) {
+        failed++;
+        const msg = e instanceof Error ? e.message : 'Errore rete';
+        errors.push(`${item.tenantSlug}:${item.channelId} — ${msg}`);
+      }
+    }
+    return { failed, errors };
   }
 }

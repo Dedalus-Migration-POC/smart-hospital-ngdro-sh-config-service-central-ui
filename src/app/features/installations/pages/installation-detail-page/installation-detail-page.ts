@@ -481,12 +481,89 @@ export class InstallationDetailPage {
       ).catch(() => { /* ignora errori push-confirm singoli */ });
     }
 
-    const totalSynced = alreadySynced + browserSynced;
-    this.snackbar.open(
-      this.translate.instant('installation.resyncAllSuccess', { count: totalSynced }),
-      'OK',
-      { duration: 4000 },
-    );
+  /**
+   * Fallback browser per factory reset: il central non raggiunge l'on-prem.
+   * Il browser fa la chiamata direttamente aggiungendo X-Reset-Password.
+   */
+  private async browserFactoryReset(
+    inst: Installation,
+    pkg: ProvisionPackage,
+    resetPassword: string,
+  ): Promise<void> {
+    const baseUrl = pkg.targetUrl.replace(/\/v1\/admin\/factory-reset$/, '');
+
+    this.snackbar.open(this.translate.instant('config.browserPushChecking'), 'OK', { duration: 4000 });
+
+    const reachable = await fetch(`${baseUrl}/actuator/health`, {
+      mode: 'no-cors',
+      signal: AbortSignal.timeout(5000),
+    }).then(() => true).catch(() => false);
+
+    if (!reachable) {
+      this.snackbar.open(this.translate.instant('installation.factoryResetUnreachable'), 'OK', { duration: 8000 });
+      return;
+    }
+
+    this.snackbar.open(this.translate.instant('config.browserPushInProgress'), undefined, { duration: 0 });
+
+    try {
+      const res = await fetch(pkg.targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': pkg.adminApiKey,
+          'X-Reset-Password': resetPassword,
+        },
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (!res.ok) {
+        this.snackbar.open(
+          this.translate.instant('installation.factoryResetError') + ` (${res.status})`,
+          'OK',
+          { duration: 6000 },
+        );
+        return;
+      }
+
+      const body = await res.json() as { backupData?: string; message?: string };
+
+      if (body.backupData) {
+        const json = atob(body.backupData);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        a.href = url;
+        a.download = `backup-${inst.id}-${ts}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        let backupSummary = { tenants: 0, configs: 0, apiKeys: 0, timestamp: new Date().toISOString() };
+        try {
+          const backup = JSON.parse(json) as { tenants?: unknown[]; configs?: unknown[]; apiKeys?: unknown[]; timestamp?: string };
+          backupSummary = {
+            tenants: backup.tenants?.length ?? 0,
+            configs: backup.configs?.length ?? 0,
+            apiKeys: backup.apiKeys?.length ?? 0,
+            timestamp: backup.timestamp ?? new Date().toISOString(),
+          };
+        } catch { /* usa i valori di default */ }
+
+        this.dialog.open<FactoryResetRecoveryDialog, FactoryResetRecoveryDialogData>(
+          FactoryResetRecoveryDialog,
+          { data: { installation: inst, backupSummary }, disableClose: true, width: '560px', maxWidth: '95vw' },
+        );
+      } else {
+        this.snackbar.open(this.translate.instant('installation.factoryResetSuccessNoBackup'), 'OK', { duration: 3000 });
+      }
+    } catch (e) {
+      this.snackbar.open(
+        e instanceof Error ? e.message : this.translate.instant('installation.factoryResetError'),
+        'OK',
+        { duration: 6000 },
+      );
+    }
   }
 
   async factoryReset(): Promise<void> {
@@ -543,11 +620,8 @@ export class InstallationDetailPage {
           { data: recoveryData, disableClose: true, width: '560px', maxWidth: '95vw' },
         );
       } else if (res.provisionPackage) {
-        this.snackbar.open(
-          this.translate.instant('installation.factoryResetUnreachable'),
-          'OK',
-          { duration: 8000 },
-        );
+        // Central non raggiunge l'on-prem → il browser tenta direttamente
+        await this.browserFactoryReset(inst, res.provisionPackage, result.resetPassword);
       } else {
         this.snackbar.open(
           this.translate.instant('installation.factoryResetSuccessNoBackup'),
