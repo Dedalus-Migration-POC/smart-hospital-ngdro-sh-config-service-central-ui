@@ -73,7 +73,9 @@
             </mat-form-field>
           }
 
-          <mat-slide-toggle formControlName="active" [disabled]="isReadonlySelf()">{{ 'user.activeToggle' | translate }}</mat-slide-toggle>
+          @if (!isReadonlySelf()) {
+            <mat-slide-toggle formControlName="active">{{ 'user.activeToggle' | translate }}</mat-slide-toggle>
+          }
 
           <div class="detail__meta">
             {{ 'common.createdAt' | translate }} {{ u.createdAt | date:'dd/MM/yyyy HH:mm' }} ·
