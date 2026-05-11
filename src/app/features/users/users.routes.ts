@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { adminOnlyGuard } from '../../core/auth/admin-guard';
+import { selfOrAdminGuard } from '../../core/auth/self-or-admin-guard';
 
 export const usersRoutes: Routes = [
   {
@@ -12,7 +13,7 @@ export const usersRoutes: Routes = [
   },
   {
     path: ':id',
-    canActivate: [adminOnlyGuard],
+    canActivate: [selfOrAdminGuard],
     loadComponent: () =>
       import('./pages/user-detail-page/user-detail-page').then((m) => m.UserDetailPage),
     title: 'Dettaglio utente',

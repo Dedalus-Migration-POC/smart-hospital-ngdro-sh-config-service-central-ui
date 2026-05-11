@@ -93,6 +93,9 @@ export class UserDetailPage implements OnInit {
     return !!u && !!current && u.username === current.username;
   });
 
+  /** True se l'utente corrente è CUSTOMER che sta guardando se stesso: la UI è in sola lettura. */
+  readonly isReadonlySelf = computed(() => this.isSelf() && this.auth.currentUser()?.role === 'CUSTOMER');
+
   readonly isCustomerRole = computed(() => this.form.controls.role.value === 'CUSTOMER');
   readonly isUserAdmin = computed(() => this.user()?.role === 'ADMIN');
 
