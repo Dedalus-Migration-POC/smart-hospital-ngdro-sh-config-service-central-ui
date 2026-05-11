@@ -67,7 +67,7 @@ import {
   FactoryResetRecoveryDialog,
   FactoryResetRecoveryDialogData,
 } from '../../dialogs/factory-reset-recovery-dialog/factory-reset-recovery-dialog';
-import { Installation, InstallationStats, INSTALLATION_BASE_URL_PATTERN, ProvisionPackage, ResyncAllPendingPush } from '../../models';
+import { Installation, InstallationStats, INSTALLATION_BASE_URL_PATTERN, ProvisionPackage, ReadPackage, ResyncAllPendingPush } from '../../models';
 import { InstallationService } from '../../services/installations';
 import { TenantService } from '../../../tenants/services/tenants';
 
@@ -669,11 +669,53 @@ export class InstallationDetailPage {
         this.stats.set(s);
         this.statsLoading.set(false);
       },
-      error: (err: unknown) => {
-        this.statsLoading.set(false);
-        this.statsError.set(toUserMessage(err, this.translate.instant('installation.statsError')));
+      error: () => {
+        // Central non ha raggiunto l'on-prem → il browser ci prova direttamente
+        this.installations.getReadPackage(inst.id).subscribe({
+          next: (pkg) => void this.browserLoadStats(inst.id, pkg),
+          error: (credErr: unknown) => {
+            this.statsLoading.set(false);
+            this.statsError.set(toUserMessage(credErr, this.translate.instant('installation.statsError')));
+          },
+        });
       },
     });
+  }
+
+  private async browserLoadStats(installationId: string, pkg: ReadPackage): Promise<void> {
+    if (!pkg.adminApiKey) {
+      this.statsLoading.set(false);
+      this.statsError.set(this.translate.instant('installation.statsErrorNoKey'));
+      return;
+    }
+
+    const reachable = await fetch(`${pkg.onPremBaseUrl}/actuator/health`, {
+      mode: 'no-cors',
+      signal: AbortSignal.timeout(5000),
+    }).then(() => true).catch(() => false);
+
+    if (!reachable) {
+      this.statsLoading.set(false);
+      this.statsError.set(this.translate.instant('installation.statsErrorUnreachable'));
+      return;
+    }
+
+    try {
+      const res = await fetch(`${pkg.onPremBaseUrl}/v1/admin/stats`, {
+        headers: { 'X-API-Key': pkg.adminApiKey },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) {
+        throw new Error(`On-prem ha risposto ${res.status}`);
+      }
+      const statsData = await res.json() as InstallationStats;
+      this.stats.set(statsData);
+      this.statsLoading.set(false);
+      void firstValueFrom(this.installations.getReadPackage(installationId)).catch(() => undefined);
+    } catch (e) {
+      this.statsLoading.set(false);
+      this.statsError.set(e instanceof Error ? e.message : this.translate.instant('installation.statsError'));
+    }
   }
 
   openSnippet(): void {

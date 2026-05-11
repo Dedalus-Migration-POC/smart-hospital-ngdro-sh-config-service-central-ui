@@ -257,6 +257,8 @@
     "statsByChannel": "By channel",
     "statsGeneratedAt": "Generated at",
     "statsError": "Unable to retrieve statistics from the on-prem.",
+    "statsErrorUnreachable": "On-prem unreachable. Check network connectivity.",
+    "statsErrorNoKey": "ADMIN key not configured for this installation.",
     "revealApiKeyInfo": "Show the ADMIN key used by central for on-prem push.",
     "revealApiKeyBtn": "Print to log",
     "rotateApiKeyBtn": "Rotate",

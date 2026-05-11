@@ -16,6 +16,7 @@ import {
   InstallationStats,
   InstallationUpdateRequest,
   FactoryResetResponse,
+  ReadPackage,
   ResyncAllResponse,
 } from '../models';
 
@@ -119,6 +120,11 @@ export class InstallationService {
   /** GET /installations/{id}/stats — ADMIN only, pull on-demand dall'on-prem. */
   getStats(id: string): Observable<InstallationStats> {
     return this.http.get<InstallationStats>(`${this.baseUrl}/installations/${id}/stats`);
+  }
+
+  /** GET /installations/{id}/read-package — ADMIN only. Credenziali per letture browser-direct dall'on-prem. */
+  getReadPackage(id: string): Observable<ReadPackage> {
+    return this.http.get<ReadPackage>(`${this.baseUrl}/installations/${id}/read-package`);
   }
 
   /** Ri-provisiona entrambe le chiavi (ADMIN + READ) sull'on-prem. */

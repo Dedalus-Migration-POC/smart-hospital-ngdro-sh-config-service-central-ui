@@ -103,6 +103,14 @@ export interface InstallationStats {
   uniqueIpCount: number;
 }
 
+/** Credenziali per letture browser-direct dall'on-prem quando il central non lo raggiunge. */
+export interface ReadPackage {
+  adminApiKey: string | null;
+  readApiKey: string | null;
+  onPremBaseUrl: string;
+  payloadMasterKey: string | null;
+}
+
 /** Regex baseUrl come Pattern lato backend. */
 export const INSTALLATION_BASE_URL_PATTERN = /^https?:\/\/.+/;
 

@@ -264,6 +264,8 @@
     "statsByChannel": "Per canale",
     "statsGeneratedAt": "Aggiornato al",
     "statsError": "Impossibile recuperare le statistiche dall'on-prem.",
+    "statsErrorUnreachable": "On-prem non raggiungibile. Verificare la connettività di rete.",
+    "statsErrorNoKey": "ADMIN key non configurata per questa installazione.",
     "rotateApiKeyBtn": "Ruota",
     "showAdminKeyTitle": "ADMIN key on-prem",
     "showAdminKeyIntroPre": "ADMIN key attualmente configurata per",
