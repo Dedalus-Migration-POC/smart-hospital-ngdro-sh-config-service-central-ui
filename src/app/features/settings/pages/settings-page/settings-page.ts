@@ -228,4 +228,14 @@ export class SettingsPage implements OnInit {
   setBooleanOnprem(key: string, val: boolean) {
     this.onpremForm[key] = String(val);
   }
+
+  isBoolean(s: SystemSetting): boolean {
+    return s.value === 'true' || s.value === 'false';
+  }
+
+  isNumber(s: SystemSetting): boolean {
+    return s.value !== null && s.value !== '' && !isNaN(Number(s.value));
+  }
+
+  readonly String = String;
 }

@@ -195,14 +195,44 @@
     <mat-card-content>
       <div class="settings-page__grid">
         @for (s of securitySettings(); track s.key) {
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'settings.security.jwtExpiration' | translate }}</mat-label>
-            <input matInput type="number" min="60" [(ngModel)]="securityForm[s.key]" />
-            <mat-hint>{{ 'settings.security.jwtExpiration_hint' | translate }}</mat-hint>
-            @if (s.updatedAt) {
-              <mat-hint align="end">{{ 'settings.lastUpdated' | translate }}: {{ s.updatedAt | date:'dd/MM/yyyy HH:mm' }}</mat-hint>
-            }
-          </mat-form-field>
+          @if (isBoolean(s)) {
+            <div class="settings-page__toggle-row">
+              <mat-slide-toggle
+                [checked]="securityForm[s.key] === 'true'"
+                (change)="securityForm[s.key] = String($event.checked)">
+                {{ s.label ?? s.key }}
+              </mat-slide-toggle>
+              @if (s.description) {
+                <span class="settings-page__hint mat-body-small">{{ s.description }}</span>
+              }
+            </div>
+          } @else {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ s.label ?? s.key }}</mat-label>
+              @if (s.secret) {
+                <input matInput
+                  [type]="secretVisible[s.key] ? 'text' : 'password'"
+                  [(ngModel)]="securityForm[s.key]"
+                  [placeholder]="'settings.secretPlaceholder' | translate"
+                  autocomplete="new-password" />
+                <button mat-icon-button matSuffix type="button" tabindex="-1"
+                  (click)="toggleSecretVisibility(s.key)"
+                  [matTooltip]="(secretVisible[s.key] ? 'common.hide' : 'common.show') | translate">
+                  <mat-icon>{{ secretVisible[s.key] ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+              } @else if (isNumber(s)) {
+                <input matInput type="number" [(ngModel)]="securityForm[s.key]" />
+              } @else {
+                <input matInput [(ngModel)]="securityForm[s.key]" />
+              }
+              @if (s.description) {
+                <mat-hint>{{ s.description }}</mat-hint>
+              }
+              @if (s.updatedAt) {
+                <mat-hint align="end">{{ 'settings.lastUpdated' | translate }}: {{ s.updatedAt | date:'dd/MM/yyyy HH:mm' }}</mat-hint>
+              }
+            </mat-form-field>
+          }
         }
       </div>
     </mat-card-content>
@@ -231,8 +261,23 @@
       <div class="settings-page__grid">
         @for (s of notificationsSettings(); track s.key) {
           <mat-form-field appearance="outline">
-            <mat-label>{{ 'settings.notifications.monitorDelay' | translate }}</mat-label>
-            <input matInput type="number" min="10000" [(ngModel)]="notificationsForm[s.key]" />
+            <mat-label>{{ s.label ?? s.key }}</mat-label>
+            @if (s.secret) {
+              <input matInput
+                [type]="secretVisible[s.key] ? 'text' : 'password'"
+                [(ngModel)]="notificationsForm[s.key]"
+                [placeholder]="'settings.secretPlaceholder' | translate"
+                autocomplete="new-password" />
+              <button mat-icon-button matSuffix type="button" tabindex="-1"
+                (click)="toggleSecretVisibility(s.key)"
+                [matTooltip]="(secretVisible[s.key] ? 'common.hide' : 'common.show') | translate">
+                <mat-icon>{{ secretVisible[s.key] ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+            } @else if (isNumber(s)) {
+              <input matInput type="number" min="10000" [(ngModel)]="notificationsForm[s.key]" />
+            } @else {
+              <input matInput [(ngModel)]="notificationsForm[s.key]" />
+            }
             @if (s.description) {
               <mat-hint>{{ s.description }}</mat-hint>
             }
