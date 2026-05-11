@@ -10,6 +10,4 @@
 export const environment = {
   production: true,
   apiBaseUrl: '/api',
-  recaptchaSiteKey: '6Lc6mtwsAAAAABDmEVspg6TKG-rQ6pOQEv_z6PlW',
-  captchaEnabled: true,
 } as const;

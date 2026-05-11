@@ -15,8 +15,8 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { from, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../../../core/auth/auth';
+import { AuthConfigService } from '../../../../core/auth/auth-config';
 import { toUserMessage } from '../../../../core/http/api-error';
-import { environment } from '../../../../../environments/environment';
 import { RecaptchaV3Service } from '../../../../shared/services/recaptcha-v3';
 
 @Component({
@@ -42,8 +42,7 @@ export class LoginPage {
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   private readonly recaptcha = inject(RecaptchaV3Service);
-
-  private readonly captchaEnabled = environment.captchaEnabled;
+  private readonly authConfig = inject(AuthConfigService);
 
   readonly form = this.fb.nonNullable.group({
     username: ['', [Validators.required]],
@@ -63,7 +62,7 @@ export class LoginPage {
 
     const { username, password } = this.form.getRawValue();
 
-    const token$ = this.captchaEnabled
+    const token$ = this.authConfig.captchaEnabled()
       ? from(this.recaptcha.execute('login'))
       : of('dev-bypass');
 

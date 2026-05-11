@@ -8,6 +8,7 @@ import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { firstValueFrom } from 'rxjs';
 
 import { authInterceptor } from './core/auth/auth-interceptor';
+import { AuthConfigService } from './core/auth/auth-config';
 import { routes } from './app.routes';
 
 const SUPPORTED_LANGS = ['it', 'en'] as const;
@@ -31,6 +32,12 @@ export const appConfig: ApplicationConfig = {
     { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { subscriptSizing: 'dynamic' } },
     provideTranslateService({ fallbackLang: 'it' }),
     ...provideTranslateHttpLoader(),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (authConfig: AuthConfigService) => () => firstValueFrom(authConfig.load()),
+      deps: [AuthConfigService],
+      multi: true,
+    },
     {
       provide: APP_INITIALIZER,
       useFactory: () => {

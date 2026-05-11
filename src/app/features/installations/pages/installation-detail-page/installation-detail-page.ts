@@ -390,7 +390,7 @@ export class InstallationDetailPage {
           { duration: 4000 },
         );
       }
-      this.loadInstallation(inst.id);
+      this.load(inst.id);
     } catch (err: unknown) {
       this.snackbar.open(
         toUserMessage(err, this.translate.instant('installation.resyncAllError')),

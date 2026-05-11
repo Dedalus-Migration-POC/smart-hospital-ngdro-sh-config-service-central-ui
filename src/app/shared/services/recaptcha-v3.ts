@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment';
+import { Injectable, inject } from '@angular/core';
+import { AuthConfigService } from '../../core/auth/auth-config';
 
 declare global {
   interface Window {
@@ -14,15 +14,16 @@ declare global {
 
 @Injectable({ providedIn: 'root' })
 export class RecaptchaV3Service {
-  private readonly siteKey = environment.recaptchaSiteKey;
+  private readonly authConfig = inject(AuthConfigService);
   private scriptLoaded = false;
 
   execute(action: string): Promise<string> {
     return this.ensureLoaded().then(
       () =>
         new Promise((resolve, reject) => {
+          const siteKey = this.authConfig.siteKey();
           window.grecaptcha.enterprise.ready(() => {
-            window.grecaptcha.enterprise.execute(this.siteKey, { action }).then(resolve).catch(reject);
+            window.grecaptcha.enterprise.execute(siteKey, { action }).then(resolve).catch(reject);
           });
         }),
     );
@@ -34,8 +35,9 @@ export class RecaptchaV3Service {
       return Promise.resolve();
     }
     return new Promise((resolve, reject) => {
+      const siteKey = this.authConfig.siteKey();
       const script = document.createElement('script');
-      script.src = `https://www.google.com/recaptcha/enterprise.js?render=${this.siteKey}`;
+      script.src = `https://www.google.com/recaptcha/enterprise.js?render=${siteKey}`;
       script.onload = () => {
         this.scriptLoaded = true;
         resolve();
