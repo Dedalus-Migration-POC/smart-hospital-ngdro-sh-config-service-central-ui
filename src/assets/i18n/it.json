@@ -548,7 +548,14 @@
     "notifColDate": "Data",
     "notifColError": "Errore",
     "notifStatus_SENT": "Inviata",
-    "notifStatus_FAILED": "Fallita"
+    "notifStatus_FAILED": "Fallita",
+    "notifHistory": "Storico notifiche",
+    "notifHistorySubtitle": "Ultime notifiche inviate per questo utente",
+    "notifType": "Tipo",
+    "notifStatus": "Stato",
+    "notifInstallation": "Installazione",
+    "notifDate": "Data",
+    "notifEmpty": "Nessuna notifica inviata."
   },
   "audit": {
     "title": "Audit log",

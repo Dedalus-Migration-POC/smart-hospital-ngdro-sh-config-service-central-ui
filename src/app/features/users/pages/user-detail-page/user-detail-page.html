@@ -221,4 +221,70 @@
       </mat-card-actions>
     </mat-card>
   }
+
+  @if (!isReadonlySelf() && user()) {
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>{{ 'user.notifHistory' | translate }}</mat-card-title>
+        <mat-card-subtitle>{{ 'user.notifHistorySubtitle' | translate }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (notifLogsLoading()) {
+          <mat-progress-bar mode="indeterminate" />
+        }
+        <table mat-table [dataSource]="notifLogs()" class="notif-table">
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>{{ 'user.notifType' | translate }}</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-chip-set>
+                <mat-chip [highlighted]="false">
+                  <mat-icon matChipAvatar>{{ row.type === 'EMAIL' ? 'email' : 'notifications' }}</mat-icon>
+                  {{ row.type }}
+                </mat-chip>
+              </mat-chip-set>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>{{ 'user.notifStatus' | translate }}</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-chip-set>
+                <mat-chip [color]="row.status === 'SENT' ? 'primary' : row.status === 'FAILED' ? 'warn' : undefined" [highlighted]="row.status !== 'DRY_RUN'">
+                  {{ row.status }}
+                </mat-chip>
+              </mat-chip-set>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="installationName">
+            <th mat-header-cell *matHeaderCellDef>{{ 'user.notifInstallation' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.installationName }}</td>
+          </ng-container>
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef>{{ 'user.notifDate' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button (click)="openNotifDetail(row)" [matTooltip]="'common.detail' | translate">
+                <mat-icon>open_in_new</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="notifColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: notifColumns;"></tr>
+          <tr class="mat-mdc-no-data-row" *matNoDataRow>
+            <td [attr.colspan]="notifColumns.length" style="padding: 16px; text-align: center; color: var(--mat-sys-on-surface-variant)">
+              {{ 'user.notifEmpty' | translate }}
+            </td>
+          </tr>
+        </table>
+        <mat-paginator
+          [length]="notifLogsTotal()"
+          [pageSize]="20"
+          [pageIndex]="notifLogsPage()"
+          [hidePageSize]="true"
+          (page)="loadNotificationHistory($event.pageIndex)" />
+      </mat-card-content>
+    </mat-card>
+  }
 </section>

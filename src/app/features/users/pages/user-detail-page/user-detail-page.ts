@@ -12,15 +12,19 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -38,7 +42,11 @@ import {
 } from '../../dialogs/change-password-dialog/change-password-dialog';
 import { Customer } from '../../../customers/models';
 import { CustomerService } from '../../../customers/services/customers';
-import { AVAILABLE_ROLES, User } from '../../models';
+import {
+  NotificationDetailDialog,
+  NotificationDetailDialogData,
+} from '../../../notifications/dialogs/notification-detail-dialog/notification-detail-dialog';
+import { AVAILABLE_ROLES, NotificationLog, User } from '../../models';
 import { UserService } from '../../services/users';
 
 @Component({
@@ -50,14 +58,18 @@ import { UserService } from '../../services/users';
     RouterLink,
     ReactiveFormsModule,
     MatCardModule,
+    MatChipsModule,
     MatFormFieldModule,
     MatInputModule,
+    MatPaginatorModule,
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
     MatSlideToggleModule,
     MatProgressBarModule,
     MatProgressSpinnerModule,
+    MatTableModule,
+    MatTooltipModule,
     TranslatePipe,
   ],
   templateUrl: './user-detail-page.html',
@@ -85,7 +97,13 @@ export class UserDetailPage implements OnInit {
   readonly customers = signal<Customer[]>([]);
   readonly pushSubscribed = signal(false);
 
+  readonly notifLogs = signal<NotificationLog[]>([]);
+  readonly notifLogsTotal = signal(0);
+  readonly notifLogsLoading = signal(false);
+  readonly notifLogsPage = signal(0);
+
   readonly availableRoles = AVAILABLE_ROLES;
+  readonly notifColumns = ['type', 'status', 'installationName', 'createdAt', 'actions'];
 
   readonly isSelf = computed(() => {
     const u = this.user();
@@ -162,6 +180,7 @@ export class UserDetailPage implements OnInit {
           this.form.controls.customerId.updateValueAndValidity();
         }
         this.loading.set(false);
+        this.loadNotificationHistory();
       },
       error: (err: unknown) => {
         this.user.set(null);
@@ -312,5 +331,26 @@ export class UserDetailPage implements OnInit {
         );
       },
     });
+  }
+
+  loadNotificationHistory(page = 0): void {
+    const u = this.user();
+    if (!u) return;
+    this.notifLogsLoading.set(true);
+    this.notifLogsPage.set(page);
+    this.userService.getNotificationHistory(u.id, page, 20).subscribe({
+      next: (res) => {
+        this.notifLogs.set(res.content);
+        this.notifLogsTotal.set(res.totalElements);
+        this.notifLogsLoading.set(false);
+      },
+      error: () => this.notifLogsLoading.set(false),
+    });
+  }
+
+  openNotifDetail(row: NotificationLog): void {
+    this.dialog.open<NotificationDetailDialog, NotificationDetailDialogData>(
+      NotificationDetailDialog, { data: row, width: '640px' }
+    );
   }
 }
