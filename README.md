@@ -2,6 +2,115 @@
 
 Frontend Angular **admin** del configuratore centrale SmartHospital. SPA consumata dagli operatori interni Dedalus per gestire customer, installation on-prem, tenant, configurazioni applicative, utenti e audit log. Parla solo con il backend gemello `sh-config-service-central` (Spring Boot, JWT, REST).
 
+---
+
+## Architettura di sistema
+
+```mermaid
+graph TB
+    subgraph CLOUD["☁️  Dedalus Cloud"]
+        UI["🖥️ <b>sh-config-service-central-ui</b><br/>Angular SPA admin<br/>:4200 (dev) / CDN (prod)"]
+        CENTRAL["⚙️ <b>sh-config-service-central</b><br/>Spring Boot · REST API<br/>:8081 (dev)"]
+        CENTRALDB[("🐘 PostgreSQL<br/>shconfigcentraldb")]
+        UI -- "REST · JWT cookie\n(HttpOnly, Secure)" --> CENTRAL
+        CENTRAL --- CENTRALDB
+    end
+
+    subgraph CLIENTEA["🏥 On-prem Cliente A"]
+        ONPREM_A["📦 sh-config-service\n:8080"]
+        DB_A[("🐘 PostgreSQL\nshconfigdb")]
+        APPS_A["📱 App mobile / web / totem"]
+        ONPREM_A --- DB_A
+        APPS_A -- "GET config\nX-API-Key READ" --> ONPREM_A
+    end
+
+    subgraph CLIENTEB["🏥 On-prem Cliente B"]
+        ONPREM_B["📦 sh-config-service\n:8080"]
+        APPS_B["📱 App mobile / web / totem"]
+        APPS_B -- "GET config\nX-API-Key READ" --> ONPREM_B
+    end
+
+    CENTRAL -- "PUT config\nX-API-Key ADMIN" --> ONPREM_A
+    CENTRAL -- "PUT config\nX-API-Key ADMIN" --> ONPREM_B
+
+    style UI fill:#1565C0,color:#fff,stroke:#0D47A1
+    style CLOUD fill:#E3F2FD,stroke:#1565C0
+    style CLIENTEA fill:#F1F8E9,stroke:#558B2F
+    style CLIENTEB fill:#F1F8E9,stroke:#558B2F
+```
+
+> Questo repo è **solo la GUI**: non contiene logica di dominio. Ogni operazione viene delegata all'API del central.
+
+---
+
+## Sequence diagram — push configurazione
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant FE as FE Angular<br/>(questo repo)
+    participant C as Central<br/>(sh-config-service-central)
+    participant OP as On-prem<br/>(sh-config-service)
+
+    Admin->>FE: Salva configurazione
+    FE->>C: PUT /tenants/{id}/configs/{channel}
+    C->>C: Versiona e persiste config
+    C->>OP: PUT /v1/config/{slug}/{channel}<br/>X-API-Key ADMIN
+
+    alt On-prem raggiungibile dal server (percorso normale)
+        OP-->>C: 200 OK · {version}
+        C-->>FE: AppConfigVersion (SYNCED)
+        FE-->>Admin: ✅ Push riuscito
+    else On-prem non raggiungibile (es. VPN cliente)
+        C-->>FE: AppConfigVersion (DRAFT) + PushPackage cifrato
+        Note over FE: Browser fallback
+        FE->>OP: Health check (no-cors)
+        OP-->>FE: opaque 200
+        FE->>Admin: Dialog conferma
+        Admin->>FE: Conferma
+        FE->>OP: PUT /v1/config/{slug}/{channel}<br/>X-API-Key · payload cifrato
+        OP-->>FE: 200 OK · {version}
+        FE->>C: POST /push-confirm
+        C-->>FE: AppConfigVersion (SYNCED)
+        FE-->>Admin: ✅ Push riuscito via browser
+    end
+```
+
+---
+
+## Sequence diagram — provisioning on-prem (nuova installazione)
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant FE as FE Angular
+    participant C as Central
+    participant OP as On-prem
+
+    Admin->>FE: Crea installazione (base_url)
+    FE->>C: POST /customers/{id}/installations
+    C->>C: Genera ADMIN key + READ key
+    C->>C: Cifra le chiavi (AES-256-GCM)
+    C->>OP: POST /v1/admin/api-keys/admin<br/>X-API-Key: setup-key-statica
+
+    alt On-prem raggiungibile
+        OP-->>C: 200 OK
+        C->>OP: POST /v1/admin/api-keys/read<br/>X-API-Key: ADMIN key
+        OP-->>C: 200 OK
+        C-->>FE: Installation (provisionata)
+        FE-->>Admin: ✅ Pronto
+    else On-prem non raggiungibile
+        C-->>FE: Installation + ProvisionPackage (ADMIN)
+        FE->>OP: POST /v1/admin/api-keys/admin<br/>(browser fallback)
+        OP-->>FE: 200 OK
+        FE->>OP: POST /v1/admin/api-keys/read
+        OP-->>FE: 200 OK
+        FE-->>Admin: ✅ Provisionato via browser
+    end
+```
+
+---
+
 ## Stack
 
 - Angular 21.2 (standalone components, signals, routing)
