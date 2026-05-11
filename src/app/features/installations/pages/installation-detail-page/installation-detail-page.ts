@@ -58,8 +58,9 @@ import {
   IntegrationSnippetDialog,
   IntegrationSnippetDialogData,
 } from '../../dialogs/integration-snippet-dialog/integration-snippet-dialog';
-import { Installation, InstallationStats, INSTALLATION_BASE_URL_PATTERN, ProvisionPackage } from '../../models';
+import { Installation, InstallationStats, INSTALLATION_BASE_URL_PATTERN, ProvisionPackage, ResyncAllPendingPush } from '../../models';
 import { InstallationService } from '../../services/installations';
+import { TenantService } from '../../../tenants/services/tenants';
 
 @Component({
   selector: 'app-installation-detail-page',
@@ -90,6 +91,7 @@ export class InstallationDetailPage {
 
   private readonly fb = inject(FormBuilder);
   private readonly installations = inject(InstallationService);
+  private readonly tenantService = inject(TenantService);
   private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
@@ -103,6 +105,7 @@ export class InstallationDetailPage {
   readonly saving = signal(false);
   readonly deleting = signal(false);
   readonly reprovisioning = signal(false);
+  readonly resyncingAll = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly installation = signal<Installation | null>(null);
 
@@ -369,6 +372,111 @@ export class InstallationDetailPage {
 
   private async handleBrowserProvision(pkg: ProvisionPackage): Promise<void> {
     return this.browserProvision.provision(pkg);
+  }
+
+  async resyncAll(): Promise<void> {
+    const inst = this.installation();
+    if (!inst || this.resyncingAll()) return;
+    this.resyncingAll.set(true);
+    try {
+      const result = await firstValueFrom(this.installations.resyncAll(inst.id));
+
+      if (result.pendingBrowserPush.length > 0) {
+        await this.handleBrowserResync(result.pendingBrowserPush, result.syncedCount, result.totalCount);
+      } else {
+        this.snackbar.open(
+          this.translate.instant('installation.resyncAllSuccess', { count: result.syncedCount }),
+          'OK',
+          { duration: 4000 },
+        );
+      }
+      this.loadInstallation(inst.id);
+    } catch (err: unknown) {
+      this.snackbar.open(
+        toUserMessage(err, this.translate.instant('installation.resyncAllError')),
+        'OK',
+        { duration: 6000 },
+      );
+    } finally {
+      this.resyncingAll.set(false);
+    }
+  }
+
+  private async handleBrowserResync(
+    pending: ResyncAllPendingPush[],
+    alreadySynced: number,
+    total: number,
+  ): Promise<void> {
+    const baseUrl = pending[0].pushPackage.baseUrl;
+
+    this.snackbar.open(this.translate.instant('config.browserPushChecking'), 'OK', { duration: 4000 });
+
+    const reachable = await fetch(`${baseUrl}/actuator/health`, {
+      mode: 'no-cors',
+      signal: AbortSignal.timeout(5000),
+    }).then(() => true).catch(() => false);
+
+    if (!reachable) {
+      this.snackbar.open(this.translate.instant('config.browserPushUnreachable'), 'OK', { duration: 8000 });
+      return;
+    }
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const data: ConfirmDialogData = {
+        title: this.translate.instant('installation.browserResyncConfirmTitle'),
+        message: this.translate.instant('installation.browserResyncConfirmMessage', {
+          pending: pending.length,
+          synced: alreadySynced,
+          total,
+        }),
+        confirmLabel: this.translate.instant('config.browserPushConfirmButton'),
+        destructive: false,
+      };
+      const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data });
+      ref.afterClosed().subscribe((r) => resolve(r === true));
+    });
+
+    if (!confirmed) return;
+
+    this.snackbar.open(this.translate.instant('config.browserPushInProgress'), undefined, { duration: 0 });
+
+    let browserSynced = 0;
+    for (const item of pending) {
+      const pkg = item.pushPackage;
+      let remoteVersion: number | null = null;
+      let pushError: string | null = null;
+      let pushOk = false;
+
+      try {
+        const res = await fetch(pkg.targetUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': pkg.apiKey },
+          body: JSON.stringify({ payload: pkg.encryptedPayload }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (res.ok) {
+          const data = await res.json() as { version?: number };
+          remoteVersion = data.version ?? null;
+          pushOk = true;
+          browserSynced++;
+        } else {
+          pushError = `On-prem ha risposto ${res.status}`;
+        }
+      } catch (e) {
+        pushError = e instanceof Error ? e.message : 'Errore rete';
+      }
+
+      await firstValueFrom(
+        this.tenantService.pushConfirm(item.tenantId, item.channelId, item.entity, pushOk, remoteVersion, pushError)
+      ).catch(() => { /* ignora errori push-confirm singoli */ });
+    }
+
+    const totalSynced = alreadySynced + browserSynced;
+    this.snackbar.open(
+      this.translate.instant('installation.resyncAllSuccess', { count: totalSynced }),
+      'OK',
+      { duration: 4000 },
+    );
   }
 
   confirmDelete(): void {

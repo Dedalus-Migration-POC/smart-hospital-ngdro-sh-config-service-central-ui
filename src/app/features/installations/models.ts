@@ -72,6 +72,26 @@ export interface InstallationReadApiKeyResponse {
   provisionPackage?: ProvisionPackage | null;
 }
 
+export interface ResyncAllPendingPush {
+  tenantId: string;
+  tenantSlug: string;
+  channelId: string;
+  entity: string;
+  pushPackage: {
+    encryptedPayload: string;
+    apiKey: string;
+    targetUrl: string;
+    baseUrl: string;
+  };
+}
+
+export interface ResyncAllResponse {
+  installationId: string;
+  syncedCount: number;
+  totalCount: number;
+  pendingBrowserPush: ResyncAllPendingPush[];
+}
+
 export interface InstallationStats {
   generatedAt: string;
   retentionDays: number;

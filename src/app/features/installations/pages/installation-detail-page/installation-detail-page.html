@@ -252,6 +252,16 @@
               <mat-icon>sync</mat-icon>
               {{ 'installation.reprovisionButton' | translate }}
             </button>
+            <button
+              mat-stroked-button
+              color="primary"
+              type="button"
+              (click)="resyncAll()"
+              [disabled]="resyncingAll()"
+            >
+              <mat-icon>cloud_sync</mat-icon>
+              {{ 'installation.resyncAllButton' | translate }}
+            </button>
           }
           <button mat-stroked-button type="button" (click)="openSnippet()">
             <mat-icon>integration_instructions</mat-icon>

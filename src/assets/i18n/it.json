@@ -290,7 +290,12 @@
     "readKeyProvisionSuccess": "READ key provisionata sull'on-prem.",
     "reprovisionButton": "Ri-provisiona on-prem",
     "reprovisionSuccess": "On-prem provisionato con successo.",
-    "reprovisionError": "Errore durante il ri-provisioning dell'on-prem."
+    "reprovisionError": "Errore durante il ri-provisioning dell'on-prem.",
+    "resyncAllButton": "Risincronizza tutto",
+    "resyncAllSuccess": "Risincronizzazione completata: {{count}} config aggiornate.",
+    "resyncAllError": "Errore durante la risincronizzazione.",
+    "browserResyncConfirmTitle": "Push via browser",
+    "browserResyncConfirmMessage": "{{synced}}/{{total}} config sincronizzate dal server. {{pending}} richiedono push diretto dal browser. Procedere?"
   },
   "product": {
     "title": "Prodotti",

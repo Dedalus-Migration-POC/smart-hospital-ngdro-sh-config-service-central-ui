@@ -15,6 +15,7 @@ import {
   InstallationReprovisionResponse,
   InstallationStats,
   InstallationUpdateRequest,
+  ResyncAllResponse,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -123,6 +124,14 @@ export class InstallationService {
   reprovision(id: string): Observable<InstallationReprovisionResponse> {
     return this.http.post<InstallationReprovisionResponse>(
       `${this.baseUrl}/installations/${id}/provision`,
+      {},
+    );
+  }
+
+  /** Ri-pusha tutte le config attive dell'installazione verso l'on-prem. */
+  resyncAll(id: string): Observable<ResyncAllResponse> {
+    return this.http.post<ResyncAllResponse>(
+      `${this.baseUrl}/installations/${id}/resync-all`,
       {},
     );
   }
