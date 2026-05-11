@@ -290,12 +290,21 @@
     "resyncAllSuccess": "Resync complete: {{count}} configs updated.",
     "resyncAllError": "Error during full resync.",
     "browserResyncConfirmTitle": "Browser push required",
-    "browserResyncConfirmMessage": "{{synced}}/{{total}} configs synced by server. {{pending}} require direct browser push. Proceed?"
+    "browserResyncConfirmMessage": "{{synced}}/{{total}} configs synced by server. {{pending}} require direct browser push. Proceed?",
     "revealApiKeyTitle": "Print API Key to Logs",
     "revealApiKeyMessage": "The API key for \"{{ name }}\" will be decrypted and written in plain text to the server log. The operation is recorded in the audit log. Continue?",
     "revealApiKeyConfirm": "Print to logs",
     "revealApiKeySuccess": "API key printed to server log. Check the application logs.",
-    "revealApiKeyError": "Unable to print the API key to the log."
+    "revealApiKeyError": "Unable to print the API key to the log.",
+    "factoryResetBtn": "Factory Reset",
+    "factoryResetConfirmTitle": "Installation Factory Reset",
+    "factoryResetWarning": "This operation will delete ALL data on the on-prem: tenants, configurations and API keys. This operation is irreversible.",
+    "factoryResetCheckbox": "I have read and confirmed the warning",
+    "factoryResetPasswordLabel": "Reset password",
+    "factoryResetSuccess": "Factory reset completed. Backup downloaded.",
+    "factoryResetSuccessNoBackup": "Factory reset completed.",
+    "factoryResetUnreachable": "On-prem unreachable — perform the reset manually",
+    "factoryResetError": "Error during factory reset"
   },
   "product": {
     "title": "Products",

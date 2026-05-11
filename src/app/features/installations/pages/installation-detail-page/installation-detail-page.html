@@ -262,6 +262,16 @@
               <mat-icon>cloud_sync</mat-icon>
               {{ 'installation.resyncAllButton' | translate }}
             </button>
+            <button
+              mat-flat-button
+              color="warn"
+              type="button"
+              (click)="factoryReset()"
+              [disabled]="factoryResetting()"
+            >
+              <mat-icon>restart_alt</mat-icon>
+              {{ 'installation.factoryResetBtn' | translate }}
+            </button>
           }
           <button mat-stroked-button type="button" (click)="openSnippet()">
             <mat-icon>integration_instructions</mat-icon>

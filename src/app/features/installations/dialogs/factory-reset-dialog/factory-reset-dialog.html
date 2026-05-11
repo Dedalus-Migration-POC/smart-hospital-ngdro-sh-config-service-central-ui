@@ -1,0 +1,65 @@
+<h2 mat-dialog-title class="factory-reset-title">
+  <mat-icon color="warn">warning</mat-icon>
+  {{ 'installation.factoryResetConfirmTitle' | translate }}
+</h2>
+
+<mat-dialog-content>
+  <p class="factory-reset-warning">
+    {{ 'installation.factoryResetWarning' | translate }}
+  </p>
+
+  <form [formGroup]="form" id="factory-reset-form" (ngSubmit)="submit()">
+    <mat-checkbox formControlName="confirmed" color="warn">
+      {{ 'installation.factoryResetCheckbox' | translate }}
+    </mat-checkbox>
+
+    <mat-form-field appearance="outline" class="factory-reset-password">
+      <mat-label>{{ 'installation.factoryResetPasswordLabel' | translate }}</mat-label>
+      <input
+        matInput
+        formControlName="resetPassword"
+        [type]="showPassword() ? 'text' : 'password'"
+        autocomplete="off"
+      />
+      <button mat-icon-button matSuffix type="button" (click)="toggleVisibility()">
+        <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close>
+    {{ 'common.cancel' | translate }}
+  </button>
+  <button
+    mat-flat-button
+    color="warn"
+    type="submit"
+    form="factory-reset-form"
+    [disabled]="!form.controls.confirmed.value"
+  >
+    <mat-icon>restart_alt</mat-icon>
+    {{ 'installation.factoryResetBtn' | translate }}
+  </button>
+</mat-dialog-actions>
+
+<style>
+  .factory-reset-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .factory-reset-warning {
+    color: var(--mat-sys-error, #d32f2f);
+    font-weight: 500;
+    margin-bottom: 16px;
+  }
+
+  .factory-reset-password {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+  }
+</style>

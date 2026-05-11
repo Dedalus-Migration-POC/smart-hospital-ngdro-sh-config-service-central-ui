@@ -295,7 +295,16 @@
     "resyncAllSuccess": "Risincronizzazione completata: {{count}} config aggiornate.",
     "resyncAllError": "Errore durante la risincronizzazione.",
     "browserResyncConfirmTitle": "Push via browser",
-    "browserResyncConfirmMessage": "{{synced}}/{{total}} config sincronizzate dal server. {{pending}} richiedono push diretto dal browser. Procedere?"
+    "browserResyncConfirmMessage": "{{synced}}/{{total}} config sincronizzate dal server. {{pending}} richiedono push diretto dal browser. Procedere?",
+    "factoryResetBtn": "Factory Reset",
+    "factoryResetConfirmTitle": "Factory Reset Installazione",
+    "factoryResetWarning": "Questa operazione cancellerà TUTTI i dati sull'on-prem: tenant, configurazioni e API key. L'operazione è irreversibile.",
+    "factoryResetCheckbox": "Ho letto e confermato l'avviso",
+    "factoryResetPasswordLabel": "Password di reset",
+    "factoryResetSuccess": "Factory reset eseguito. Backup scaricato.",
+    "factoryResetSuccessNoBackup": "Factory reset eseguito.",
+    "factoryResetUnreachable": "On-prem non raggiungibile — eseguire il reset manualmente",
+    "factoryResetError": "Errore durante il factory reset"
   },
   "product": {
     "title": "Prodotti",

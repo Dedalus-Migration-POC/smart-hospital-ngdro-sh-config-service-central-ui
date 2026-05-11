@@ -58,6 +58,11 @@ import {
   IntegrationSnippetDialog,
   IntegrationSnippetDialogData,
 } from '../../dialogs/integration-snippet-dialog/integration-snippet-dialog';
+import {
+  FactoryResetDialog,
+  FactoryResetDialogData,
+  FactoryResetDialogResult,
+} from '../../dialogs/factory-reset-dialog/factory-reset-dialog';
 import { Installation, InstallationStats, INSTALLATION_BASE_URL_PATTERN, ProvisionPackage, ResyncAllPendingPush } from '../../models';
 import { InstallationService } from '../../services/installations';
 import { TenantService } from '../../../tenants/services/tenants';
@@ -106,6 +111,7 @@ export class InstallationDetailPage {
   readonly deleting = signal(false);
   readonly reprovisioning = signal(false);
   readonly resyncingAll = signal(false);
+  readonly factoryResetting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly installation = signal<Installation | null>(null);
 
@@ -477,6 +483,70 @@ export class InstallationDetailPage {
       'OK',
       { duration: 4000 },
     );
+  }
+
+  async factoryReset(): Promise<void> {
+    const inst = this.installation();
+    if (!inst || this.factoryResetting()) return;
+
+    const data: FactoryResetDialogData = { installationName: inst.name };
+    const result = await new Promise<FactoryResetDialogResult | undefined>((resolve) => {
+      this.dialog
+        .open<FactoryResetDialog, FactoryResetDialogData, FactoryResetDialogResult | undefined>(
+          FactoryResetDialog,
+          { data, autoFocus: 'first-tabbable' },
+        )
+        .afterClosed()
+        .subscribe(resolve);
+    });
+
+    if (!result) return;
+
+    this.factoryResetting.set(true);
+    try {
+      const res = await firstValueFrom(
+        this.installations.factoryReset(inst.id, result.resetPassword),
+      );
+
+      if (res.backupData) {
+        const json = atob(res.backupData);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        a.href = url;
+        a.download = `backup-${inst.id}-${ts}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.snackbar.open(
+          this.translate.instant('installation.factoryResetSuccess'),
+          'OK',
+          { duration: 4000 },
+        );
+      } else if (res.provisionPackage) {
+        this.snackbar.open(
+          this.translate.instant('installation.factoryResetUnreachable'),
+          'OK',
+          { duration: 8000 },
+        );
+      } else {
+        this.snackbar.open(
+          this.translate.instant('installation.factoryResetSuccessNoBackup'),
+          'OK',
+          { duration: 3000 },
+        );
+      }
+
+      this.load(inst.id);
+    } catch (err: unknown) {
+      this.snackbar.open(
+        toUserMessage(err, this.translate.instant('installation.factoryResetError')),
+        'OK',
+        { duration: 6000 },
+      );
+    } finally {
+      this.factoryResetting.set(false);
+    }
   }
 
   confirmDelete(): void {

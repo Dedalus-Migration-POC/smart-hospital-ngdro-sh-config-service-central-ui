@@ -15,6 +15,7 @@ import {
   InstallationReprovisionResponse,
   InstallationStats,
   InstallationUpdateRequest,
+  FactoryResetResponse,
   ResyncAllResponse,
 } from '../models';
 
@@ -139,5 +140,13 @@ export class InstallationService {
   /** DELETE /installations/{id} — soft-delete (active=false). */
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/installations/${id}`);
+  }
+
+  /** POST /installations/{id}/factory-reset — ADMIN only. */
+  factoryReset(id: string, resetPassword: string): Observable<FactoryResetResponse> {
+    return this.http.post<FactoryResetResponse>(
+      `${this.baseUrl}/installations/${id}/factory-reset`,
+      { resetPassword },
+    );
   }
 }

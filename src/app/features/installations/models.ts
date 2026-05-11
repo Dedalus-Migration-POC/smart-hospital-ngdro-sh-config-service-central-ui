@@ -105,3 +105,9 @@ export interface InstallationStats {
 
 /** Regex baseUrl come Pattern lato backend. */
 export const INSTALLATION_BASE_URL_PATTERN = /^https?:\/\/.+/;
+
+export interface FactoryResetResponse {
+  backupData: string | null;
+  message: string;
+  provisionPackage?: ProvisionPackage;
+}
