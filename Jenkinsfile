@@ -1,1 +1,68 @@
-buildAngular()
+def ECR_REGISTRY = '350801433917.dkr.ecr.eu-west-1.amazonaws.com'
+def ECR_REPO     = 'products/smart-hospital/sh-config-service-central-ui'
+def IMAGE        = "${ECR_REGISTRY}/${ECR_REPO}"
+def VERSION      = ''
+
+pipeline {
+    agent { label 'smarthospital' }
+
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                deleteDir()
+                cleanWs()
+                checkout scm
+            }
+        }
+
+        stage('Setup') {
+            steps {
+                script {
+                    VERSION = sh(script: "node -p \"require('./package.json').version\"", returnStdout: true).trim()
+                    echo "Versione: ${VERSION}"
+                }
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID',     variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh """
+                        /usr/local/bin/aws configure set aws_access_key_id \$AWS_ACCESS_KEY_ID --profile smarthospital_aws
+                        /usr/local/bin/aws configure set aws_secret_access_key \$AWS_SECRET_ACCESS_KEY --profile smarthospital_aws
+                        /usr/local/bin/aws configure set default.region eu-west-1 --profile smarthospital_aws
+                        /usr/local/bin/aws ecr get-login-password --profile smarthospital_aws | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    """
+                }
+            }
+        }
+
+        stage('Build & Push') {
+            steps {
+                script {
+                    sh """
+                        docker build -t ${IMAGE}:${VERSION} -t ${IMAGE}:latest .
+                        docker push ${IMAGE}:${VERSION}
+                        docker push ${IMAGE}:latest
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker image prune -f || true'
+            cleanWs()
+        }
+    }
+}
