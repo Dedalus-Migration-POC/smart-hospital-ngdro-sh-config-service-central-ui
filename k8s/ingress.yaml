@@ -1,0 +1,41 @@
+# Ingress per sh-config-service-central-ui
+# Il frontend serve /  →  sh-config-service-central-ui:80
+# Il backend serve /api →  sh-config-service-central:8081
+# Entrambi sotto lo stesso hostname per mantenere same-origin con apiBaseUrl='/api'.
+#
+# ⚠️  Da configurare con il DevOps:
+#   - spec.rules[0].host  → hostname definitivo
+#   - spec.tls            → certificato TLS
+#   - nome del Service del backend (sh-config-service-central)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sh-config-service-central-ui
+  namespace: sh-configurator
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  ingressClassName: nginx
+  # tls:
+  #   - hosts:
+  #       - sh-configurator.smarthospital.cloud
+  #     secretName: sh-configurator-tls
+  rules:
+    - host: sh-configurator.smarthospital.cloud   # ← cambiare con hostname reale
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: sh-config-service-central   # ← Service del backend
+                port:
+                  number: 8081
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sh-config-service-central-ui
+                port:
+                  number: 80

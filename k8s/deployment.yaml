@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sh-config-service-central-ui
+  namespace: sh-configurator
+  labels:
+    app: sh-config-service-central-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sh-config-service-central-ui
+  template:
+    metadata:
+      labels:
+        app: sh-config-service-central-ui
+    spec:
+      containers:
+        - name: sh-config-service-central-ui
+          image: 350801433917.dkr.ecr.eu-west-1.amazonaws.com/products/smart-hospital/ngdro/sh-config-service-central-ui:1.0.0
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sh-config-service-central-ui
+  namespace: sh-configurator
+  labels:
+    app: sh-config-service-central-ui
+spec:
+  selector:
+    app: sh-config-service-central-ui
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  type: ClusterIP
