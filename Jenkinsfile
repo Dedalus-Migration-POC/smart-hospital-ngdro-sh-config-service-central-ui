@@ -32,18 +32,30 @@ pipeline {
 
         stage('Docker Login') {
             steps {
-                sh """
-                    /usr/local/bin/aws configure set aws_access_key_id \$AWS_ACCESS_KEY_ID --profile smarthospital_aws
-                    /usr/local/bin/aws configure set aws_secret_access_key \$AWS_SECRET_ACCESS_KEY --profile smarthospital_aws
-                    /usr/local/bin/aws configure set default.region eu-west-1 --profile smarthospital_aws
-                    /usr/local/bin/aws ecr get-login-password --profile smarthospital_aws | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                """
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'smarthospital_aws',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    sh """
+                        /usr/local/bin/aws configure set aws_access_key_id \$AWS_ACCESS_KEY_ID --profile smarthospital_aws
+                        /usr/local/bin/aws configure set aws_secret_access_key \$AWS_SECRET_ACCESS_KEY --profile smarthospital_aws
+                        /usr/local/bin/aws configure set default.region eu-west-1 --profile smarthospital_aws
+                        /usr/local/bin/aws ecr get-login-password --profile smarthospital_aws | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    """
+                }
             }
         }
 
         stage('Build & Push') {
             steps {
-                script {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'smarthospital_aws',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
                     sh """
                         docker build -t ${IMAGE}:${VERSION} -t ${IMAGE}:latest .
                         docker push ${IMAGE}:${VERSION}
