@@ -56,11 +56,23 @@ pipeline {
                     accessKeyVariable: 'AWS_ACCESS_KEY_ID',
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
-                    sh """
-                        docker build -t ${IMAGE}:${VERSION} -t ${IMAGE}:latest .
-                        docker push ${IMAGE}:${VERSION}
-                        docker push ${IMAGE}:latest
-                    """
+                    script {
+                        // Crea il repository ECR se non esiste
+                        def repoExists = sh(
+                            script: "/usr/local/bin/aws ecr describe-repositories --repository-name ${ECR_REPO} --region eu-west-1 --profile smarthospital_aws",
+                            returnStatus: true
+                        ) == 0
+                        if (!repoExists) {
+                            echo "Repository ECR non trovato, lo creo: ${ECR_REPO}"
+                            sh "/usr/local/bin/aws ecr create-repository --repository-name ${ECR_REPO} --region eu-west-1 --profile smarthospital_aws"
+                        }
+
+                        sh """
+                            docker build -t ${IMAGE}:${VERSION} -t ${IMAGE}:latest .
+                            docker push ${IMAGE}:${VERSION}
+                            docker push ${IMAGE}:latest
+                        """
+                    }
                 }
             }
         }
