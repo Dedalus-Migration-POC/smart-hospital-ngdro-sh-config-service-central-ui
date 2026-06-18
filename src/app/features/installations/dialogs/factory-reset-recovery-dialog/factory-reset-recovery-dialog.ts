@@ -13,6 +13,7 @@ import { firstValueFrom } from 'rxjs';
 import { toUserMessage } from '../../../../core/http/api-error';
 import { Installation, ProvisionPackage, ResyncAllPendingPush, ResyncAllResult } from '../../models';
 import { InstallationService } from '../../services/installations';
+import { TenantService } from '../../../tenants/services/tenants';
 
 export interface FactoryResetRecoveryDialogData {
   installation: Installation;
@@ -47,6 +48,7 @@ type StepState = 'idle' | 'loading' | 'success' | 'error';
 export class FactoryResetRecoveryDialog {
   readonly data = inject<FactoryResetRecoveryDialogData>(MAT_DIALOG_DATA);
   private readonly installations = inject(InstallationService);
+  private readonly tenantService = inject(TenantService);
   private readonly translate = inject(TranslateService);
   private readonly ref = inject<MatDialogRef<FactoryResetRecoveryDialog>>(MatDialogRef);
 
@@ -159,8 +161,7 @@ export class FactoryResetRecoveryDialog {
         if (res.ok) {
           const data = await res.json() as { version?: number };
           await firstValueFrom(
-            this.installations.resyncAllPushConfirm(
-              this.data.installation.id,
+            this.tenantService.pushConfirm(
               item.tenantId,
               item.channelId,
               item.entity,
@@ -173,8 +174,7 @@ export class FactoryResetRecoveryDialog {
           failed++;
           errors.push(`${item.tenantSlug}:${item.channelId} — on-prem ha risposto ${res.status}`);
           await firstValueFrom(
-            this.installations.resyncAllPushConfirm(
-              this.data.installation.id,
+            this.tenantService.pushConfirm(
               item.tenantId,
               item.channelId,
               item.entity,

@@ -480,6 +480,7 @@ export class InstallationDetailPage {
         this.tenantService.pushConfirm(item.tenantId, item.channelId, item.entity, pushOk, remoteVersion, pushError)
       ).catch(() => { /* ignora errori push-confirm singoli */ });
     }
+  }
 
   /**
    * Fallback browser per factory reset: il central non raggiunge l'on-prem.
