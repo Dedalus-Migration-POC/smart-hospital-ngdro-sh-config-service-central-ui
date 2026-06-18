@@ -1,5 +1,5 @@
 def ECR_REGISTRY = '350801433917.dkr.ecr.eu-west-1.amazonaws.com'
-def ECR_REPO     = 'products/smart-hospital/sh-config-service-central-ui'
+def ECR_REPO     = 'products/smart-hospital/ngdro/sh-config-service-central-ui'
 def IMAGE        = "${ECR_REGISTRY}/${ECR_REPO}"
 def VERSION      = ''
 
