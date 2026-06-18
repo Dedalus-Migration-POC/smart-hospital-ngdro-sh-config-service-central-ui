@@ -1,37 +1,23 @@
-# Ingress per sh-config-service-central-ui
-# Il frontend serve /  →  sh-config-service-central-ui:80
-# Il backend serve /api →  sh-config-service-central:8081
-# Entrambi sotto lo stesso hostname per mantenere same-origin con apiBaseUrl='/api'.
-#
-# ⚠️  Da configurare con il DevOps:
-#   - spec.rules[0].host  → hostname definitivo
-#   - spec.tls            → certificato TLS
-#   - nome del Service del backend (sh-config-service-central)
+# Ingress per sh-config-service-central-ui — AWS ALB
+# ⚠️  Da configurare:
+#   - spec.rules[0].host  → hostname definitivo (o rimuovere host per wildcard)
+#   - routing /api verso il Service del backend quando disponibile
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: sh-config-service-central-ui
   namespace: sh-configurator
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-1:500820381187:certificate/9014ee65-c1e9-47ec-ae41-8e61f8670f99
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/load-balancer-attributes: deletion_protection.enabled=false
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
 spec:
-  ingressClassName: nginx
-  # tls:
-  #   - hosts:
-  #       - sh-configurator.smarthospital.cloud
-  #     secretName: sh-configurator-tls
+  ingressClassName: alb
   rules:
-    - host: sh-configurator.smarthospital.cloud   # ← cambiare con hostname reale
-      http:
+    - http:
         paths:
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: sh-config-service-central   # ← Service del backend
-                port:
-                  number: 8081
           - path: /
             pathType: Prefix
             backend:
