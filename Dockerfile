@@ -3,8 +3,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN echo "registry=https://registry.npmjs.org" > .npmrc && npm install --legacy-peer-deps && rm .npmrc
+COPY package.json ./
+RUN echo "registry=https://registry.npmjs.org" > .npmrc && \
+    npm install --legacy-peer-deps && \
+    rm .npmrc
 
 COPY . .
 RUN npm run build -- --configuration production
