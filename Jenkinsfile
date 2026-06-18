@@ -3,6 +3,7 @@ pipeline {
         docker {
             image 'node:20-alpine'
             args '--tmpfs /.npm'
+            reuseNode true
         }
     }
 
