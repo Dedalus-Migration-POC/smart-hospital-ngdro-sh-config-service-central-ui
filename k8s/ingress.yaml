@@ -1,7 +1,4 @@
 # Ingress per sh-config-service-central-ui — AWS ALB
-# ⚠️  Da configurare:
-#   - spec.rules[0].host  → hostname definitivo (o rimuovere host per wildcard)
-#   - routing /api verso il Service del backend quando disponibile
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -16,7 +13,8 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - http:
+    - host: configurator.smarthospital.cloud
+      http:
         paths:
           - path: /
             pathType: Prefix
