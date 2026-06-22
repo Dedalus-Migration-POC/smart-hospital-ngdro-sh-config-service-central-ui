@@ -33,7 +33,7 @@ export class ConfigApiDocDialog {
     const base = this.data.baseUrl || '{base-url}';
     this.curlExample =
       `curl -s \\\n` +
-      `  "${base}/v1/${this.data.tenantSlug}/${this.data.channelId}?entity=base" \\\n` +
+      `  "${base}/v1/config/${this.data.tenantSlug}/${this.data.channelId}?entity=base" \\\n` +
       `  -H "X-API-Key: <la-tua-api-key>"`;
   }
 
