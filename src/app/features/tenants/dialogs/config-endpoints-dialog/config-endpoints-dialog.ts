@@ -67,7 +67,7 @@ export class ConfigEndpointsDialog {
         const entityNames = entities.length ? entities.map((e) => e.entity) : ['base'];
         const rows = entityNames.map((e) => ({
           entity: e,
-          url: `${base}/v1/${this.data.tenantSlug}/${this.data.channelId}?entity=${e}`,
+          url: `${base}/v1/config/${this.data.tenantSlug}/${this.data.channelId}?entity=${e}`,
         }));
         this.endpoints.set(rows);
         this.loading.set(false);
