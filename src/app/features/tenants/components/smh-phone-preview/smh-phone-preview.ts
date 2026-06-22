@@ -18,7 +18,7 @@ export interface BodyCategory {
 export class SmhPhonePreview {
   readonly renderData = input<SmhUiRenderJson | null>(null);
   readonly themeData = input<SmhThemeDataJson | null>(null);
-  readonly translations = input<Record<string, string> | null>(null);
+  readonly translations = input<Record<string, unknown> | null>(null);
 
   readonly themeVars = computed(() => {
     const t = this.themeData();
@@ -39,11 +39,21 @@ export class SmhPhonePreview {
     return Object.entries(body).map(([name, items]) => ({ name, items }));
   });
 
-  /** Risolve una chiave di traduzione: se presente in translations, restituisce il valore tradotto, altrimenti la stringa originale. */
+  /** Risolve una chiave dot-notation (es. "home_screen.body.faq_title") nel JSON annidato delle traduzioni. */
   t(key: string | null | undefined): string {
     if (!key) return '';
     const dict = this.translations();
-    return (dict && Object.prototype.hasOwnProperty.call(dict, key)) ? dict[key] : key;
+    if (!dict) return key;
+    const parts = key.split('.');
+    let current: unknown = dict;
+    for (const part of parts) {
+      if (current && typeof current === 'object' && part in (current as Record<string, unknown>)) {
+        current = (current as Record<string, unknown>)[part];
+      } else {
+        return key;
+      }
+    }
+    return typeof current === 'string' ? current : key;
   }
 
   svgUri(svg: string | null | undefined): string {

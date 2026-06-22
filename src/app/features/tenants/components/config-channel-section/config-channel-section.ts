@@ -242,7 +242,7 @@ export class ConfigChannelSection {
         .pipe(catchError(() => of(null)))
         .subscribe((cfg) => {
           if (cfg) {
-            this.translationsCache.update(m => new Map(m).set(entity, cfg.configJson as Record<string, string>));
+            this.translationsCache.update(m => new Map(m).set(entity, cfg.configJson as Record<string, unknown>));
           }
         });
     });
@@ -307,7 +307,7 @@ export class ConfigChannelSection {
       .pipe(catchError(() => fallbackToEn$))
       .subscribe((cfg) => {
         if (cfg) {
-          this.translationsCache.update(m => new Map(m).set(translationEntity, cfg.configJson as Record<string, string>));
+          this.translationsCache.update(m => new Map(m).set(translationEntity, cfg.configJson as Record<string, unknown>));
         }
       });
   }
@@ -669,7 +669,7 @@ export class ConfigChannelSection {
 
   private readonly cachedUiRenderJson  = signal<SmhUiRenderJson | null>(null);
   private readonly cachedThemeDataJson = signal<SmhThemeDataJson | null>(null);
-  private readonly translationsCache   = signal<Map<string, Record<string, string>>>(new Map());
+  private readonly translationsCache   = signal<Map<string, Record<string, unknown>>>(new Map());
 
   /** Ricava l'entity di traduzione dalla lingua del browser (es. "it" → "smh_it"). Default: "smh_en". */
   private static translationEntity(): string {
@@ -714,7 +714,7 @@ export class ConfigChannelSection {
     return this.cachedThemeDataJson();
   });
 
-  readonly previewTranslationsJson = computed((): Record<string, string> | null => {
+  readonly previewTranslationsJson = computed((): Record<string, unknown> | null => {
     if (!this.showPreview()) return null;
     const lang = this.previewLang();
     const entity = `smh_${lang}`;
@@ -722,7 +722,7 @@ export class ConfigChannelSection {
     if (this.entity() === entity) {
       const raw = this.configValue();
       if (!raw?.trim()) return cached;
-      try { return JSON.parse(raw) as Record<string, string>; } catch { return cached; }
+      try { return JSON.parse(raw) as Record<string, unknown>; } catch { return cached; }
     }
     return cached;
   });
