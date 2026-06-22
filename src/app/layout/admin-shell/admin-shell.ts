@@ -21,6 +21,7 @@ import { map } from 'rxjs/operators';
 
 import { AuthService } from '../../core/auth/auth';
 import { VersionService } from '../../core/version/version';
+import pkg from '../../../../package.json';
 
 interface NavItem {
   icon: string;
@@ -61,7 +62,7 @@ export class AdminShell {
 
   readonly currentUser = this.auth.currentUser;
   readonly currentLang = signal<string>(this.translate.currentLang ?? localStorage.getItem('sh.cs.lang') ?? 'it');
-  readonly feVersion = '1.0.0';
+  readonly feVersion = pkg.version;
   readonly beVersion = signal<string>('…');
 
   readonly isMobile = toSignal(
