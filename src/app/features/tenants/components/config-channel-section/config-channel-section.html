@@ -419,7 +419,17 @@
       <mat-icon class="channel__preview-label-icon">smartphone</mat-icon>
       <span>{{ 'config.previewTitle' | translate }}</span>
     </div>
-    <app-smh-phone-preview [renderData]="previewJson()" [themeData]="previewThemeJson()" />
+    @if (previewLangs().length > 1) {
+      <mat-form-field appearance="outline" class="channel__preview-lang-select">
+        <mat-label>{{ 'config.previewLang' | translate }}</mat-label>
+        <mat-select [value]="previewLang()" (selectionChange)="previewLang.set($event.value)">
+          @for (lang of previewLangs(); track lang) {
+            <mat-option [value]="lang">{{ lang | uppercase }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+    <app-smh-phone-preview [renderData]="previewJson()" [themeData]="previewThemeJson()" [translations]="previewTranslationsJson()" />
   </div>
 }
 

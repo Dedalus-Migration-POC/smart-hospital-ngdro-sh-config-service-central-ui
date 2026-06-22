@@ -374,6 +374,7 @@
     "addEntityPattern": "Solo lettere/numeri minuscoli, trattini e underscore (es. \"smh_ui_render\").",
     "addEntityConfirm": "Aggiungi",
     "previewTitle": "Anteprima live",
+    "previewLang": "Lingua simulatore",
     "addEntityTooltip": "Aggiungi una nuova entity per questo canale",
     "noConfig": "Nessuna configurazione salvata per questa entity.",
     "jsonLabel": "Configurazione JSON — entity: {{entity}}",

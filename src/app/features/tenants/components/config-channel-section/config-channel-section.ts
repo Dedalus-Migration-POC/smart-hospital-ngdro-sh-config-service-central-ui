@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, UpperCasePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -26,6 +26,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
@@ -150,6 +151,7 @@ function extractServiceIds(config: unknown): string[] {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
+    UpperCasePipe,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -159,6 +161,7 @@ function extractServiceIds(config: unknown): string[] {
     MatProgressSpinnerModule,
     MatDividerModule,
     MatExpansionModule,
+    MatSelectModule,
     MatTooltipModule,
     TranslatePipe,
     SmhPhonePreview,
@@ -216,6 +219,7 @@ export class ConfigChannelSection {
       const channelId = this.channelId();
       this.entities.set(['base']);
       this.initialized.set(false);
+      this.translationsCache.set(new Map());
       this.loadEntities(tenantId, channelId);
     });
 
@@ -227,6 +231,21 @@ export class ConfigChannelSection {
       this.loadConfig(tenantId, channelId, entity);
     });
 
+    // Fetch translation on-demand when previewLang changes (if not already cached)
+    effect(() => {
+      const lang = this.previewLang();
+      const tenantId = this.tenantId();
+      if (this.channelId() !== 'mobile') return;
+      const entity = `smh_${lang}`;
+      if (this.translationsCache().has(entity)) return;
+      this.tenantService.getConfig(tenantId, 'mobile', 'local', entity)
+        .pipe(catchError(() => of(null)))
+        .subscribe((cfg) => {
+          if (cfg) {
+            this.translationsCache.update(m => new Map(m).set(entity, cfg.configJson as Record<string, string>));
+          }
+        });
+    });
   }
 
   private loadEntities(tenantId: string, channelId: string): void {
@@ -239,6 +258,7 @@ export class ConfigChannelSection {
         merged.add('base');
         if (channelId === 'mobile') {
           ConfigChannelSection.MOBILE_MANDATORY_ENTITIES.forEach((e) => merged.add(e));
+          merged.add(ConfigChannelSection.translationEntity());
         }
         const sorted = [...merged].sort((a, b) => {
           if (a === 'base') return -1;
@@ -254,6 +274,7 @@ export class ConfigChannelSection {
         const base = new Set<string>(['base']);
         if (channelId === 'mobile') {
           ConfigChannelSection.MOBILE_MANDATORY_ENTITIES.forEach((e) => base.add(e));
+          base.add(ConfigChannelSection.translationEntity());
         }
         this.entities.update((list) => {
           const merged = new Set([...list, ...base]);
@@ -276,6 +297,18 @@ export class ConfigChannelSection {
       .pipe(catchError(() => of(null)))
       .subscribe((cfg) => {
         if (cfg) this.cachedThemeDataJson.set(cfg.configJson as SmhThemeDataJson);
+      });
+    const translationEntity = ConfigChannelSection.translationEntity();
+    const fallbackToIt$ = this.tenantService.getConfig(tenantId, 'mobile', 'local', 'smh_it').pipe(catchError(() => of(null)));
+    const fallbackToEn$ = translationEntity !== 'smh_en'
+      ? this.tenantService.getConfig(tenantId, 'mobile', 'local', 'smh_en').pipe(catchError(() => fallbackToIt$))
+      : fallbackToIt$;
+    this.tenantService.getConfig(tenantId, 'mobile', 'local', translationEntity)
+      .pipe(catchError(() => fallbackToEn$))
+      .subscribe((cfg) => {
+        if (cfg) {
+          this.translationsCache.update(m => new Map(m).set(translationEntity, cfg.configJson as Record<string, string>));
+        }
       });
   }
 
@@ -330,6 +363,9 @@ export class ConfigChannelSection {
         }
         if (channelId === 'mobile' && entity === 'smh_theme_data') {
           this.cachedThemeDataJson.set(active.configJson as SmhThemeDataJson);
+        }
+        if (channelId === 'mobile' && entity === ConfigChannelSection.translationEntity()) {
+          this.translationsCache.update(m => new Map(m).set(entity, active.configJson as Record<string, string>));
         }
         this.loading.set(false);
         this.initialized.set(true);
@@ -566,6 +602,7 @@ export class ConfigChannelSection {
     'smh_faq',
     'smh_service_config',
     'smh_it',
+    'smh_en',
     'smh_min_app_version',
     'smh_news',
     'smh_tutorial',
@@ -586,6 +623,7 @@ export class ConfigChannelSection {
     smh_faq: [],
     smh_service_config: [],
     smh_it: {},
+    smh_en: {},
     smh_min_app_version: { ios: '1.0', android: '1.0' },
     smh_news: [],
     smh_tutorial: { cdnBaseUrl: '', youtubePlaylistUrl: '' },
@@ -631,6 +669,26 @@ export class ConfigChannelSection {
 
   private readonly cachedUiRenderJson  = signal<SmhUiRenderJson | null>(null);
   private readonly cachedThemeDataJson = signal<SmhThemeDataJson | null>(null);
+  private readonly translationsCache   = signal<Map<string, Record<string, string>>>(new Map());
+
+  /** Ricava l'entity di traduzione dalla lingua del browser (es. "it" → "smh_it"). Default: "smh_en". */
+  private static translationEntity(): string {
+    const lang = navigator.language.split('-')[0].toLowerCase();
+    return `smh_${lang}`;
+  }
+
+  /** Lingua selezionata nel simulatore (codice a 2 lettere). Reset al cambio di tenant/channel. */
+  readonly previewLang = linkedSignal({
+    source: () => `${this.tenantId()}::${this.channelId()}`,
+    computation: () => ConfigChannelSection.translationEntity().slice(4),
+  });
+
+  /** Lingue disponibili nel simulatore: entità smh_XX presenti nella lista. */
+  readonly previewLangs = computed(() =>
+    this.entities()
+      .filter(e => /^smh_[a-z]{2}$/.test(e))
+      .map(e => e.slice(4)),
+  );
 
   readonly showPreview = computed(() =>
     this.channelId() === 'mobile' && (this.isSmhUiRender() || this.isSmhThemeData()),
@@ -654,6 +712,19 @@ export class ConfigChannelSection {
       try { return JSON.parse(raw) as SmhThemeDataJson; } catch { return this.cachedThemeDataJson(); }
     }
     return this.cachedThemeDataJson();
+  });
+
+  readonly previewTranslationsJson = computed((): Record<string, string> | null => {
+    if (!this.showPreview()) return null;
+    const lang = this.previewLang();
+    const entity = `smh_${lang}`;
+    const cached = this.translationsCache().get(entity) ?? null;
+    if (this.entity() === entity) {
+      const raw = this.configValue();
+      if (!raw?.trim()) return cached;
+      try { return JSON.parse(raw) as Record<string, string>; } catch { return cached; }
+    }
+    return cached;
   });
 
   openGraphicEditor(): void {

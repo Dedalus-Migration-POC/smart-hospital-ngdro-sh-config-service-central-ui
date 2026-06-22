@@ -22,7 +22,7 @@
       <svg class="phone__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
-      <span>{{ renderData()?.home?.search_bar?.hint_label || 'Cerca...' }}</span>
+      <span>{{ t(renderData()?.home?.search_bar?.hint_label) || 'Cerca...' }}</span>
     </div>
 
     <!-- Header banners -->
@@ -34,8 +34,8 @@
               <img class="phone__banner-icon" [src]="uri" alt="" />
             }
             <div>
-              @if (banner.title) { <div class="phone__banner-title">{{ banner.title }}</div> }
-              @if (banner.subtitle) { <div class="phone__banner-sub">{{ banner.subtitle }}</div> }
+              @if (banner.title) { <div class="phone__banner-title">{{ t(banner.title) }}</div> }
+              @if (banner.subtitle) { <div class="phone__banner-sub">{{ t(banner.subtitle) }}</div> }
             </div>
           </div>
         </div>
@@ -45,7 +45,7 @@
     <!-- Body categories -->
     @for (cat of bodyCategories(); track cat.name) {
       @if (cat.name) {
-        <div class="phone__section-title">{{ cat.name }}</div>
+        <div class="phone__section-title">{{ t(cat.name) }}</div>
       }
       <div class="phone__grid">
         @for (item of cat.items; track item.id) {
@@ -71,9 +71,9 @@
                 </div>
               }
               <div class="phone__card-text">
-                <div class="phone__card-title">{{ item.title || '…' }}</div>
+                <div class="phone__card-title">{{ t(item.title) || '…' }}</div>
                 @if (item.subtitle) {
-                  <div class="phone__card-sub">{{ item.subtitle }}</div>
+                  <div class="phone__card-sub">{{ t(item.subtitle) }}</div>
                 }
               </div>
             </div>
@@ -96,7 +96,7 @@
               <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
             </svg>
           }
-          <span class="phone__nav-label">{{ svc.title }}</span>
+          <span class="phone__nav-label">{{ t(svc.title) }}</span>
         </div>
       }
     </div>

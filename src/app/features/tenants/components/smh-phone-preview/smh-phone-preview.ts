@@ -18,6 +18,7 @@ export interface BodyCategory {
 export class SmhPhonePreview {
   readonly renderData = input<SmhUiRenderJson | null>(null);
   readonly themeData = input<SmhThemeDataJson | null>(null);
+  readonly translations = input<Record<string, string> | null>(null);
 
   readonly themeVars = computed(() => {
     const t = this.themeData();
@@ -37,6 +38,13 @@ export class SmhPhonePreview {
     if (!body) return [];
     return Object.entries(body).map(([name, items]) => ({ name, items }));
   });
+
+  /** Risolve una chiave di traduzione: se presente in translations, restituisce il valore tradotto, altrimenti la stringa originale. */
+  t(key: string | null | undefined): string {
+    if (!key) return '';
+    const dict = this.translations();
+    return (dict && Object.prototype.hasOwnProperty.call(dict, key)) ? dict[key] : key;
+  }
 
   svgUri(svg: string | null | undefined): string {
     if (!svg) return '';
