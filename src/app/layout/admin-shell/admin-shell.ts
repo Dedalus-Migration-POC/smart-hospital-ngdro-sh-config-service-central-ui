@@ -20,7 +20,6 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { map } from 'rxjs/operators';
 
 import { AuthService } from '../../core/auth/auth';
-import { VersionService } from '../../core/version/version';
 import pkg from '../../../../package.json';
 
 interface NavItem {
@@ -58,12 +57,10 @@ export class AdminShell {
   private readonly router = inject(Router);
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly translate = inject(TranslateService);
-  private readonly versionService = inject(VersionService);
 
   readonly currentUser = this.auth.currentUser;
   readonly currentLang = signal<string>(this.translate.currentLang ?? localStorage.getItem('sh.cs.lang') ?? 'it');
   readonly feVersion = pkg.version;
-  readonly beVersion = signal<string>('…');
 
   readonly isMobile = toSignal(
     this.breakpointObserver.observe(MOBILE_QUERY).pipe(map((r) => r.matches)),
@@ -98,8 +95,6 @@ export class AdminShell {
   });
 
   constructor() {
-    this.versionService.getBackendVersion().subscribe((v) => this.beVersion.set(v));
-
     effect(() => {
       this.sidenavOpened.set(!this.isMobile());
     });
