@@ -21,6 +21,12 @@ export interface ServiceItem {
   subtitle: string;
   svg_icon: string;
   show_lock: boolean;
+  link?: string;
+  disabled?: boolean;
+}
+
+export interface WidgetItem {
+  id: string;
 }
 
 export interface HeaderItem {
@@ -38,6 +44,8 @@ export interface SmhUiRenderJson {
     search_bar?: { hint_label?: string };
     header?: HeaderItem[];
     body?: Record<string, ServiceItem[]>;
+    widgets?: WidgetItem[];
+    widget?: WidgetItem[];
   };
   navigation_bar?: { services?: ServiceItem[] };
 }
@@ -106,6 +114,7 @@ export class SmhUiRenderEditorDialog {
   get searchBarGroup(): FormGroup { return this.homeGroup.get('search_bar') as FormGroup; }
   get headerArray(): FormArray { return this.homeGroup.get('header') as FormArray; }
   get bodyArray(): FormArray { return this.homeGroup.get('body') as FormArray; }
+  get widgetsArray(): FormArray { return this.homeGroup.get('widgets') as FormArray; }
   get navServicesArray(): FormArray { return (this.form.get('navigation_bar') as FormGroup).get('services') as FormArray; }
 
   getCategoryItemsArray(catIndex: number): FormArray {
@@ -135,6 +144,7 @@ export class SmhUiRenderEditorDialog {
         }),
         header: this.fb.array((v.home?.header ?? []).map((h) => this.makeHeaderGroup(h))),
         body: this.fb.array(body),
+        widgets: this.fb.array((v.home?.widgets ?? v.home?.widget ?? []).map((w) => this.makeWidgetGroup(w))),
       }),
       navigation_bar: this.fb.nonNullable.group({
         services: this.fb.array((v.navigation_bar?.services ?? []).map((s) => this.makeServiceGroup(s))),
@@ -149,6 +159,7 @@ export class SmhUiRenderEditorDialog {
       subtitle: [item?.subtitle ?? ''],
       svg_icon: [item?.svg_icon ?? ''],
       show_lock: [item?.show_lock ?? false],
+      link: [item?.link ?? ''],
     });
   }
 
@@ -158,6 +169,12 @@ export class SmhUiRenderEditorDialog {
       subtitle: [item?.subtitle ?? ''],
       svg_icon: [item?.svg_icon ?? ''],
       show_card: [item?.show_card ?? true],
+    });
+  }
+
+  private makeWidgetGroup(item?: Partial<WidgetItem>): FormGroup {
+    return this.fb.nonNullable.group({
+      id: [item?.id ?? '', Validators.required],
     });
   }
 
@@ -204,6 +221,14 @@ export class SmhUiRenderEditorDialog {
     this.moveInArray(this.getCategoryItemsArray(catIndex), event.previousIndex, event.currentIndex);
   }
 
+  addWidget(): void {
+    this.widgetsArray.push(this.makeWidgetGroup());
+  }
+
+  removeWidget(i: number): void {
+    this.widgetsArray.removeAt(i);
+  }
+
   addNavService(): void {
     this.navServicesArray.push(this.makeServiceGroup());
   }
@@ -230,6 +255,7 @@ export class SmhUiRenderEditorDialog {
         search_bar: { hint_label: string };
         header: HeaderItem[];
         body: Array<{ categoryName: string; items: ServiceItem[] }>;
+        widgets: WidgetItem[];
       };
       navigation_bar: { services: ServiceItem[] };
     };
@@ -247,6 +273,7 @@ export class SmhUiRenderEditorDialog {
         search_bar: raw.home.search_bar,
         header: raw.home.header,
         body,
+        ...(raw.home.widgets.length > 0 ? { widgets: raw.home.widgets } : {}),
       },
       navigation_bar: raw.navigation_bar,
     };

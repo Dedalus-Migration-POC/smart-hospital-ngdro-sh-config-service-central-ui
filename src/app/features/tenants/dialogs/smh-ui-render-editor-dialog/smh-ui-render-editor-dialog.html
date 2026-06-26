@@ -217,10 +217,51 @@
               }
             </div>
           </section>
+          <!-- Widgets -->
+          <section class="smh-editor__section">
+            <div class="smh-editor__section-header">
+              <h3 class="smh-editor__section-title">Widget</h3>
+              <button mat-stroked-button type="button" (click)="addWidget()">
+                <mat-icon>add</mat-icon>
+                Aggiungi widget
+              </button>
+            </div>
+            <p class="smh-editor__desc">{{ 'smhUiRender.widgetsDesc' | translate }}</p>
+
+            <div class="smh-editor__drag-list" formArrayName="widgets">
+              @for (ctrl of widgetsArray.controls; track ctrl; let i = $index) {
+                <div class="smh-editor__drag-item" [formGroup]="asFormGroup(ctrl)">
+                  <mat-icon class="smh-editor__drag-handle" style="cursor:default;color:#9e9e9e">widgets</mat-icon>
+                  <div class="smh-editor__drag-body">
+                    <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                      <mat-label>ID widget</mat-label>
+                      <input matInput formControlName="id" required />
+                      @if (asFormGroup(ctrl).controls['id'].touched && asFormGroup(ctrl).controls['id'].hasError('required')) {
+                        <mat-error>{{ 'smhUiRender.fieldRequired' | translate }}</mat-error>
+                      }
+                    </mat-form-field>
+                  </div>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    matTooltip="Rimuovi widget"
+                    (click)="removeWidget(i)"
+                    class="smh-editor__remove-btn"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              }
+              @if (widgetsArray.length === 0) {
+                <div class="smh-editor__empty">
+                  <mat-icon>widgets</mat-icon>
+                  <span>Nessun widget configurato</span>
+                </div>
+              }
+            </div>
+          </section>
         </div>
       </mat-tab>
-
-      <!-- ── TAB NAVIGATION BAR ── -->
       <mat-tab [label]="'smhUiRender.tabNavBar' | translate">
         <div class="smh-editor__tab-content" formGroupName="navigation_bar">
           <div class="smh-editor__section-header">

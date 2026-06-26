@@ -1,0 +1,8 @@
+{
+  "/api": {
+    "target": "https://configurator.smarthospital.cloud",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "info"
+  }
+}

@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:cloud": "ng serve --configuration production --proxy-config proxy.cloud.json",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
@@ -24,7 +25,8 @@
     "@ngx-translate/http-loader": "^17.0.0",
     "chart.js": "^4.5.1",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "yargs": "^17.7.3"
   },
   "devDependencies": {
     "@angular/build": "^21.2.9",

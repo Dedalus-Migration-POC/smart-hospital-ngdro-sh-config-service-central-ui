@@ -298,6 +298,17 @@ export class ConfigChannelSection {
       .subscribe((cfg) => {
         if (cfg) this.cachedThemeDataJson.set(cfg.configJson as SmhThemeDataJson);
       });
+    this.tenantService.getConfig(tenantId, 'mobile', 'local', 'smh_service_config')
+      .pipe(catchError(() => of(null)))
+      .subscribe((cfg) => {
+        if (cfg) {
+          const raw = cfg.configJson;
+          const parsed: SmhServiceConfigJson = Array.isArray(raw)
+            ? { services: raw as SmhServiceConfigJson['services'] }
+            : (raw as SmhServiceConfigJson) ?? { services: [] };
+          this.cachedServiceConfigJson.set(parsed);
+        }
+      });
     const translationEntity = ConfigChannelSection.translationEntity();
     const fallbackToIt$ = this.tenantService.getConfig(tenantId, 'mobile', 'local', 'smh_it').pipe(catchError(() => of(null)));
     const fallbackToEn$ = translationEntity !== 'smh_en'
@@ -363,6 +374,13 @@ export class ConfigChannelSection {
         }
         if (channelId === 'mobile' && entity === 'smh_theme_data') {
           this.cachedThemeDataJson.set(active.configJson as SmhThemeDataJson);
+        }
+        if (channelId === 'mobile' && entity === 'smh_service_config') {
+          const raw = active.configJson;
+          const parsed: SmhServiceConfigJson = Array.isArray(raw)
+            ? { services: raw as SmhServiceConfigJson['services'] }
+            : (raw as SmhServiceConfigJson) ?? { services: [] };
+          this.cachedServiceConfigJson.set(parsed);
         }
         if (channelId === 'mobile' && entity === ConfigChannelSection.translationEntity()) {
           this.translationsCache.update(m => new Map(m).set(entity, active.configJson as Record<string, string>));
@@ -669,6 +687,7 @@ export class ConfigChannelSection {
 
   private readonly cachedUiRenderJson  = signal<SmhUiRenderJson | null>(null);
   private readonly cachedThemeDataJson = signal<SmhThemeDataJson | null>(null);
+  private readonly cachedServiceConfigJson = signal<SmhServiceConfigJson | null>(null);
   private readonly translationsCache   = signal<Map<string, Record<string, unknown>>>(new Map());
 
   /** Ricava l'entity di traduzione dalla lingua del browser (es. "it" → "smh_it"). Default: "smh_en". */
@@ -712,6 +731,18 @@ export class ConfigChannelSection {
       try { return JSON.parse(raw) as SmhThemeDataJson; } catch { return this.cachedThemeDataJson(); }
     }
     return this.cachedThemeDataJson();
+  });
+
+  readonly previewServiceConfig = computed((): SmhServiceConfigJson | null => {
+    if (this.isSmhServiceConfig()) {
+      const raw = this.configValue();
+      if (!raw?.trim()) return this.cachedServiceConfigJson();
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? { services: parsed } : parsed as SmhServiceConfigJson;
+      } catch { return this.cachedServiceConfigJson(); }
+    }
+    return this.cachedServiceConfigJson();
   });
 
   readonly previewTranslationsJson = computed((): Record<string, unknown> | null => {
