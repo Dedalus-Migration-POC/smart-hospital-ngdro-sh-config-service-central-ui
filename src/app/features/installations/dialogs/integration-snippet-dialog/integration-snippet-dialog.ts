@@ -68,24 +68,31 @@ export class IntegrationSnippetDialog implements OnInit {
   get flutterSnippet(): string {
     return `import 'dart:convert';
 import 'dart:typed_data';
-import 'package:http/http.dart' as http;
-import 'package:pointycastle/export.dart'; // pub: pointycastle ^3.7.4
+import 'package:dio/dio.dart';
+import 'package:pointycastle/export.dart'; // pub: pointycastle ^3.9.1
 
 const String baseUrl      = '${this.baseUrl}';
-const String tenantId     = '${this.tenantId}';
+const String tenantSlug   = '${this.tenantSlug}';
 const String channel      = 'mobile';
-const String apiKey       = 'LA_TUA_READ_API_KEY';  // sezione Sicurezza → READ key
+const String entity       = 'base';
+const String apiKey       = 'LA_TUA_READ_API_KEY';       // sezione Sicurezza → READ key
 const String masterKeyB64 = 'LA_TUA_PAYLOAD_MASTER_KEY'; // sezione Sicurezza → Payload master key
 
 /// Recupera e decifra la configurazione dal tenant.
 Future<Map<String, dynamic>> fetchConfig() async {
-  final uri = Uri.parse('\$baseUrl/api/tenants/\$tenantId/configs/\$channel');
-  final response = await http.get(uri, headers: {'X-API-Key': apiKey});
+  final url = '\$baseUrl/v1/config/\$tenantSlug/\$channel?entity=\$entity';
+  final dio = Dio();
+
+  final response = await dio.get<Map<String, dynamic>>(
+    url,
+    options: Options(headers: {'X-API-Key': apiKey}),
+  );
+
   if (response.statusCode != 200) {
     throw Exception('Errore caricamento config: \${response.statusCode}');
   }
 
-  final encryptedB64 = (jsonDecode(response.body) as Map<String, dynamic>)['payload'] as String;
+  final encryptedB64 = response.data!['payload'] as String;
   final plainJson    = _decryptAesGcm(encryptedB64, masterKeyB64);
   return jsonDecode(plainJson) as Map<String, dynamic>;
 }
@@ -118,19 +125,18 @@ export class ConfigService {
   private readonly http = inject(HttpClient);
 
   private readonly baseUrl      = '${this.baseUrl}';
-  private readonly tenantId     = '${this.tenantId}';
+  private readonly tenantSlug   = '${this.tenantSlug}';
   private readonly channel      = 'web';
+  private readonly entity       = 'base';
   private readonly apiKey       = 'LA_TUA_READ_API_KEY';       // sezione Sicurezza → READ key
   private readonly masterKeyB64 = 'LA_TUA_PAYLOAD_MASTER_KEY'; // sezione Sicurezza → Payload master key
 
   /** Recupera e decifra la configurazione del tenant. */
   getConfig(): Observable<unknown> {
     const headers = new HttpHeaders({ 'X-API-Key': this.apiKey });
+    const url = \`\${this.baseUrl}/v1/config/\${this.tenantSlug}/\${this.channel}?entity=\${this.entity}\`;
     return this.http
-      .get<{ payload: string }>(
-        \`\${this.baseUrl}/api/tenants/\${this.tenantId}/configs/\${this.channel}\`,
-        { headers }
-      )
+      .get<{ payload: string }>(url, { headers })
       .pipe(switchMap(({ payload }) => from(this.decryptAesGcm(payload))));
   }
 
@@ -140,7 +146,7 @@ export class ConfigService {
    * Richiede SubtleCrypto (Web Crypto API) — disponibile in tutti i browser moderni.
    */
   private async decryptAesGcm(encryptedB64: string): Promise<unknown> {
-    const payload = Uint8Array.from(atob(encryptedB64), c => c.charCodeAt(0));
+    const payload  = Uint8Array.from(atob(encryptedB64), c => c.charCodeAt(0));
     const keyBytes = Uint8Array.from(atob(this.masterKeyB64), c => c.charCodeAt(0));
 
     const iv         = payload.slice(0, 12);
@@ -174,8 +180,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class ConfigClient {
 
     private static final String BASE_URL       = "${this.baseUrl}";
-    private static final String TENANT_ID      = "${this.tenantId}";
+    private static final String TENANT_SLUG    = "${this.tenantSlug}";
     private static final String CHANNEL        = "totem";
+    private static final String ENTITY         = "base";
     private static final String API_KEY        = "LA_TUA_READ_API_KEY";       // sezione Sicurezza → READ key
     private static final String MASTER_KEY_B64 = "LA_TUA_PAYLOAD_MASTER_KEY"; // sezione Sicurezza → Payload master key
 
@@ -184,9 +191,11 @@ public class ConfigClient {
 
     /** Recupera e decifra la configurazione del tenant. */
     public JsonNode fetchConfig() throws Exception {
+        final String url = BASE_URL + "/v1/config/" + TENANT_SLUG + "/" + CHANNEL + "?entity=" + ENTITY;
+
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(BASE_URL + "/api/tenants/" + TENANT_ID + "/configs/" + CHANNEL))
+            .uri(URI.create(url))
             .header("X-API-Key", API_KEY)
             .GET()
             .build();
