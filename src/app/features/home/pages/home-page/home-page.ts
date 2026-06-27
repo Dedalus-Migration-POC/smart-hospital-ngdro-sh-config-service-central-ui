@@ -208,11 +208,40 @@ export class HomePage implements AfterViewInit, OnDestroy {
         this.installationService.checkHealth(inst.id)
           .pipe(catchError(() => of({ reachable: false })))
           .subscribe(health => {
-            if (health.reachable) this.onPremOnline.update(n => n + 1);
-            this.onPremChecked.update(n => n + 1);
+            if (health.reachable) {
+              this.onPremOnline.update(n => n + 1);
+              this.onPremChecked.update(n => n + 1);
+            } else {
+              // Central non raggiunge l'on-prem (es. VPN-only): fallback browser diretto.
+              this.browserHealthCheck(inst.baseUrl!).then(online => {
+                if (online) this.onPremOnline.update(n => n + 1);
+                this.onPremChecked.update(n => n + 1);
+              });
+            }
           });
       });
     });
+  }
+
+  /**
+   * Fallback browser-side per on-prem raggiungibili solo via VPN.
+   * Tenta un fetch con CORS (per leggere lo status HTTP); se il browser
+   * blocca per CORS, degrada a no-cors (TCP check).
+   */
+  private async browserHealthCheck(baseUrl: string): Promise<boolean> {
+    const url = `${baseUrl}/actuator/health`;
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      return res.ok;
+    } catch {
+      // CORS bloccato o rete irraggiungibile → prova no-cors (solo TCP)
+      try {
+        await fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(5000) });
+        return true;
+      } catch {
+        return false;
+      }
+    }
   }
 
   private buildCharts(customers: Customer[], _users: User[], auditEntries: AuditLog[]): void {
