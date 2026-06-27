@@ -72,7 +72,7 @@ import 'package:dio/dio.dart';
 import 'package:pointycastle/export.dart'; // pub: pointycastle ^3.9.1
 
 const String baseUrl      = '${this.baseUrl}';
-const String tenantSlug   = '${this.tenantSlug}';
+const String productSlug  = '${this.tenantSlug}';
 const String channel      = 'mobile';
 const String entity       = 'base';
 const String apiKey       = 'LA_TUA_READ_API_KEY';       // sezione Sicurezza → READ key
@@ -80,7 +80,7 @@ const String masterKeyB64 = 'LA_TUA_PAYLOAD_MASTER_KEY'; // sezione Sicurezza �
 
 /// Recupera e decifra la configurazione dal tenant.
 Future<Map<String, dynamic>> fetchConfig() async {
-  final url = '\$baseUrl/v1/config/\$tenantSlug/\$channel?entity=\$entity';
+  final url = '\$baseUrl/v1/config/\$productSlug/\$channel?entity=\$entity';
   final dio = Dio();
 
   final response = await dio.get<Map<String, dynamic>>(
@@ -125,7 +125,7 @@ export class ConfigService {
   private readonly http = inject(HttpClient);
 
   private readonly baseUrl      = '${this.baseUrl}';
-  private readonly tenantSlug   = '${this.tenantSlug}';
+  private readonly productSlug  = '${this.tenantSlug}';
   private readonly channel      = 'web';
   private readonly entity       = 'base';
   private readonly apiKey       = 'LA_TUA_READ_API_KEY';       // sezione Sicurezza → READ key
@@ -134,7 +134,7 @@ export class ConfigService {
   /** Recupera e decifra la configurazione del tenant. */
   getConfig(): Observable<unknown> {
     const headers = new HttpHeaders({ 'X-API-Key': this.apiKey });
-    const url = \`\${this.baseUrl}/v1/config/\${this.tenantSlug}/\${this.channel}?entity=\${this.entity}\`;
+    const url = \`\${this.baseUrl}/v1/config/\${this.productSlug}/\${this.channel}?entity=\${this.entity}\`;
     return this.http
       .get<{ payload: string }>(url, { headers })
       .pipe(switchMap(({ payload }) => from(this.decryptAesGcm(payload))));
@@ -180,7 +180,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class ConfigClient {
 
     private static final String BASE_URL       = "${this.baseUrl}";
-    private static final String TENANT_SLUG    = "${this.tenantSlug}";
+    private static final String PRODUCT_SLUG   = "${this.tenantSlug}";
     private static final String CHANNEL        = "totem";
     private static final String ENTITY         = "base";
     private static final String API_KEY        = "LA_TUA_READ_API_KEY";       // sezione Sicurezza → READ key
@@ -191,7 +191,7 @@ public class ConfigClient {
 
     /** Recupera e decifra la configurazione del tenant. */
     public JsonNode fetchConfig() throws Exception {
-        final String url = BASE_URL + "/v1/config/" + TENANT_SLUG + "/" + CHANNEL + "?entity=" + ENTITY;
+        final String url = BASE_URL + "/v1/config/" + PRODUCT_SLUG + "/" + CHANNEL + "?entity=" + ENTITY;
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
