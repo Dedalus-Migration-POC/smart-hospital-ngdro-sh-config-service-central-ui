@@ -8,40 +8,39 @@
   $gap-field: 8px;
   $item-pad: 10px;
 
+  // mat-dialog-content: lasciamo che Material gestisca overflow:auto e lo scroll nativo.
+  // Sovrascriviamo solo max-height per avere più spazio (Material default: 65vh).
   .smh-editor {
     padding: 0 !important;
-    overflow: hidden;
     max-width: 100%;
+    max-height: calc(90svh - 130px) !important; // titolo(~52px) + footer(52px) + buffer(26px)
   }
 
+  // Tab-header sticky: resta visibile in cima mentre il contenuto scorre dentro mat-dialog-content.
   .smh-editor__tabs {
     ::ng-deep .mat-mdc-tab-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
       border-bottom: 1px solid var(--mat-sys-outline-variant);
       background: var(--mat-sys-surface-container-low);
       padding: 0 $pad-h;
     }
   }
 
+  // Contenuto tab: scorre insieme a mat-dialog-content (nessun overflow interno).
   .smh-editor__tab-content {
-    padding: $pad-v $pad-h 12px;
+    padding: $pad-v $pad-h 24px;
     display: flex;
     flex-direction: column;
     gap: $gap-section;
-    max-height: calc(90svh - 240px);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--mat-sys-outline-variant) transparent;
   }
 
   .smh-editor__content {
     display: flex;
     flex-direction: column;
     gap: $gap-section;
-    padding: $pad-v $pad-h;
-    max-height: calc(90svh - 180px);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--mat-sys-outline-variant) transparent;
+    padding: $pad-v $pad-h 24px;
   }
 
   .smh-editor__desc {

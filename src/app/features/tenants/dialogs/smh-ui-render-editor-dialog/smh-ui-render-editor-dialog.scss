@@ -1,39 +1,38 @@
 // ── Variabili locali ──────────────────────────────────────────────────────────
-$pad-h: 20px;        // padding orizzontale contenuto
-$pad-v: 14px;        // padding verticale tab-content
+$pad-h: 20px;
+$pad-v: 14px;
 $gap-section: 12px;
 $gap-field: 8px;
 $item-pad: 10px;
 
 // ── Dialog container ──────────────────────────────────────────────────────────
-// Azzeriamo il padding di mat-dialog-content e gestiamo tutto noi.
-// Il tab-header va edge-to-edge (nessun negative-margin: il parent ha già 0 padding),
-// il tab-content applica $pad-h per avere margine visivo dai bordi.
+// mat-dialog-content: lasciamo che Material gestisca overflow:auto e lo scroll nativo.
+// Sovrascriviamo max-height per avere più spazio (Material default: 65vh).
 .smh-editor {
   padding: 0 !important;
-  overflow: hidden;
   max-width: 100%;
+  max-height: calc(90svh - 130px) !important;
 }
 
 .smh-editor__tabs {
-  // tab-header full-width senza negative-margin (parent ha già padding 0)
+  // tab-header sticky: rimane visibile in cima mentre il contenuto scorre
   ::ng-deep .mat-mdc-tab-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
     border-bottom: 1px solid var(--mat-sys-outline-variant);
     background: var(--mat-sys-surface-container-low);
-    padding: 0 $pad-h;  // label allineate al contenuto
+    padding: 0 $pad-h;
   }
 }
 
 // ── Tab content ───────────────────────────────────────────────────────────────
+// Nessun overflow interno: scorre insieme a mat-dialog-content.
 .smh-editor__tab-content {
-  padding: $pad-v $pad-h 12px;
+  padding: $pad-v $pad-h 24px;
   display: flex;
   flex-direction: column;
   gap: $gap-section;
-  max-height: calc(90svh - 240px);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--mat-sys-outline-variant) transparent;
 }
 
 .smh-editor__desc {
