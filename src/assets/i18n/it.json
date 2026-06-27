@@ -937,7 +937,7 @@
     "pageSubtitle": "Invia notifiche push a tutti i dispositivi di un tenant",
     "selectTarget": "Seleziona destinatario",
     "installation": "Installazione",
-    "tenant": "Tenant",
+    "tenant": "Prodotto",
     "noTenants": "Nessun tenant attivo trovato per questa installazione.",
     "composeTitle": "Componi messaggio",
     "noticeType": "Tipo notifica",

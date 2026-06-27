@@ -944,7 +944,7 @@
     "pageSubtitle": "Send push notifications to all devices of a tenant",
     "selectTarget": "Select target",
     "installation": "Installation",
-    "tenant": "Tenant",
+    "tenant": "Product",
     "noTenants": "No active tenants found for this installation.",
     "composeTitle": "Compose message",
     "noticeType": "Notice type",
