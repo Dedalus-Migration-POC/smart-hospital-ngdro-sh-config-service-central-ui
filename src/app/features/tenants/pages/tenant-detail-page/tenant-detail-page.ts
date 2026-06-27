@@ -40,7 +40,7 @@ import {
   ConfigEndpointsDialog,
   ConfigEndpointsDialogData,
 } from '../../dialogs/config-endpoints-dialog/config-endpoints-dialog';
-import { CHANNELS, ChannelId, Tenant } from '../../models';
+import { CHANNELS, ChannelId, PushNotificationConfig, Tenant } from '../../models';
 import { TenantService } from '../../services/tenants';
 
 @Component({
@@ -85,6 +85,10 @@ export class TenantDetailPage {
   readonly errorMessage = signal<string | null>(null);
   readonly tenant = signal<Tenant | null>(null);
 
+  readonly pushConfig = signal<PushNotificationConfig | null>(null);
+  readonly pushConfigLoading = signal(false);
+  readonly pushConfigSaving = signal(false);
+
   readonly channels = CHANNELS;
 
   readonly form = this.fb.nonNullable.group({
@@ -92,10 +96,18 @@ export class TenantDetailPage {
     active: [true],
   });
 
+  readonly pushForm = this.fb.nonNullable.group({
+    notificatorUrl: ['', [Validators.required, Validators.maxLength(512)]],
+    notificatorTenant: ['', [Validators.required, Validators.maxLength(255)]],
+    apiKey: ['', [Validators.required, Validators.maxLength(512)]],
+    secret: ['', [Validators.required, Validators.maxLength(512)]],
+  });
+
   constructor() {
     effect(() => {
       const id = this.id();
       this.load(id);
+      this.loadPushConfig(id);
     });
   }
 
@@ -113,6 +125,27 @@ export class TenantDetailPage {
         this.tenant.set(null);
         this.loading.set(false);
         this.errorMessage.set(toUserMessage(err, this.translate.instant('product.loadDetailError')));
+      },
+    });
+  }
+
+  private loadPushConfig(id: string): void {
+    this.pushConfigLoading.set(true);
+    this.tenants.getPushConfig(id).subscribe({
+      next: (cfg) => {
+        this.pushConfig.set(cfg);
+        this.pushForm.reset({
+          notificatorUrl: cfg.notificatorUrl ?? '',
+          notificatorTenant: cfg.notificatorTenant ?? '',
+          apiKey: '',
+          secret: '',
+        });
+        if (!this.isAdmin()) this.pushForm.disable();
+        this.pushConfigLoading.set(false);
+      },
+      error: () => {
+        this.pushConfig.set(null);
+        this.pushConfigLoading.set(false);
       },
     });
   }
@@ -145,6 +178,42 @@ export class TenantDetailPage {
         this.saving.set(false);
         this.snackbar.open(
           toUserMessage(err, this.translate.instant('common.saveError')),
+          'OK',
+          { duration: 6000 },
+        );
+      },
+    });
+  }
+
+  savePushConfig(): void {
+    const t = this.tenant();
+    if (!t || this.pushForm.invalid || this.pushConfigSaving()) {
+      this.pushForm.markAllAsTouched();
+      return;
+    }
+    this.pushConfigSaving.set(true);
+    const v = this.pushForm.getRawValue();
+    this.tenants.savePushConfig(t.id, {
+      notificatorUrl: v.notificatorUrl,
+      notificatorTenant: v.notificatorTenant,
+      apiKey: v.apiKey,
+      secret: v.secret,
+    }).subscribe({
+      next: (cfg) => {
+        this.pushConfig.set(cfg);
+        this.pushForm.reset({
+          notificatorUrl: cfg.notificatorUrl,
+          notificatorTenant: cfg.notificatorTenant,
+          apiKey: '',
+          secret: '',
+        });
+        this.pushConfigSaving.set(false);
+        this.snackbar.open(this.translate.instant('push.configSaved'), 'OK', { duration: 3000 });
+      },
+      error: (err: unknown) => {
+        this.pushConfigSaving.set(false);
+        this.snackbar.open(
+          toUserMessage(err, this.translate.instant('push.configSaveError')),
           'OK',
           { duration: 6000 },
         );

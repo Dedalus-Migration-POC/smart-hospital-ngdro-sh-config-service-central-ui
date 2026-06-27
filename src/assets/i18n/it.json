@@ -18,7 +18,8 @@
     "myCustomer": "Il mio cliente",
     "myConfigurations": "Configurazioni",
     "notifications": "Le mie notifiche",
-    "settings": "Impostazioni"
+    "settings": "Impostazioni",
+    "pushNotifications": "Notifiche Push"
   },
   "common": {
     "save": "Salva",
@@ -54,7 +55,8 @@
     "copyError": "Copia non riuscita: copia manualmente il valore.",
     "show": "Mostra",
     "hide": "Nascondi",
-    "loadError": "Impossibile caricare i dati."
+    "loadError": "Impossibile caricare i dati.",
+    "fieldRequired": "Campo obbligatorio."
   },
   "auth": {
     "brandSubtitle": "SmartHospital · Configuratore centrale",
@@ -929,5 +931,34 @@
     "enabled_hint": "Disattivato = dry-run, le email vengono solo loggate",
     "dev_whitelist": "Whitelist sviluppo",
     "dev_whitelist_hint": "Indirizzi che ricevono email reali anche in dry-run (separati da virgola)"
+  },
+  "push": {
+    "pageTitle": "Notifiche Push",
+    "pageSubtitle": "Invia notifiche push a tutti i dispositivi di un tenant",
+    "selectTarget": "Seleziona destinatario",
+    "installation": "Installazione",
+    "tenant": "Tenant",
+    "noTenants": "Nessun tenant attivo trovato per questa installazione.",
+    "composeTitle": "Componi messaggio",
+    "noticeType": "Tipo notifica",
+    "titleField": "Titolo",
+    "messageField": "Messaggio",
+    "sendButton": "Invia a tutti i dispositivi",
+    "sentSuccess": "Notifica inviata a {{count}} dispositivo/i.",
+    "sentNoDevices": "Nessun dispositivo registrato per questo tenant.",
+    "sendError": "Impossibile inviare la notifica.",
+    "configTitle": "Configurazione notifiche push",
+    "configSubtitle": "Credenziali del notificator per questo tenant",
+    "notificatorUrl": "URL Notificator",
+    "notificatorTenant": "Tenant ID (notificator)",
+    "apiKey": "API Key",
+    "apiKeyHint": "Lascia vuoto per non modificare la chiave esistente.",
+    "secret": "Secret HMAC",
+    "secretHint": "Lascia vuoto per non modificare il secret esistente.",
+    "leaveBlankToKeep": "Invariata",
+    "configured": "configurato",
+    "notConfigured": "non configurato",
+    "configSaved": "Configurazione push salvata.",
+    "configSaveError": "Impossibile salvare la configurazione push."
   }
 }

@@ -134,5 +134,89 @@
         </mat-tab-group>
       </mat-card-content>
     </mat-card>
+    <mat-card appearance="outlined" class="detail__push-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="detail__push-icon">campaign</mat-icon>
+          {{ 'push.configTitle' | translate }}
+        </mat-card-title>
+        <mat-card-subtitle>{{ 'push.configSubtitle' | translate }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (pushConfigLoading()) {
+          <mat-progress-bar mode="indeterminate" />
+        } @else {
+          @if (pushConfig(); as cfg) {
+            <div class="detail__push-status">
+              <span class="chip" [class.chip--success]="cfg.apiKeyConfigured" [class.chip--neutral]="!cfg.apiKeyConfigured">
+                <mat-icon>{{ cfg.apiKeyConfigured ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                API Key {{ cfg.apiKeyConfigured ? ('push.configured' | translate) : ('push.notConfigured' | translate) }}
+              </span>
+              <span class="chip" [class.chip--success]="cfg.secretConfigured" [class.chip--neutral]="!cfg.secretConfigured">
+                <mat-icon>{{ cfg.secretConfigured ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                Secret {{ cfg.secretConfigured ? ('push.configured' | translate) : ('push.notConfigured' | translate) }}
+              </span>
+            </div>
+          }
+          @if (isAdmin()) {
+            <form [formGroup]="pushForm" (ngSubmit)="savePushConfig()" class="detail__form" id="push-config-form">
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'push.notificatorUrl' | translate }}</mat-label>
+                <input matInput formControlName="notificatorUrl" placeholder="https://notificator.esempio.cloud" />
+                @if (pushForm.controls.notificatorUrl.touched && pushForm.controls.notificatorUrl.hasError('required')) {
+                  <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'push.notificatorTenant' | translate }}</mat-label>
+                <input matInput formControlName="notificatorTenant" placeholder="healthcare" />
+                @if (pushForm.controls.notificatorTenant.touched && pushForm.controls.notificatorTenant.hasError('required')) {
+                  <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'push.apiKey' | translate }}</mat-label>
+                <input matInput formControlName="apiKey" type="password" autocomplete="new-password"
+                  [placeholder]="pushConfig()?.apiKeyConfigured ? ('push.leaveBlankToKeep' | translate) : ''" />
+                <mat-hint>{{ 'push.apiKeyHint' | translate }}</mat-hint>
+                @if (pushForm.controls.apiKey.touched && pushForm.controls.apiKey.hasError('required')) {
+                  <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'push.secret' | translate }}</mat-label>
+                <input matInput formControlName="secret" type="password" autocomplete="new-password"
+                  [placeholder]="pushConfig()?.secretConfigured ? ('push.leaveBlankToKeep' | translate) : ''" />
+                <mat-hint>{{ 'push.secretHint' | translate }}</mat-hint>
+                @if (pushForm.controls.secret.touched && pushForm.controls.secret.hasError('required')) {
+                  <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+                }
+              </mat-form-field>
+            </form>
+          }
+        }
+      </mat-card-content>
+      @if (isAdmin() && !pushConfigLoading()) {
+        <mat-card-actions align="end">
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            form="push-config-form"
+            [disabled]="pushConfigSaving() || pushForm.invalid || pushForm.pristine"
+          >
+            @if (pushConfigSaving()) {
+              <mat-progress-spinner mode="indeterminate" diameter="20" />
+            } @else {
+              {{ 'common.save' | translate }}
+            }
+          </button>
+        </mat-card-actions>
+      }
+    </mat-card>
+
   }
 </section>

@@ -18,7 +18,8 @@
     "myCustomer": "My customer",
     "myConfigurations": "Configurations",
     "notifications": "My notifications",
-    "settings": "Settings"
+    "settings": "Settings",
+    "pushNotifications": "Push Notifications"
   },
   "common": {
     "save": "Save",
@@ -54,7 +55,8 @@
     "copyError": "Copy failed: please copy the value manually.",
     "show": "Show",
     "hide": "Hide",
-    "loadError": "Unable to load data."
+    "loadError": "Unable to load data.",
+    "fieldRequired": "Required field."
   },
   "auth": {
     "brandSubtitle": "SmartHospital · Central Configurator",
@@ -936,5 +938,34 @@
     "enabled_hint": "Disabled = dry-run, emails are only logged",
     "dev_whitelist": "Development whitelist",
     "dev_whitelist_hint": "Addresses that receive real emails even in dry-run (comma-separated)"
+  },
+  "push": {
+    "pageTitle": "Push Notifications",
+    "pageSubtitle": "Send push notifications to all devices of a tenant",
+    "selectTarget": "Select target",
+    "installation": "Installation",
+    "tenant": "Tenant",
+    "noTenants": "No active tenants found for this installation.",
+    "composeTitle": "Compose message",
+    "noticeType": "Notice type",
+    "titleField": "Title",
+    "messageField": "Message",
+    "sendButton": "Send to all devices",
+    "sentSuccess": "Notification sent to {{count}} device(s).",
+    "sentNoDevices": "No registered devices for this tenant.",
+    "sendError": "Failed to send the notification.",
+    "configTitle": "Push notification config",
+    "configSubtitle": "Notificator credentials for this tenant",
+    "notificatorUrl": "Notificator URL",
+    "notificatorTenant": "Tenant ID (notificator)",
+    "apiKey": "API Key",
+    "apiKeyHint": "Leave blank to keep the existing key.",
+    "secret": "HMAC Secret",
+    "secretHint": "Leave blank to keep the existing secret.",
+    "leaveBlankToKeep": "Unchanged",
+    "configured": "configured",
+    "notConfigured": "not configured",
+    "configSaved": "Push configuration saved.",
+    "configSaveError": "Failed to save push configuration."
   }
 }

@@ -1,0 +1,129 @@
+<section class="push">
+  <header class="push__header">
+    <mat-icon class="push__header-icon">campaign</mat-icon>
+    <div>
+      <h1>{{ 'push.pageTitle' | translate }}</h1>
+      <p class="push__subtitle">{{ 'push.pageSubtitle' | translate }}</p>
+    </div>
+  </header>
+
+  <div class="push__layout">
+    <!-- Selezione destinatario -->
+    <mat-card appearance="outlined" class="push__card">
+      <mat-card-header>
+        <mat-card-title>{{ 'push.selectTarget' | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="push__selectors">
+
+        @if (loadingCustomers()) {
+          <mat-progress-bar mode="indeterminate" />
+        }
+
+        <!-- Selettore customer: visibile solo ad admin/operator -->
+        @if (!isCustomerRole() && !loadingCustomers()) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'nav.customers' | translate }}</mat-label>
+            <mat-select [value]="selectedCustomerId()" (selectionChange)="onCustomerChange($event.value)">
+              @for (c of customers(); track c.id) {
+                <mat-option [value]="c.id">{{ c.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
+        @if (loadingInstallations()) {
+          <mat-progress-bar mode="indeterminate" />
+        } @else if (selectedCustomerId()) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'push.installation' | translate }}</mat-label>
+            <mat-select [value]="selectedInstallationId()" (selectionChange)="onInstallationChange($event.value)">
+              @for (i of installations(); track i.id) {
+                <mat-option [value]="i.id">{{ i.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
+        @if (loadingTenants()) {
+          <mat-progress-bar mode="indeterminate" />
+        } @else if (selectedInstallationId()) {
+          @if (noTenants()) {
+            <p class="push__empty">{{ 'push.noTenants' | translate }}</p>
+          } @else {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'push.tenant' | translate }}</mat-label>
+              <mat-select [value]="selectedTenantId()" (selectionChange)="onTenantChange($event.value)">
+                @for (t of tenants(); track t.id) {
+                  <mat-option [value]="t.id">
+                    {{ t.name }} <span class="push__slug">({{ t.slug }})</span>
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+        }
+
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Composizione messaggio -->
+    <mat-card appearance="outlined" class="push__card">
+      <mat-card-header>
+        <mat-card-title>{{ 'push.composeTitle' | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="form" (ngSubmit)="send()" id="push-form" class="push__form">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'push.noticeType' | translate }}</mat-label>
+            <mat-select formControlName="noticeType">
+              <mat-option value="INFO">
+                <mat-icon class="push__type-icon push__type-icon--info">info</mat-icon>
+                INFO
+              </mat-option>
+              <mat-option value="WARNING">
+                <mat-icon class="push__type-icon push__type-icon--warning">warning</mat-icon>
+                WARNING
+              </mat-option>
+              <mat-option value="ERROR">
+                <mat-icon class="push__type-icon push__type-icon--error">error</mat-icon>
+                ERROR
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'push.titleField' | translate }}</mat-label>
+            <input matInput formControlName="title" maxlength="255" />
+            @if (form.controls.title.touched && form.controls.title.hasError('required')) {
+              <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'push.messageField' | translate }}</mat-label>
+            <textarea matInput formControlName="message" rows="4" maxlength="1000"></textarea>
+            @if (form.controls.message.touched && form.controls.message.hasError('required')) {
+              <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+            }
+          </mat-form-field>
+        </form>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          form="push-form"
+          [disabled]="sending() || form.invalid || !selectedTenantId()"
+        >
+          @if (sending()) {
+            <mat-progress-spinner mode="indeterminate" diameter="20" />
+          } @else {
+            <mat-icon>send</mat-icon>
+            {{ 'push.sendButton' | translate }}
+          }
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</section>

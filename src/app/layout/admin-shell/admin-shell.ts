@@ -73,6 +73,7 @@ export class AdminShell {
   private readonly navItems: readonly NavItem[] = [
     { icon: 'dashboard', labelKey: 'nav.dashboard', path: '/' },
     { icon: 'business', labelKey: 'nav.customers', path: '/customers' },
+    { icon: 'campaign', labelKey: 'nav.pushNotifications', path: '/push' },
     { icon: 'notifications', labelKey: 'nav.notifications', path: '/notifications' },
     { icon: 'people', labelKey: 'nav.users', path: '/users', requiredRole: 'ADMIN' },
     { icon: 'receipt_long', labelKey: 'nav.auditLog', path: '/audit', requiredRole: 'ADMIN' },

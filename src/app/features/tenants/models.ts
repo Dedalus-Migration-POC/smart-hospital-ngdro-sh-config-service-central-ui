@@ -82,6 +82,36 @@ export interface EntityInfo {
   enabled: boolean;
 }
 
+export interface PushNotificationConfig {
+  notificatorUrl: string;
+  notificatorTenant: string;
+  apiKey: string;
+  /** Non restituito dal server in lettura — solo in scrittura. */
+  secret?: string;
+  apiKeyConfigured: boolean;
+  secretConfigured: boolean;
+}
+
+export interface PushNotificationConfigRequest {
+  notificatorUrl: string;
+  notificatorTenant: string;
+  apiKey: string;
+  secret: string;
+}
+
+export type PushNoticeType = 'INFO' | 'WARNING' | 'ERROR';
+
+export interface PushSendRequest {
+  title: string;
+  message: string;
+  noticeType: PushNoticeType;
+}
+
+export interface PushSendResult {
+  status: string;
+  tokens: number;
+}
+
 export interface DraftConfigSummary {
   configId: string;
   tenantId: string;

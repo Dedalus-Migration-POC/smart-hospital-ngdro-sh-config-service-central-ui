@@ -54,6 +54,11 @@ export const routes: Routes = [
           import('./features/audit/audit.routes').then((m) => m.auditRoutes),
       },
       {
+        path: 'push',
+        loadChildren: () =>
+          import('./features/push-notifications/push-notifications.routes').then((m) => m.pushNotificationsRoutes),
+      },
+      {
         path: 'notifications',
         loadChildren: () =>
           import('./features/notifications/notifications.routes').then((m) => m.notificationsRoutes),

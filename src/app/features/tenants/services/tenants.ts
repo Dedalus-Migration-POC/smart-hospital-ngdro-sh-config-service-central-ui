@@ -8,6 +8,10 @@ import {
   AppConfigVersion,
   DraftConfigSummary,
   EntityInfo,
+  PushNotificationConfig,
+  PushNotificationConfigRequest,
+  PushSendRequest,
+  PushSendResult,
   Tenant,
   TenantCreateRequest,
   TenantUpdateRequest,
@@ -143,5 +147,17 @@ export class TenantService {
       { success, remoteVersion, errorMessage },
       { params: new HttpParams().set('entity', entity) },
     );
+  }
+
+  getPushConfig(tenantId: string): Observable<PushNotificationConfig> {
+    return this.http.get<PushNotificationConfig>(`${this.baseUrl}/tenants/${tenantId}/push-config`);
+  }
+
+  savePushConfig(tenantId: string, req: PushNotificationConfigRequest): Observable<PushNotificationConfig> {
+    return this.http.put<PushNotificationConfig>(`${this.baseUrl}/tenants/${tenantId}/push-config`, req);
+  }
+
+  sendPushAll(tenantId: string, req: PushSendRequest): Observable<PushSendResult> {
+    return this.http.post<PushSendResult>(`${this.baseUrl}/tenants/${tenantId}/push/send-all`, req);
   }
 }
