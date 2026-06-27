@@ -19,7 +19,6 @@
           <mat-progress-bar mode="indeterminate" />
         }
 
-        <!-- Selettore customer: visibile solo ad admin/operator -->
         @if (!isCustomerRole() && !loadingCustomers()) {
           <mat-form-field appearance="outline">
             <mat-label>{{ 'nav.customers' | translate }}</mat-label>
@@ -72,7 +71,8 @@
         <mat-card-title>{{ 'push.composeTitle' | translate }}</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <form [formGroup]="form" (ngSubmit)="send()" id="push-form" class="push__form">
+        <form [formGroup]="form" (ngSubmit)="openConfirm()" id="push-form" class="push__form">
+
           <mat-form-field appearance="outline">
             <mat-label>{{ 'push.noticeType' | translate }}</mat-label>
             <mat-select formControlName="noticeType">
@@ -94,18 +94,40 @@
           <mat-form-field appearance="outline">
             <mat-label>{{ 'push.titleField' | translate }}</mat-label>
             <input matInput formControlName="title" maxlength="255" />
-            @if (form.controls.title.touched && form.controls.title.hasError('required')) {
-              <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+            @if (form.controls.title.touched) {
+              @if (form.controls.title.hasError('required')) {
+                <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+              } @else if (form.controls.title.hasError('asciiEmoji')) {
+                <mat-error>{{ 'push.invalidChars' | translate }}</mat-error>
+              }
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>{{ 'push.messageField' | translate }}</mat-label>
             <textarea matInput formControlName="message" rows="4" maxlength="1000"></textarea>
-            @if (form.controls.message.touched && form.controls.message.hasError('required')) {
-              <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+            @if (form.controls.message.touched) {
+              @if (form.controls.message.hasError('required')) {
+                <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+              } @else if (form.controls.message.hasError('asciiEmoji')) {
+                <mat-error>{{ 'push.invalidChars' | translate }}</mat-error>
+              }
             }
           </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'push.usersField' | translate }}</mat-label>
+            <textarea matInput formControlName="users" rows="5"
+              [placeholder]="'push.usersPlaceholder' | translate"></textarea>
+            <mat-hint>{{ 'push.usersHint' | translate }}</mat-hint>
+            @if (form.controls.users.touched && form.controls.users.hasError('required')) {
+              <mat-error>{{ 'common.fieldRequired' | translate }}</mat-error>
+            }
+            @if (parsedUsers().length > 0) {
+              <mat-hint align="end">{{ parsedUsers().length }} {{ 'push.usersCount' | translate }}</mat-hint>
+            }
+          </mat-form-field>
+
         </form>
       </mat-card-content>
       <mat-card-actions align="end">
@@ -114,7 +136,7 @@
           color="primary"
           type="submit"
           form="push-form"
-          [disabled]="sending() || form.invalid || !selectedTenantId()"
+          [disabled]="sending() || form.invalid || !selectedTenantId() || parsedUsers().length === 0"
         >
           @if (sending()) {
             <mat-progress-spinner mode="indeterminate" diameter="20" />

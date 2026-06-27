@@ -8,6 +8,7 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -21,6 +22,8 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
+import { ConfirmDialog, ConfirmDialogData } from '../../../../shared/dialogs/confirm-dialog/confirm-dialog';
+import { asciiEmojiValidator } from '../../../../shared/validators/ascii-emoji.validator';
 import { Customer } from '../../../customers/models';
 import { CustomerService } from '../../../customers/services/customers';
 import { Installation } from '../../../installations/models';
@@ -54,15 +57,12 @@ export class PushPage {
   private readonly customerService = inject(CustomerService);
   private readonly installationService = inject(InstallationService);
   private readonly tenantService = inject(TenantService);
+  private readonly dialog = inject(MatDialog);
   private readonly snackbar = inject(MatSnackBar);
   private readonly translate = inject(TranslateService);
 
   private readonly currentUser = this.auth.currentUser;
 
-  /** True se l'utente è ADMIN o OPERATOR (può vedere tutti i customer). */
-  readonly isAdmin = computed(() => this.currentUser()?.role === 'ADMIN');
-
-  /** Se il ruolo è CUSTOMER, mostra solo le sue installazioni (nessun selettore customer). */
   readonly isCustomerRole = computed(() => this.currentUser()?.role === 'CUSTOMER');
 
   readonly customers = signal<Customer[]>([]);
@@ -78,25 +78,37 @@ export class PushPage {
   readonly selectedInstallationId = signal<string | null>(null);
   readonly selectedTenantId = signal<string | null>(null);
 
+  readonly selectedTenant = computed(
+    () => this.tenants().find((t) => t.id === this.selectedTenantId()) ?? null,
+  );
+
   readonly noTenants = computed(
     () => !this.loadingTenants() && this.tenants().length === 0 && !!this.selectedInstallationId(),
   );
 
+  /** Restituisce la lista utenti parsata dal textarea (una per riga, righe vuote scartate). */
+  readonly parsedUsers = computed(() => {
+    const raw: string = this.form.getRawValue().users ?? '';
+    return raw
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+  });
+
   readonly form = this.fb.nonNullable.group({
-    title: ['', [Validators.required, Validators.maxLength(255)]],
-    message: ['', [Validators.required, Validators.maxLength(1000)]],
+    title: ['', [Validators.required, Validators.maxLength(255), asciiEmojiValidator()]],
+    message: ['', [Validators.required, Validators.maxLength(1000), asciiEmojiValidator()]],
     noticeType: ['INFO' as 'INFO' | 'WARNING' | 'ERROR', Validators.required],
+    users: ['', Validators.required],
   });
 
   constructor() {
     const user = this.currentUser();
 
     if (user?.role === 'CUSTOMER' && user.customerId) {
-      // Utente customer: carica direttamente le installazioni del suo customer
       this.selectedCustomerId.set(user.customerId);
       this.loadInstallations(user.customerId);
     } else {
-      // Admin/Operator: carica lista completa customer
       this.loadingCustomers.set(true);
       this.customerService.list(true).subscribe({
         next: (list) => {
@@ -146,18 +158,45 @@ export class PushPage {
     this.selectedTenantId.set(tenantId);
   }
 
-  send(): void {
+  openConfirm(): void {
     const tenantId = this.selectedTenantId();
-    if (!tenantId || this.form.invalid || this.sending()) {
+    const tenant = this.selectedTenant();
+    if (!tenantId || !tenant || this.form.invalid || this.sending()) {
       this.form.markAllAsTouched();
       return;
     }
+
+    const users = this.parsedUsers();
+    const v = this.form.getRawValue();
+
+    const summary = [
+      `${this.translate.instant('push.tenant')}: ${tenant.name} (${tenant.slug})`,
+      `${this.translate.instant('push.noticeType')}: ${v.noticeType}`,
+      `${this.translate.instant('push.titleField')}: ${v.title}`,
+      `${this.translate.instant('push.messageField')}: ${v.message}`,
+      `${this.translate.instant('push.usersCount')}: ${users.length}`,
+    ].join('\n');
+
+    const data: ConfirmDialogData = {
+      title: this.translate.instant('push.confirmTitle'),
+      message: summary,
+      confirmLabel: this.translate.instant('push.sendButton'),
+    };
+
+    const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) this.send(tenantId, users);
+    });
+  }
+
+  private send(tenantId: string, users: string[]): void {
     this.sending.set(true);
     const v = this.form.getRawValue();
     this.tenantService.sendPushAll(tenantId, {
       title: v.title,
       message: v.message,
       noticeType: v.noticeType,
+      users,
     }).subscribe({
       next: (result) => {
         this.sending.set(false);
@@ -170,7 +209,7 @@ export class PushPage {
             { duration: 4000 },
           );
         }
-        this.form.reset({ title: '', message: '', noticeType: 'INFO' });
+        this.form.reset({ title: '', message: '', noticeType: 'INFO', users: '' });
       },
       error: (err: unknown) => {
         this.sending.set(false);

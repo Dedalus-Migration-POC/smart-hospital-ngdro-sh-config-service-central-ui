@@ -105,6 +105,8 @@ export interface PushSendRequest {
   title: string;
   message: string;
   noticeType: PushNoticeType;
+  /** Identificativi utente in chiaro: il backend li trasforma in hash SHA-256 prima di inviarli al notificator. */
+  users: string[];
 }
 
 export interface PushSendResult {

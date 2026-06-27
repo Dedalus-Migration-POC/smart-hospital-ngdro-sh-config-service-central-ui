@@ -943,7 +943,7 @@
     "noticeType": "Tipo notifica",
     "titleField": "Titolo",
     "messageField": "Messaggio",
-    "sendButton": "Invia a tutti i dispositivi",
+    "sendButton": "Invia notifica",
     "sentSuccess": "Notifica inviata a {{count}} dispositivo/i.",
     "sentNoDevices": "Nessun dispositivo registrato per questo tenant.",
     "sendError": "Impossibile inviare la notifica.",
@@ -959,6 +959,12 @@
     "configured": "configurato",
     "notConfigured": "non configurato",
     "configSaved": "Configurazione push salvata.",
-    "configSaveError": "Impossibile salvare la configurazione push."
+    "configSaveError": "Impossibile salvare la configurazione push.",
+    "usersField": "Destinatari",
+    "usersPlaceholder": "user001\nuser002\nuser003",
+    "usersHint": "Un identificativo utente per riga. Il backend calcolerà l'hash.",
+    "usersCount": "utenti",
+    "invalidChars": "Sono ammessi solo caratteri ASCII e emoji standard.",
+    "confirmTitle": "Conferma invio notifica"
   }
 }

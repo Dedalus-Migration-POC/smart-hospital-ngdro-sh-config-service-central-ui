@@ -950,7 +950,7 @@
     "noticeType": "Notice type",
     "titleField": "Title",
     "messageField": "Message",
-    "sendButton": "Send to all devices",
+    "sendButton": "Send notification",
     "sentSuccess": "Notification sent to {{count}} device(s).",
     "sentNoDevices": "No registered devices for this tenant.",
     "sendError": "Failed to send the notification.",
@@ -966,6 +966,12 @@
     "configured": "configured",
     "notConfigured": "not configured",
     "configSaved": "Push configuration saved.",
-    "configSaveError": "Failed to save push configuration."
+    "configSaveError": "Failed to save push configuration.",
+    "usersField": "Recipients",
+    "usersPlaceholder": "user001\nuser002\nuser003",
+    "usersHint": "One user identifier per line. The backend will hash them.",
+    "usersCount": "users",
+    "invalidChars": "Only ASCII characters and standard emoji are allowed.",
+    "confirmTitle": "Confirm push notification"
   }
 }
