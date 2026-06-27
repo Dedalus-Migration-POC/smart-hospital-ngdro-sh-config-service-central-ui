@@ -774,7 +774,7 @@ export class ConfigChannelSection {
       const data: SmhUiRenderEditorDialogData = { value: parsed, availableServiceIds };
       const ref = this.dialog.open<SmhUiRenderEditorDialog, SmhUiRenderEditorDialogData, SmhUiRenderJson>(
         SmhUiRenderEditorDialog,
-        { data, autoFocus: 'first-tabbable', maxWidth: '960px', width: '960px' },
+        { data, autoFocus: 'first-tabbable', maxWidth: '960px', width: '960px', maxHeight: '90svh' },
       );
       ref.afterClosed().subscribe((result) => {
         if (result === undefined) return;
@@ -794,7 +794,7 @@ export class ConfigChannelSection {
     const data: SmhSpidProviderEditorDialogData = { value: parsed };
     const ref = this.dialog.open<SmhSpidProviderEditorDialog, SmhSpidProviderEditorDialogData, SmhSpidProviderJson>(
       SmhSpidProviderEditorDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px' },
+      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px', maxHeight: '90svh' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;
@@ -812,7 +812,7 @@ export class ConfigChannelSection {
     const data: SmhFaqEditorDialogData = { value: parsed };
     const ref = this.dialog.open<SmhFaqEditorDialog, SmhFaqEditorDialogData, SmhFaqJson>(
       SmhFaqEditorDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px' },
+      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px', maxHeight: '90svh' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;
@@ -830,7 +830,7 @@ export class ConfigChannelSection {
     const data: SmhServiceConfigEditorDialogData = { value: parsed };
     const ref = this.dialog.open<SmhServiceConfigEditorDialog, SmhServiceConfigEditorDialogData, SmhServiceConfigJson>(
       SmhServiceConfigEditorDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px' },
+      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px', maxHeight: '90svh' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;
@@ -914,7 +914,7 @@ export class ConfigChannelSection {
     const data: SmhMinAppVersionEditorDialogData = { value: parsed };
     const ref = this.dialog.open<SmhMinAppVersionEditorDialog, SmhMinAppVersionEditorDialogData, SmhMinAppVersionJson>(
       SmhMinAppVersionEditorDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '480px', width: '480px' },
+      { data, autoFocus: 'first-tabbable', maxWidth: '480px', width: '480px', maxHeight: '90svh' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;
@@ -932,7 +932,7 @@ export class ConfigChannelSection {
     const data: SmhNewsEditorDialogData = { value: parsed };
     const ref = this.dialog.open<SmhNewsEditorDialog, SmhNewsEditorDialogData, SmhNewsJson>(
       SmhNewsEditorDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px' },
+      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px', maxHeight: '90svh' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;
@@ -950,7 +950,7 @@ export class ConfigChannelSection {
     const data: SmhTutorialEditorDialogData = { value: parsed };
     const ref = this.dialog.open<SmhTutorialEditorDialog, SmhTutorialEditorDialogData, SmhTutorialJson>(
       SmhTutorialEditorDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '560px', width: '560px' },
+      { data, autoFocus: 'first-tabbable', maxWidth: '560px', width: '560px', maxHeight: '90svh' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;
@@ -968,7 +968,7 @@ export class ConfigChannelSection {
     const data: SmhThemeDataEditorDialogData = { value: parsed };
     const ref = this.dialog.open<SmhThemeDataEditorDialog, SmhThemeDataEditorDialogData, SmhThemeDataJson>(
       SmhThemeDataEditorDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '800px', width: '800px' },
+      { data, autoFocus: 'first-tabbable', maxWidth: '800px', width: '800px', maxHeight: '90svh' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;

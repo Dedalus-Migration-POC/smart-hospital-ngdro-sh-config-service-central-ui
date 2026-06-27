@@ -30,7 +30,7 @@ $item-pad: 10px;
   display: flex;
   flex-direction: column;
   gap: $gap-section;
-  max-height: 62vh;
+  max-height: calc(90svh - 240px);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--mat-sys-outline-variant) transparent;
