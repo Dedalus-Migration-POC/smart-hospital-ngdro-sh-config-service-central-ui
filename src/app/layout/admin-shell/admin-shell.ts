@@ -88,6 +88,7 @@ export class AdminShell {
       return [
         { icon: 'dashboard', labelKey: 'nav.dashboard', path: '/my-dashboard' } as NavItem,
         { icon: 'tune', labelKey: 'nav.myConfigurations', path: user?.customerId ? `/customers/${user.customerId}` : undefined } as NavItem,
+        { icon: 'campaign', labelKey: 'nav.pushNotifications', path: '/push' } as NavItem,
         { icon: 'notifications', labelKey: 'nav.notifications', path: '/notifications' } as NavItem,
       ];
     }
