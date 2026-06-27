@@ -73,6 +73,12 @@
     padding: 8px 0;
   }
 
+  &__send-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   &__slug {
     color: var(--mat-sys-on-surface-variant);
     font-size: 0.85em;

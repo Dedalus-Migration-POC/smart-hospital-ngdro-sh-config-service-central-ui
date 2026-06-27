@@ -136,6 +136,7 @@
           color="primary"
           type="submit"
           form="push-form"
+          class="push__send-btn"
           [disabled]="sending() || form.invalid || !selectedTenantId() || parsedUsers().length === 0"
         >
           @if (sending()) {

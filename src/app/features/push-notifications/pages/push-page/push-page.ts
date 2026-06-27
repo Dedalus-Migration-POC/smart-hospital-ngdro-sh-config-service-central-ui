@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -51,7 +52,7 @@ import { TenantService } from '../../../tenants/services/tenants';
   templateUrl: './push-page.html',
   styleUrl: './push-page.scss',
 })
-export class PushPage {
+export class PushPage implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly customerService = inject(CustomerService);
@@ -86,14 +87,8 @@ export class PushPage {
     () => !this.loadingTenants() && this.tenants().length === 0 && !!this.selectedInstallationId(),
   );
 
-  /** Restituisce la lista utenti parsata dal textarea (una per riga, righe vuote scartate). */
-  readonly parsedUsers = computed(() => {
-    const raw: string = this.form.getRawValue().users ?? '';
-    return raw
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
-  });
+  /** Lista utenti parsata dal textarea — aggiornata via valueChanges (non computed: il FormGroup non è un signal). */
+  readonly parsedUsers = signal<string[]>([]);
 
   readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(255), asciiEmojiValidator()]],
@@ -118,6 +113,14 @@ export class PushPage {
         error: () => this.loadingCustomers.set(false),
       });
     }
+  }
+
+  ngOnInit(): void {
+    this.form.controls.users.valueChanges.subscribe((v) => {
+      this.parsedUsers.set(
+        (v ?? '').split('\n').map((l) => l.trim()).filter((l) => l.length > 0),
+      );
+    });
   }
 
   private loadInstallations(customerId: string): void {
@@ -210,6 +213,7 @@ export class PushPage {
           );
         }
         this.form.reset({ title: '', message: '', noticeType: 'INFO', users: '' });
+        this.parsedUsers.set([]);
       },
       error: (err: unknown) => {
         this.sending.set(false);
