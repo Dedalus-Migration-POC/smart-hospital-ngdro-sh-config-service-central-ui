@@ -205,12 +205,12 @@ export class HomePage implements AfterViewInit, OnDestroy {
       this.onPremTotal.set(active.length);
       if (!active.length) return;
       active.forEach(inst => {
-        fetch(`${inst.baseUrl}/actuator/health`, {
-          mode: 'no-cors',
-          signal: AbortSignal.timeout(5000),
-        })
-          .then(() => { this.onPremOnline.update(n => n + 1); this.onPremChecked.update(n => n + 1); })
-          .catch(() => { this.onPremChecked.update(n => n + 1); });
+        this.installationService.checkHealth(inst.id)
+          .pipe(catchError(() => of({ reachable: false })))
+          .subscribe(health => {
+            if (health.reachable) this.onPremOnline.update(n => n + 1);
+            this.onPremChecked.update(n => n + 1);
+          });
       });
     });
   }
