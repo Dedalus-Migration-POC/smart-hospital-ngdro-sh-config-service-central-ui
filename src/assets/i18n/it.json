@@ -363,7 +363,18 @@
     "configsSubtitle": "Configura ogni canale e pusha all'on-prem.",
     "channelMobile": "Mobile",
     "channelWeb": "Web",
-    "channelTotem": "Totem"
+    "channelTotem": "Totem",
+    "clone": "Clona prodotto",
+    "cloneTitle": "Clona prodotto — {{name}}",
+    "cloneHint": "Verrà creato un nuovo prodotto in questa installation copiando l'ultima configurazione attiva di ogni canale ed entity del prodotto sorgente.",
+    "cloneConfirm": "Clona",
+    "cloneError": "Impossibile clonare il prodotto.",
+    "cloneSuccess": "Prodotto clonato: {{synced}}/{{total}} configurazioni sincronizzate.",
+    "cloneOverwriteSuccess": "Prodotto \"{{name}}\" sovrascritto: {{synced}}/{{total}} configurazioni sincronizzate.",
+    "cloneOverwriteHint": "Esiste già un prodotto con questo slug. Puoi sovrascriverlo: le configurazioni verranno sostituite per i canali/entity in comune con la sorgente, le altre resteranno invariate.",
+    "cloneOverwriteConfirm": "Sovrascrivi",
+    "browserCloneConfirmTitle": "Push diretto dal browser",
+    "browserCloneConfirmMessage": "{{pending}} configurazioni clonate non hanno raggiunto l'on-prem dal server ({{synced}}/{{total}} già sincronizzate). Vuoi tentare il push diretto dal browser?"
   },
   "config": {
     "hint401Title": "Push rifiutato dall'on-prem (401 — non autorizzato)",

@@ -242,6 +242,12 @@ body {
   padding-top: 4px;
 }
 
+.dialog-hint {
+  margin: 0 0 12px;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+}
+
 .dialog-error {
   margin: 0 0 8px;
   padding: 10px 14px;

@@ -20,14 +20,24 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
 import {
+  ConfirmDialog,
+  ConfirmDialogData,
+} from '../../../../shared/dialogs/confirm-dialog/confirm-dialog';
+import {
+  TenantCloneDialog,
+  TenantCloneDialogData,
+  TenantCloneDialogResult,
+} from '../../dialogs/tenant-clone-dialog/tenant-clone-dialog';
+import {
   TenantCreateDialog,
   TenantCreateDialogData,
 } from '../../dialogs/tenant-create-dialog/tenant-create-dialog';
-import { Tenant } from '../../models';
+import { PendingConfigPush, Tenant } from '../../models';
 import { TenantService } from '../../services/tenants';
 
 @Component({
@@ -67,6 +77,8 @@ export class InstallationTenantsSection {
   readonly rows = signal<Tenant[]>([]);
 
   readonly displayedColumns = ['name', 'slug', 'active', 'createdAt', 'actions'] as const;
+
+  readonly cloningTenantId = signal<string | null>(null);
 
   constructor() {
     effect(() => {
@@ -117,5 +129,114 @@ export class InstallationTenantsSection {
 
   openTenant(tenant: Tenant): void {
     void this.router.navigate(['/prodotti', tenant.id]);
+  }
+
+  openClone(tenant: Tenant): void {
+    const data: TenantCloneDialogData = { sourceTenant: tenant };
+    const ref = this.dialog.open<TenantCloneDialog, TenantCloneDialogData, TenantCloneDialogResult>(
+      TenantCloneDialog,
+      { data, autoFocus: 'first-tabbable' },
+    );
+    ref.afterClosed().subscribe(async (result) => {
+      if (!result) return;
+      this.cloningTenantId.set(result.tenant.id);
+      try {
+        if (result.pendingConfigPush.length > 0) {
+          await this.handleBrowserCloneConfigPush(result.pendingConfigPush, result.configsSynced, result.configsTotal);
+        } else {
+          const messageKey = result.overwritten ? 'product.cloneOverwriteSuccess' : 'product.cloneSuccess';
+          this.snackbar.open(
+            this.translate.instant(messageKey, {
+              name: result.tenant.name,
+              synced: result.configsSynced,
+              total: result.configsTotal,
+            }),
+            'OK',
+            { duration: 4000 },
+          );
+        }
+      } finally {
+        this.cloningTenantId.set(null);
+        this.reload();
+      }
+    });
+  }
+
+  /** Fallback browser: alcune config clonate non hanno raggiunto l'on-prem dal server. */
+  private async handleBrowserCloneConfigPush(
+    pending: PendingConfigPush[],
+    alreadySynced: number,
+    total: number,
+  ): Promise<void> {
+    const baseUrl = pending[0].pushPackage.baseUrl;
+
+    this.snackbar.open(this.translate.instant('config.browserPushChecking'), 'OK', { duration: 4000 });
+
+    const reachable = await fetch(`${baseUrl}/actuator/health`, {
+      mode: 'no-cors',
+      signal: AbortSignal.timeout(5000),
+    }).then(() => true).catch(() => false);
+
+    if (!reachable) {
+      this.snackbar.open(this.translate.instant('config.browserPushUnreachable'), 'OK', { duration: 8000 });
+      return;
+    }
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const data: ConfirmDialogData = {
+        title: this.translate.instant('product.browserCloneConfirmTitle'),
+        message: this.translate.instant('product.browserCloneConfirmMessage', {
+          pending: pending.length,
+          synced: alreadySynced,
+          total,
+        }),
+        confirmLabel: this.translate.instant('config.browserPushConfirmButton'),
+        destructive: false,
+      };
+      const ref = this.dialog.open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data });
+      ref.afterClosed().subscribe((r) => resolve(r === true));
+    });
+
+    if (!confirmed) return;
+
+    this.snackbar.open(this.translate.instant('config.browserPushInProgress'), undefined, { duration: 0 });
+
+    let browserSynced = 0;
+    for (const item of pending) {
+      const pkg = item.pushPackage;
+      let remoteVersion: number | null = null;
+      let pushError: string | null = null;
+      let pushOk = false;
+
+      try {
+        const res = await fetch(pkg.targetUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': pkg.apiKey },
+          body: JSON.stringify({ payload: pkg.encryptedPayload }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (res.ok) {
+          const respBody = await res.json() as { version?: number };
+          remoteVersion = respBody.version ?? null;
+          pushOk = true;
+          browserSynced++;
+        } else {
+          pushError = `On-prem ha risposto ${res.status}`;
+        }
+      } catch (e) {
+        pushError = e instanceof Error ? e.message : 'Errore rete';
+      }
+
+      await firstValueFrom(
+        this.tenants.pushConfirm(item.tenantId, item.channelId, item.entity, pushOk, remoteVersion, pushError),
+      ).catch(() => { /* ignora errori push-confirm singoli */ });
+    }
+
+    const totalSynced = alreadySynced + browserSynced;
+    this.snackbar.open(
+      this.translate.instant('product.cloneSuccess', { name: '', synced: totalSynced, total }),
+      'OK',
+      { duration: 4000 },
+    );
   }
 }

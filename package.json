@@ -1,9 +1,9 @@
 {
   "name": "sh-config-service-central-ui",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --proxy-config proxy.local.json",
     "start:cloud": "ng serve --configuration production --proxy-config proxy.cloud.json",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",

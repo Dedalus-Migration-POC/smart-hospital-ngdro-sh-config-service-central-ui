@@ -1,0 +1,74 @@
+<h2 mat-dialog-title>{{ 'product.cloneTitle' | translate: { name: data.sourceTenant.name } }}</h2>
+
+<mat-dialog-content>
+  <p class="dialog-hint">{{ 'product.cloneHint' | translate }}</p>
+
+  @if (errorMessage(); as err) {
+    <p class="dialog-error" role="alert">{{ err }}</p>
+    @if (conflict()) {
+      <p class="dialog-hint">{{ 'product.cloneOverwriteHint' | translate }}</p>
+    }
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" id="tenant-clone-form" class="dialog-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'common.slug' | translate }}</mat-label>
+      <input matInput formControlName="slug" required maxlength="100" autocomplete="off" />
+      <mat-hint>{{ 'common.slugHint' | translate }}</mat-hint>
+      @if (form.controls.slug.touched) {
+        @if (form.controls.slug.hasError('required')) {
+          <mat-error>{{ 'product.slugRequired' | translate }}</mat-error>
+        } @else if (form.controls.slug.hasError('maxlength')) {
+          <mat-error>{{ 'product.slugMax' | translate }}</mat-error>
+        } @else if (form.controls.slug.hasError('pattern')) {
+          <mat-error>{{ 'product.slugPattern' | translate }}</mat-error>
+        }
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'common.name' | translate }}</mat-label>
+      <input matInput formControlName="name" required maxlength="255" />
+      @if (form.controls.name.touched) {
+        @if (form.controls.name.hasError('required')) {
+          <mat-error>{{ 'product.nameRequired' | translate }}</mat-error>
+        } @else if (form.controls.name.hasError('maxlength')) {
+          <mat-error>{{ 'product.nameMax' | translate }}</mat-error>
+        }
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()" [disabled]="saving()">{{ 'common.cancel' | translate }}</button>
+  @if (conflict()) {
+    <button
+      mat-flat-button
+      color="warn"
+      type="button"
+      (click)="confirmOverwrite()"
+      [disabled]="saving()"
+    >
+      @if (saving()) {
+        <mat-progress-spinner mode="indeterminate" diameter="20" />
+      } @else {
+        {{ 'product.cloneOverwriteConfirm' | translate }}
+      }
+    </button>
+  } @else {
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      form="tenant-clone-form"
+      [disabled]="saving()"
+    >
+      @if (saving()) {
+        <mat-progress-spinner mode="indeterminate" diameter="20" />
+      } @else {
+        {{ 'product.cloneConfirm' | translate }}
+      }
+    </button>
+  }
+</mat-dialog-actions>

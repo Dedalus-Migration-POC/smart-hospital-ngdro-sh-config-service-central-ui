@@ -363,7 +363,18 @@
     "configsSubtitle": "Configure each channel and push to the on-premise server.",
     "channelMobile": "Mobile",
     "channelWeb": "Web",
-    "channelTotem": "Totem"
+    "channelTotem": "Totem",
+    "clone": "Clone product",
+    "cloneTitle": "Clone product — {{name}}",
+    "cloneHint": "A new product will be created in this installation, copying the latest active configuration of every channel and entity from the source product.",
+    "cloneConfirm": "Clone",
+    "cloneError": "Unable to clone the product.",
+    "cloneSuccess": "Product cloned: {{synced}}/{{total}} configurations synced.",
+    "cloneOverwriteSuccess": "Product \"{{name}}\" overwritten: {{synced}}/{{total}} configurations synced.",
+    "cloneOverwriteHint": "A product with this slug already exists. You can overwrite it: configurations will be replaced for channels/entities in common with the source, others will remain unchanged.",
+    "cloneOverwriteConfirm": "Overwrite",
+    "browserCloneConfirmTitle": "Direct browser push",
+    "browserCloneConfirmMessage": "{{pending}} cloned configurations could not reach the on-premise server ({{synced}}/{{total}} already synced). Try a direct push from the browser?"
   },
   "config": {
     "hint401Title": "Push rejected by on-premise server (401 — unauthorized)",

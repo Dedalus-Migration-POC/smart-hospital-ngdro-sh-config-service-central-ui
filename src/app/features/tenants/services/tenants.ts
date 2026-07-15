@@ -13,6 +13,8 @@ import {
   PushSendRequest,
   PushSendResult,
   Tenant,
+  TenantCloneRequest,
+  TenantCloneResponse,
   TenantCreateRequest,
   TenantUpdateRequest,
 } from '../models';
@@ -36,6 +38,13 @@ export class TenantService {
   create(installationId: string, req: TenantCreateRequest): Observable<Tenant> {
     return this.http.post<Tenant>(
       `${this.baseUrl}/installations/${installationId}/tenants`,
+      req,
+    );
+  }
+
+  clone(sourceTenantId: string, req: TenantCloneRequest): Observable<TenantCloneResponse> {
+    return this.http.post<TenantCloneResponse>(
+      `${this.baseUrl}/tenants/${sourceTenantId}/clone`,
       req,
     );
   }

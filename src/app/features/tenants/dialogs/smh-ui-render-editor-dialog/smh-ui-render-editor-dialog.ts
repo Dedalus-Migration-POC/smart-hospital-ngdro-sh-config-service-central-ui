@@ -85,6 +85,13 @@ export class SmhUiRenderEditorDialog {
   readonly form = this.buildForm(this.data.value);
   readonly availableServiceIds: string[] = this.data.availableServiceIds ?? [];
 
+  // Ordine originale delle chiavi nel JSON caricato: preservato al salvataggio
+  // per non spostare sezioni (es. "widgets") che il DB conserva come TEXT ordinato.
+  private readonly originalTopKeys = Object.keys(this.data.value ?? {});
+  private readonly originalHomeKeys = Object.keys(this.data.value?.home ?? {}).map((k) =>
+    k === 'widget' ? 'widgets' : k,
+  );
+
   private allUsedIds(): Set<string> {
     const ids = new Set<string>();
     for (let ci = 0; ci < this.bodyArray.length; ci++) {
@@ -265,20 +272,44 @@ export class SmhUiRenderEditorDialog {
       body[cat.categoryName] = cat.items;
     }
 
-    const result: SmhUiRenderJson = {
+    const homeValues: Record<string, unknown> = {
+      app_bar: raw.home.app_bar,
+      search_bar: raw.home.search_bar,
+      header: raw.home.header,
+      body,
+      ...(raw.home.widgets.length > 0 ? { widgets: raw.home.widgets } : {}),
+    };
+    const home = this.reorderKeys(homeValues, this.originalHomeKeys) as SmhUiRenderJson['home'];
+
+    const topValues: Record<string, unknown> = {
       login: raw.login,
       splash: raw.splash,
-      home: {
-        app_bar: raw.home.app_bar,
-        search_bar: raw.home.search_bar,
-        header: raw.home.header,
-        body,
-        ...(raw.home.widgets.length > 0 ? { widgets: raw.home.widgets } : {}),
-      },
+      home,
       navigation_bar: raw.navigation_bar,
     };
+    const result = this.reorderKeys(topValues, this.originalTopKeys) as SmhUiRenderJson;
 
     this.dialogRef.close(result);
+  }
+
+  // Riordina le chiavi di `values` secondo `originalOrder` (chiavi presenti nel JSON
+  // caricato inizialmente), lasciando in coda eventuali chiavi nuove non presenti prima.
+  private reorderKeys(
+    values: Record<string, unknown>,
+    originalOrder: string[],
+  ): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    for (const key of originalOrder) {
+      if (key in values) {
+        result[key] = values[key];
+      }
+    }
+    for (const key of Object.keys(values)) {
+      if (!(key in result)) {
+        result[key] = values[key];
+      }
+    }
+    return result;
   }
 
   private moveInArray(arr: FormArray, from: number, to: number): void {

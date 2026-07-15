@@ -13,6 +13,29 @@ export interface TenantCreateRequest {
   name: string;
 }
 
+export interface TenantCloneRequest {
+  slug: string;
+  name: string;
+  overwrite: boolean;
+}
+
+export interface PendingConfigPush {
+  tenantId: string;
+  tenantSlug: string;
+  channelId: string;
+  entity: string;
+  pushPackage: PushPackage;
+}
+
+export interface TenantCloneResponse {
+  tenant: Tenant;
+  configsTotal: number;
+  configsSynced: number;
+  overwritten: boolean;
+  pendingConfigPush: PendingConfigPush[];
+}
+
+
 export interface TenantUpdateRequest {
   name: string;
   active?: boolean;
