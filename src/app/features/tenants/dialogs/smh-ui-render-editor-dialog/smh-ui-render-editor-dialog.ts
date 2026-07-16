@@ -82,6 +82,10 @@ export class SmhUiRenderEditorDialog {
   readonly dialogRef = inject<MatDialogRef<SmhUiRenderEditorDialog, SmhUiRenderJson>>(MatDialogRef);
   readonly data = inject<SmhUiRenderEditorDialogData>(MAT_DIALOG_DATA);
 
+  // Campi sconosciuti (non gestiti dalla UI) associati a ogni FormGroup di lista
+  // (header/body items/widgets/navigation services): permette di non perderli al salvataggio.
+  private readonly extraByGroup = new WeakMap<FormGroup, Record<string, unknown>>();
+
   readonly form = this.buildForm(this.data.value);
   readonly availableServiceIds: string[] = this.data.availableServiceIds ?? [];
 
@@ -93,6 +97,31 @@ export class SmhUiRenderEditorDialog {
   // al salvataggio va preservato il nome originale per non alterare lo schema.
   private readonly widgetsKeyName: 'widget' | 'widgets' =
     this.data.value?.home && 'widget' in this.data.value.home ? 'widget' : 'widgets';
+
+  // Campi sconosciuti (non gestiti dalla UI) sui singoli oggetti: vengono
+  // ripristinati al salvataggio così l'editor grafico non li elimina.
+  private readonly loginExtra = this.extractExtra(this.data.value?.login, ['svg_icon']);
+  private readonly splashExtra = this.extractExtra(this.data.value?.splash, ['svg_main_icon']);
+  private readonly appBarExtra = this.extractExtra(this.data.value?.home?.app_bar, ['title', 'svg_icon']);
+  private readonly searchBarExtra = this.extractExtra(this.data.value?.home?.search_bar, ['hint_label']);
+  private readonly homeExtra = this.extractExtra(this.data.value?.home, [
+    'app_bar', 'search_bar', 'header', 'body', 'widgets', 'widget',
+  ]);
+  private readonly navigationBarExtra = this.extractExtra(this.data.value?.navigation_bar, ['services']);
+  private readonly topExtra = this.extractExtra(
+    this.data.value as Record<string, unknown> | undefined,
+    ['login', 'splash', 'home', 'navigation_bar'],
+  );
+
+  // Restituisce le proprietà di `obj` non presenti in `knownKeys`.
+  private extractExtra(obj: object | undefined | null, knownKeys: string[]): Record<string, unknown> {
+    const extra: Record<string, unknown> = {};
+    if (!obj) return extra;
+    for (const [key, value] of Object.entries(obj)) {
+      if (!knownKeys.includes(key)) extra[key] = value;
+    }
+    return extra;
+  }
 
   private allUsedIds(): Set<string> {
     const ids = new Set<string>();
@@ -162,7 +191,7 @@ export class SmhUiRenderEditorDialog {
   }
 
   private makeServiceGroup(item?: Partial<ServiceItem>): FormGroup {
-    return this.fb.nonNullable.group({
+    const group = this.fb.nonNullable.group({
       id: [item?.id ?? ''],
       title: [item?.title ?? '', Validators.required],
       subtitle: [item?.subtitle ?? ''],
@@ -170,21 +199,30 @@ export class SmhUiRenderEditorDialog {
       show_lock: [item?.show_lock ?? false],
       link: [item?.link ?? ''],
     });
+    this.extraByGroup.set(
+      group,
+      this.extractExtra(item, ['id', 'title', 'subtitle', 'svg_icon', 'show_lock', 'link']),
+    );
+    return group;
   }
 
   private makeHeaderGroup(item?: Partial<HeaderItem>): FormGroup {
-    return this.fb.nonNullable.group({
+    const group = this.fb.nonNullable.group({
       title: [item?.title ?? '', Validators.required],
       subtitle: [item?.subtitle ?? ''],
       svg_icon: [item?.svg_icon ?? ''],
       show_card: [item?.show_card ?? true],
     });
+    this.extraByGroup.set(group, this.extractExtra(item, ['title', 'subtitle', 'svg_icon', 'show_card']));
+    return group;
   }
 
   private makeWidgetGroup(item?: Partial<WidgetItem>): FormGroup {
-    return this.fb.nonNullable.group({
+    const group = this.fb.nonNullable.group({
       id: [item?.id ?? '', Validators.required],
     });
+    this.extraByGroup.set(group, this.extractExtra(item, ['id']));
+    return group;
   }
 
   private makeCategoryGroup(name: string, items: Partial<ServiceItem>[] = []): FormGroup {
@@ -256,42 +294,46 @@ export class SmhUiRenderEditorDialog {
       return;
     }
 
-    const raw = this.form.getRawValue() as {
-      login: { svg_icon: string };
-      splash: { svg_main_icon: string };
-      home: {
-        app_bar: { title: string; svg_icon: string };
-        search_bar: { hint_label: string };
-        header: HeaderItem[];
-        body: Array<{ categoryName: string; items: ServiceItem[] }>;
-        widgets: WidgetItem[];
-      };
-      navigation_bar: { services: ServiceItem[] };
-    };
+    const header = this.readGroupArray<HeaderItem>(this.headerArray);
+    const widgets = this.readGroupArray<WidgetItem>(this.widgetsArray);
+    const navServices = this.readGroupArray<ServiceItem>(this.navServicesArray);
 
     const body: Record<string, ServiceItem[]> = {};
-    for (const cat of raw.home.body) {
-      body[cat.categoryName] = cat.items;
+    for (const catCtrl of this.bodyArray.controls) {
+      const cat = catCtrl as FormGroup;
+      const categoryName = cat.get('categoryName')?.value as string;
+      body[categoryName] = this.readGroupArray<ServiceItem>(cat.get('items') as FormArray);
     }
 
     const homeValues: Record<string, unknown> = {
-      app_bar: raw.home.app_bar,
-      search_bar: raw.home.search_bar,
-      header: raw.home.header,
+      ...this.homeExtra,
+      app_bar: { ...this.appBarExtra, ...this.appBarGroup.getRawValue() },
+      search_bar: { ...this.searchBarExtra, ...this.searchBarGroup.getRawValue() },
+      header,
       body,
-      ...(raw.home.widgets.length > 0 ? { [this.widgetsKeyName]: raw.home.widgets } : {}),
+      ...(widgets.length > 0 ? { [this.widgetsKeyName]: widgets } : {}),
     };
     const home = this.reorderKeys(homeValues, this.originalHomeKeys) as SmhUiRenderJson['home'];
 
     const topValues: Record<string, unknown> = {
-      login: raw.login,
-      splash: raw.splash,
+      ...this.topExtra,
+      login: { ...this.loginExtra, ...this.loginGroup.getRawValue() },
+      splash: { ...this.splashExtra, ...this.splashGroup.getRawValue() },
       home,
-      navigation_bar: raw.navigation_bar,
+      navigation_bar: { ...this.navigationBarExtra, services: navServices },
     };
     const result = this.reorderKeys(topValues, this.originalTopKeys) as SmhUiRenderJson;
 
     this.dialogRef.close(result);
+  }
+
+  // Legge i valori di un FormArray unendo, per ciascun elemento, i campi gestiti
+  // dalla UI con gli eventuali campi sconosciuti catturati al caricamento.
+  private readGroupArray<T>(arr: FormArray): T[] {
+    return arr.controls.map((ctrl) => {
+      const group = ctrl as FormGroup;
+      return { ...this.extraByGroup.get(group), ...group.getRawValue() } as T;
+    });
   }
 
   // Riordina le chiavi di `values` secondo `originalOrder` (chiavi presenti nel JSON
