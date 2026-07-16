@@ -13,6 +13,7 @@ export interface MeResponse {
   username: string;
   role: string | null;
   customerId?: string | null;
+  deliveryCustomerIds?: string[];
 }
 
 export interface CurrentUser {
@@ -20,4 +21,5 @@ export interface CurrentUser {
   username: string;
   role: string | null;
   customerId?: string | null;
+  deliveryCustomerIds?: string[];
 }

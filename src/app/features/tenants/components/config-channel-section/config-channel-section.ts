@@ -596,7 +596,10 @@ export class ConfigChannelSection {
     });
   }
 
-  readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
+  readonly isAdmin = computed(() => {
+    const role = this.auth.currentUser()?.role;
+    return role === 'ADMIN' || role === 'DELIVERY';
+  });
   readonly isCurrentEntityDisabled = computed(() => this.disabledEntities().has(this.entity()));
   readonly isSmhUiRender = computed(() => this.entity() === 'smh_ui_render');
   readonly isSmhSpidProvider = computed(() => this.entity() === 'smh_spid_provider');

@@ -5,6 +5,7 @@ import {
   Component,
   OnInit,
   ViewChild,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -25,6 +26,7 @@ import { Router } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
 import { CustomerCreateDialog } from '../../dialogs/customer-create-dialog/customer-create-dialog';
 import { Customer } from '../../models';
@@ -58,6 +60,9 @@ export class CustomersPage implements OnInit, AfterViewInit {
   private readonly snackbar = inject(MatSnackBar);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly auth = inject(AuthService);
+
+  readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -65,6 +70,7 @@ export class CustomersPage implements OnInit, AfterViewInit {
 
   readonly displayedColumns = ['slug', 'name', 'active', 'createdAt', 'actions'] as const;
   readonly dataSource = new MatTableDataSource<Customer>([]);
+
 
   @ViewChild(MatPaginator) private paginator!: MatPaginator;
   @ViewChild(MatSort) private sort!: MatSort;

@@ -77,6 +77,10 @@ export class TenantDetailPage {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
 
+  readonly canManageTenants = computed(() => {
+    const role = this.auth.currentUser()?.role;
+    return role === 'ADMIN' || role === 'DELIVERY';
+  });
   readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
 
   readonly loading = signal(false);
@@ -118,7 +122,7 @@ export class TenantDetailPage {
       next: (tenant) => {
         this.tenant.set(tenant);
         this.form.reset({ name: tenant.name, active: tenant.active });
-        if (!this.isAdmin()) this.form.disable();
+        if (!this.canManageTenants()) this.form.disable();
         this.loading.set(false);
       },
       error: (err: unknown) => {

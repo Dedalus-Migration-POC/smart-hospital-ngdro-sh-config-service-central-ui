@@ -38,7 +38,13 @@ export class AuthService {
    */
   fetchMe(): Observable<CurrentUser> {
     return this.http.get<MeResponse>(`${environment.apiBaseUrl}/auth/me`, { withCredentials: true }).pipe(
-      tap((me) => this._currentUser.set({ id: me.id, username: me.username, role: me.role, customerId: me.customerId })),
+      tap((me) => this._currentUser.set({
+        id: me.id,
+        username: me.username,
+        role: me.role,
+        customerId: me.customerId,
+        deliveryCustomerIds: me.deliveryCustomerIds ?? [],
+      })),
     );
   }
 

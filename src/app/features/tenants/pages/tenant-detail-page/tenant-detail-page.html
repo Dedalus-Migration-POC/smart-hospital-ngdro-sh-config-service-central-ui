@@ -55,7 +55,7 @@
             }
           </mat-form-field>
 
-          @if (isAdmin()) {
+          @if (canManageTenants()) {
             <mat-slide-toggle formControlName="active">{{ 'common.active' | translate }}</mat-slide-toggle>
           }
 
@@ -64,7 +64,7 @@
           </div>
         </form>
       </mat-card-content>
-      @if (isAdmin()) {
+      @if (canManageTenants()) {
         <mat-card-actions align="end" class="detail__actions">
           <button
             mat-button
@@ -107,7 +107,7 @@
                 {{ channelLabel(ch) }}
               </ng-template>
               <div class="detail__tab-content">
-                @if (isAdmin()) {
+                @if (canManageTenants()) {
                   <div class="detail__tab-actions">
                     <button
                       mat-stroked-button

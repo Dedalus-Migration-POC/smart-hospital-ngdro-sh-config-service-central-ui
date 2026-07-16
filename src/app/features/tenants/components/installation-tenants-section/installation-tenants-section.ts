@@ -69,7 +69,10 @@ export class InstallationTenantsSection {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
 
-  readonly isAdmin = computed(() => this.auth.currentUser()?.role === 'ADMIN');
+  readonly canManageTenants = computed(() => {
+    const role = this.auth.currentUser()?.role;
+    return role === 'ADMIN' || role === 'DELIVERY';
+  });
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);

@@ -115,12 +115,14 @@ export class UserDetailPage implements OnInit {
   readonly isReadonlySelf = computed(() => this.isSelf() && this.auth.currentUser()?.role === 'CUSTOMER');
 
   readonly isCustomerRole = computed(() => this.form.controls.role.value === 'CUSTOMER');
+  readonly isDeliveryRole = computed(() => this.form.controls.role.value === 'DELIVERY');
   readonly isUserAdmin = computed(() => this.user()?.role === 'ADMIN');
 
   readonly form = this.fb.nonNullable.group({
     role: ['ADMIN', [Validators.required]],
     active: [true],
     customerId: [null as string | null],
+    deliveryCustomerIds: [[] as string[]],
   });
 
   readonly notificationForm = this.fb.nonNullable.group({
@@ -147,14 +149,23 @@ export class UserDetailPage implements OnInit {
     }
 
     this.form.controls.role.valueChanges.subscribe((role) => {
-      const ctrl = this.form.controls.customerId;
+      const customerCtrl = this.form.controls.customerId;
       if (role === 'CUSTOMER') {
-        ctrl.setValidators([Validators.required]);
+        customerCtrl.setValidators([Validators.required]);
       } else {
-        ctrl.clearValidators();
-        ctrl.setValue(null);
+        customerCtrl.clearValidators();
+        customerCtrl.setValue(null);
       }
-      ctrl.updateValueAndValidity();
+      customerCtrl.updateValueAndValidity();
+
+      const deliveryCtrl = this.form.controls.deliveryCustomerIds;
+      if (role === 'DELIVERY') {
+        deliveryCtrl.setValidators([Validators.required, Validators.minLength(1)]);
+      } else {
+        deliveryCtrl.clearValidators();
+        deliveryCtrl.setValue([]);
+      }
+      deliveryCtrl.updateValueAndValidity();
     });
   }
 
@@ -168,16 +179,20 @@ export class UserDetailPage implements OnInit {
           role: user.role,
           active: user.active,
           customerId: user.customerId ?? null,
+          deliveryCustomerIds: user.deliveryCustomerIds ?? [],
         });
         this.notificationForm.reset({
           notificationsEnabled: user.notificationsEnabled,
           notificationCustomerIds: user.notificationCustomerIds ?? [],
           pollIntervalMinutes: user.notificationPollIntervalMinutes ?? 30,
         });
-        // imposta validator customerId in base al ruolo caricato
+        // imposta validator customerId/deliveryCustomerIds in base al ruolo caricato
         if (user.role === 'CUSTOMER') {
           this.form.controls.customerId.setValidators([Validators.required]);
           this.form.controls.customerId.updateValueAndValidity();
+        } else if (user.role === 'DELIVERY') {
+          this.form.controls.deliveryCustomerIds.setValidators([Validators.required, Validators.minLength(1)]);
+          this.form.controls.deliveryCustomerIds.updateValueAndValidity();
         }
         this.loading.set(false);
         this.loadNotificationHistory();
@@ -202,6 +217,7 @@ export class UserDetailPage implements OnInit {
       role: v.role,
       active: v.active,
       customerId: v.role === 'CUSTOMER' ? v.customerId : null,
+      deliveryCustomerIds: v.role === 'DELIVERY' ? v.deliveryCustomerIds : [],
     }).subscribe({
       next: (updated) => {
         this.user.set(updated);
@@ -209,6 +225,7 @@ export class UserDetailPage implements OnInit {
           role: updated.role,
           active: updated.active,
           customerId: updated.customerId ?? null,
+          deliveryCustomerIds: updated.deliveryCustomerIds ?? [],
         });
         this.saving.set(false);
         this.snackbar.open(this.translate.instant('user.saveSuccess'), 'OK', { duration: 3000 });

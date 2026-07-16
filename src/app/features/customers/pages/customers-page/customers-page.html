@@ -4,10 +4,12 @@
       <h1>{{ 'customer.title' | translate }}</h1>
       <p class="customers__subtitle">{{ 'customer.subtitle' | translate }}</p>
     </div>
-    <button mat-flat-button color="primary" type="button" (click)="openCreate()">
-      <mat-icon>add</mat-icon>
-      {{ 'customer.new' | translate }}
-    </button>
+    @if (isAdmin()) {
+      <button mat-flat-button color="primary" type="button" (click)="openCreate()">
+        <mat-icon>add</mat-icon>
+        {{ 'customer.new' | translate }}
+      </button>
+    }
   </header>
 
   <div class="customers__toolbar">

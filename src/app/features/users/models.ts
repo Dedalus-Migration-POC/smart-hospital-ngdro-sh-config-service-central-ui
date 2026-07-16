@@ -3,6 +3,7 @@ export interface User {
   username: string;
   role: string;
   customerId?: string | null;
+  deliveryCustomerIds: string[];
   active: boolean;
   notificationsEnabled: boolean;
   notificationCustomerIds: string[];
@@ -16,12 +17,14 @@ export interface UserCreateRequest {
   password: string;
   role: string;
   customerId?: string | null;
+  deliveryCustomerIds?: string[];
 }
 
 export interface UserUpdateRequest {
   role?: string;
   active?: boolean;
   customerId?: string | null;
+  deliveryCustomerIds?: string[];
 }
 
 export interface UserPasswordUpdateRequest {
@@ -56,5 +59,5 @@ export interface Page<T> {
   size: number;
 }
 
-export const AVAILABLE_ROLES = ['ADMIN', 'CUSTOMER'] as const;
+export const AVAILABLE_ROLES = ['ADMIN', 'CUSTOMER', 'DELIVERY'] as const;
 export type UserRole = (typeof AVAILABLE_ROLES)[number];

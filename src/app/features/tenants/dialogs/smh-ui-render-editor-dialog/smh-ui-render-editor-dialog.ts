@@ -88,9 +88,11 @@ export class SmhUiRenderEditorDialog {
   // Ordine originale delle chiavi nel JSON caricato: preservato al salvataggio
   // per non spostare sezioni (es. "widgets") che il DB conserva come TEXT ordinato.
   private readonly originalTopKeys = Object.keys(this.data.value ?? {});
-  private readonly originalHomeKeys = Object.keys(this.data.value?.home ?? {}).map((k) =>
-    k === 'widget' ? 'widgets' : k,
-  );
+  private readonly originalHomeKeys = Object.keys(this.data.value?.home ?? {});
+  // Alcuni JSON storici usano la chiave singolare "widget" invece di "widgets":
+  // al salvataggio va preservato il nome originale per non alterare lo schema.
+  private readonly widgetsKeyName: 'widget' | 'widgets' =
+    this.data.value?.home && 'widget' in this.data.value.home ? 'widget' : 'widgets';
 
   private allUsedIds(): Set<string> {
     const ids = new Set<string>();
@@ -277,7 +279,7 @@ export class SmhUiRenderEditorDialog {
       search_bar: raw.home.search_bar,
       header: raw.home.header,
       body,
-      ...(raw.home.widgets.length > 0 ? { widgets: raw.home.widgets } : {}),
+      ...(raw.home.widgets.length > 0 ? { [this.widgetsKeyName]: raw.home.widgets } : {}),
     };
     const home = this.reorderKeys(homeValues, this.originalHomeKeys) as SmhUiRenderJson['home'];
 

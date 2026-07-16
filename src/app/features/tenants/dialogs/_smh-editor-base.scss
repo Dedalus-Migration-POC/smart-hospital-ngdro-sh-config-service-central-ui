@@ -14,6 +14,75 @@
     padding: 0 !important;
     max-width: 100%;
     max-height: calc(90svh - 130px) !important; // titolo(~52px) + footer(52px) + buffer(26px)
+
+    // Densità compatta locale per i form-field Material, senza toccare il tema globale.
+    --mat-form-field-container-height: 40px;
+    --mat-form-field-container-vertical-padding: 6px;
+    --mat-form-field-filled-with-label-container-padding-top: 8px;
+    --mat-form-field-filled-with-label-container-padding-bottom: 8px;
+    --mat-form-field-container-text-size: 0.8125rem;
+    --mat-form-field-subscript-text-size: 0.6875rem;
+    --mat-form-field-subscript-text-line-height: 1.2;
+    --mdc-checkbox-state-layer-size: 32px;
+    --mdc-radio-state-layer-size: 32px;
+    --mdc-icon-button-state-layer-size: 32px;
+
+    // I componenti Material (form-field, checkbox, icon-button, tab...) renderizzano
+    // markup interno nel proprio template incapsulato: senza ::ng-deep i selettori
+    // qui sotto non "penetrano" fino a quegli elementi (non basta la sola variabile CSS).
+    ::ng-deep {
+      .mat-mdc-form-field {
+        font-size: 0.8125rem;
+      }
+
+      .mat-mdc-text-field-wrapper {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+      }
+
+      .mat-mdc-form-field-infix {
+        min-height: 40px !important;
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+      }
+
+      .mat-mdc-form-field-subscript-wrapper {
+        margin-top: 0 !important;
+      }
+
+      .mat-mdc-form-field-bottom-align::before {
+        height: 12px !important;
+      }
+
+      // Checkbox/radio più compatti: riduce l'area touch-target riservata.
+      .mdc-checkbox,
+      .mdc-radio {
+        padding: 4px !important;
+      }
+
+      .mat-mdc-checkbox label,
+      .mat-mdc-radio-button label {
+        font-size: 0.8125rem !important;
+      }
+
+      // Icon-button più compatti (usati per rimuovi/drag-handle/azioni riga).
+      .mat-mdc-icon-button {
+        width: 32px !important;
+        height: 32px !important;
+        padding: 4px !important;
+
+        .mat-icon {
+          font-size: 18px !important;
+          width: 18px !important;
+          height: 18px !important;
+        }
+      }
+
+      // Tab-header più basso.
+      .mdc-tab {
+        height: 40px !important;
+      }
+    }
   }
 
   // Tab-header sticky: resta visibile in cima mentre il contenuto scorre dentro mat-dialog-content.

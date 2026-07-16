@@ -67,6 +67,7 @@ export class UserCreateDialog implements OnInit {
     password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]],
     role: ['ADMIN', [Validators.required]],
     customerId: [null as string | null],
+    deliveryCustomerIds: [[] as string[]],
   });
 
   ngOnInit(): void {
@@ -76,19 +77,32 @@ export class UserCreateDialog implements OnInit {
     });
 
     this.form.controls.role.valueChanges.subscribe((role) => {
-      const ctrl = this.form.controls.customerId;
+      const customerCtrl = this.form.controls.customerId;
       if (role === 'CUSTOMER') {
-        ctrl.setValidators([Validators.required]);
+        customerCtrl.setValidators([Validators.required]);
       } else {
-        ctrl.clearValidators();
-        ctrl.setValue(null);
+        customerCtrl.clearValidators();
+        customerCtrl.setValue(null);
       }
-      ctrl.updateValueAndValidity();
+      customerCtrl.updateValueAndValidity();
+
+      const deliveryCtrl = this.form.controls.deliveryCustomerIds;
+      if (role === 'DELIVERY') {
+        deliveryCtrl.setValidators([Validators.required, Validators.minLength(1)]);
+      } else {
+        deliveryCtrl.clearValidators();
+        deliveryCtrl.setValue([]);
+      }
+      deliveryCtrl.updateValueAndValidity();
     });
   }
 
   get isCustomerRole(): boolean {
     return this.form.controls.role.value === 'CUSTOMER';
+  }
+
+  get isDeliveryRole(): boolean {
+    return this.form.controls.role.value === 'DELIVERY';
   }
 
   togglePasswordVisibility(): void {
@@ -108,6 +122,7 @@ export class UserCreateDialog implements OnInit {
       password: v.password,
       role: v.role,
       customerId: v.role === 'CUSTOMER' ? v.customerId : null,
+      deliveryCustomerIds: v.role === 'DELIVERY' ? v.deliveryCustomerIds : [],
     }).subscribe({
       next: (user) => {
         this.saving.set(false);

@@ -73,6 +73,20 @@
             </mat-form-field>
           }
 
+          @if (isDeliveryRole() && !isReadonlySelf()) {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'user.deliveryCustomersLabel' | translate }}</mat-label>
+              <mat-select formControlName="deliveryCustomerIds" required multiple>
+                @for (c of customers(); track c.id) {
+                  <mat-option [value]="c.id">{{ c.name }} ({{ c.slug }})</mat-option>
+                }
+              </mat-select>
+              @if (form.controls.deliveryCustomerIds.touched && form.controls.deliveryCustomerIds.invalid) {
+                <mat-error>{{ 'user.deliveryCustomersRequired' | translate }}</mat-error>
+              }
+            </mat-form-field>
+          }
+
           @if (!isReadonlySelf()) {
             <mat-slide-toggle formControlName="active">{{ 'user.activeToggle' | translate }}</mat-slide-toggle>
           }
