@@ -10,6 +10,8 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 
 import { TranslatePipe } from '@ngx-translate/core';
 
+import { extractExtra, reorderKeys } from '../../../../shared/utils/json-extra';
+
 export interface FaqItem {
   id: string;
   name: string;
@@ -45,16 +47,26 @@ export class SmhFaqEditorDialog {
   readonly dialogRef = inject<MatDialogRef<SmhFaqEditorDialog, SmhFaqJson>>(MatDialogRef);
   readonly data = inject<SmhFaqEditorDialogData>(MAT_DIALOG_DATA);
 
+  // Campi sconosciuti (non gestiti dalla UI) associati a ogni voce, più l'ordine
+  // originale delle chiavi: preservati entrambi al salvataggio.
+  // Deve essere inizializzato prima di faqArray, che lo usa in makeFaqGroup().
+  private readonly itemMetaByGroup = new WeakMap<FormGroup, { extra: Record<string, unknown>; order: string[] }>();
+
   readonly faqArray: FormArray = this.fb.array(
     (this.data.value ?? []).map((item) => this.makeFaqGroup(item)),
   );
 
   private makeFaqGroup(item?: Partial<FaqItem>): FormGroup {
-    return this.fb.nonNullable.group({
+    const group = this.fb.nonNullable.group({
       id:          [item?.id          ?? '', Validators.required],
       name:        [item?.name        ?? '', Validators.required],
       description: [item?.description ?? ''],
     });
+    this.itemMetaByGroup.set(group, {
+      extra: extractExtra(item, ['id', 'name', 'description']),
+      order: Object.keys(item ?? {}),
+    });
+    return group;
   }
 
   asFormGroup(ctrl: unknown): FormGroup { return ctrl as FormGroup; }
@@ -79,6 +91,12 @@ export class SmhFaqEditorDialog {
       this.faqArray.markAllAsTouched();
       return;
     }
-    this.dialogRef.close(this.faqArray.getRawValue() as SmhFaqJson);
+    const result: SmhFaqJson = this.faqArray.controls.map((ctrl) => {
+      const group = ctrl as FormGroup;
+      const meta = this.itemMetaByGroup.get(group);
+      const merged = { ...(meta?.extra ?? {}), ...group.getRawValue() };
+      return reorderKeys(merged, meta?.order ?? []) as unknown as FaqItem;
+    });
+    this.dialogRef.close(result);
   }
 }

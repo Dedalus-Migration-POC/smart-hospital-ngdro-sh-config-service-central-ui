@@ -11,6 +11,8 @@ import { MatTabsModule } from '@angular/material/tabs';
 
 import { TranslatePipe } from '@ngx-translate/core';
 
+import { extractExtra, reorderKeys } from '../../../../shared/utils/json-extra';
+
 export interface SmhColorScheme {
   primary: string;
   onPrimary: string;
@@ -101,6 +103,46 @@ export class SmhThemeDataEditorDialog {
 
   readonly fontWeights = FONT_WEIGHTS;
 
+  // Campi sconosciuti (non gestiti dalla UI) preservati al salvataggio.
+  private readonly topExtra = extractExtra(this.data.value, [
+    'primaryColor', 'primarySwatch', 'scaffoldBackgroundColor', 'colorScheme', 'textTheme', 'tabBarTheme', 'cardTheme',
+  ]);
+  private readonly colorSchemeExtra = extractExtra(this.data.value?.colorScheme, [
+    'brightness', 'primary', 'onPrimary', 'secondary', 'onSecondary', 'error', 'onError', 'surface', 'onSurface',
+  ]);
+  private readonly textThemeExtra = extractExtra(this.data.value?.textTheme, [
+    'fontFamily', 'titleLarge', 'bodyMedium', 'bodySmall', 'labelSmall',
+  ]);
+  private readonly titleLargeExtra = extractExtra(this.data.value?.textTheme?.titleLarge, ['fontWeight', 'fontSize']);
+  private readonly bodyMediumExtra = extractExtra(this.data.value?.textTheme?.bodyMedium, ['fontWeight', 'fontSize']);
+  private readonly bodySmallExtra = extractExtra(this.data.value?.textTheme?.bodySmall, ['fontWeight', 'fontSize']);
+  private readonly labelSmallExtra = extractExtra(this.data.value?.textTheme?.labelSmall, ['fontWeight', 'fontSize']);
+  private readonly tabBarThemeExtra = extractExtra(this.data.value?.tabBarTheme, [
+    'dividerColor', 'labelStyle', 'unselectedLabelStyle',
+  ]);
+  private readonly tabLabelStyleExtra = extractExtra(this.data.value?.tabBarTheme?.labelStyle, ['fontSize', 'fontWeight', 'color']);
+  private readonly tabUnselectedLabelStyleExtra = extractExtra(
+    this.data.value?.tabBarTheme?.unselectedLabelStyle, ['fontSize', 'fontWeight', 'color'],
+  );
+  private readonly cardThemeExtra = extractExtra(this.data.value?.cardTheme, ['elevation', 'color', 'shape']);
+  private readonly cardShapeExtra = extractExtra(this.data.value?.cardTheme?.shape, ['type', 'borderRadius']);
+
+  // Ordine originale delle chiavi di ciascun (sotto-)oggetto: serve a riposizionare
+  // correttamente eventuali campi extra dopo il merge con i valori del form.
+  private readonly topOrder = Object.keys(this.data.value ?? {});
+  private readonly colorSchemeOrder = Object.keys(this.data.value?.colorScheme ?? {});
+  private readonly textThemeOrder = Object.keys(this.data.value?.textTheme ?? {});
+  private readonly titleLargeOrder = Object.keys(this.data.value?.textTheme?.titleLarge ?? {});
+  private readonly bodyMediumOrder = Object.keys(this.data.value?.textTheme?.bodyMedium ?? {});
+  private readonly bodySmallOrder = Object.keys(this.data.value?.textTheme?.bodySmall ?? {});
+  private readonly labelSmallOrder = Object.keys(this.data.value?.textTheme?.labelSmall ?? {});
+  private readonly tabBarThemeOrder = Object.keys(this.data.value?.tabBarTheme ?? {});
+  private readonly tabLabelStyleOrder = Object.keys(this.data.value?.tabBarTheme?.labelStyle ?? {});
+  private readonly tabUnselectedLabelStyleOrder = Object.keys(this.data.value?.tabBarTheme?.unselectedLabelStyle ?? {});
+  private readonly cardThemeOrder = Object.keys(this.data.value?.cardTheme ?? {});
+  private readonly cardShapeOrder = Object.keys(this.data.value?.cardTheme?.shape ?? {});
+
+
   readonly form: FormGroup = this.fb.nonNullable.group({
     primaryColor:             [this.data.value?.primaryColor ?? '#19509A'],
     primarySwatch:            [this.data.value?.primarySwatch ?? 'blue'],
@@ -158,6 +200,23 @@ export class SmhThemeDataEditorDialog {
     }),
   });
 
+  constructor() {
+    // Il colore primario è duplicato in due punti del JSON (colori generali e
+    // schema colori): li teniamo sincronizzati in entrambe le direzioni.
+    this.linkControls('primaryColor', 'colorScheme.primary');
+  }
+
+  private linkControls(pathA: string, pathB: string): void {
+    const ctrlA = this.form.get(pathA)!;
+    const ctrlB = this.form.get(pathB)!;
+    ctrlA.valueChanges.subscribe((value) => {
+      if (ctrlB.value !== value) ctrlB.setValue(value, { emitEvent: false });
+    });
+    ctrlB.valueChanges.subscribe((value) => {
+      if (ctrlA.value !== value) ctrlA.setValue(value, { emitEvent: false });
+    });
+  }
+
   patchColor(path: string, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.form.get(path)?.setValue(value);
@@ -169,6 +228,43 @@ export class SmhThemeDataEditorDialog {
   }
 
   confirm(): void {
-    this.dialogRef.close(this.form.getRawValue() as SmhThemeDataJson);
+    const raw = this.form.getRawValue();
+    const merged: Record<string, unknown> = {
+      ...this.topExtra,
+      primaryColor: raw.primaryColor,
+      primarySwatch: raw.primarySwatch,
+      scaffoldBackgroundColor: raw.scaffoldBackgroundColor,
+      colorScheme: reorderKeys(
+        { ...this.colorSchemeExtra, ...raw.colorScheme },
+        this.colorSchemeOrder,
+      ),
+      textTheme: reorderKeys({
+        ...this.textThemeExtra,
+        fontFamily: raw.textTheme.fontFamily,
+        titleLarge: reorderKeys({ ...this.titleLargeExtra, ...raw.textTheme.titleLarge }, this.titleLargeOrder),
+        bodyMedium: reorderKeys({ ...this.bodyMediumExtra, ...raw.textTheme.bodyMedium }, this.bodyMediumOrder),
+        bodySmall: reorderKeys({ ...this.bodySmallExtra, ...raw.textTheme.bodySmall }, this.bodySmallOrder),
+        labelSmall: reorderKeys({ ...this.labelSmallExtra, ...raw.textTheme.labelSmall }, this.labelSmallOrder),
+      }, this.textThemeOrder),
+      tabBarTheme: reorderKeys({
+        ...this.tabBarThemeExtra,
+        dividerColor: raw.tabBarTheme.dividerColor,
+        labelStyle: reorderKeys(
+          { ...this.tabLabelStyleExtra, ...raw.tabBarTheme.labelStyle }, this.tabLabelStyleOrder,
+        ),
+        unselectedLabelStyle: reorderKeys(
+          { ...this.tabUnselectedLabelStyleExtra, ...raw.tabBarTheme.unselectedLabelStyle },
+          this.tabUnselectedLabelStyleOrder,
+        ),
+      }, this.tabBarThemeOrder),
+      cardTheme: reorderKeys({
+        ...this.cardThemeExtra,
+        elevation: raw.cardTheme.elevation,
+        color: raw.cardTheme.color,
+        shape: reorderKeys({ ...this.cardShapeExtra, ...raw.cardTheme.shape }, this.cardShapeOrder),
+      }, this.cardThemeOrder),
+    };
+    const result = reorderKeys(merged, this.topOrder) as unknown as SmhThemeDataJson;
+    this.dialogRef.close(result);
   }
 }

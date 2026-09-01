@@ -14,6 +14,7 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { SvgUploadField } from '../../../../shared/components/svg-upload-field/svg-upload-field';
+import { extractExtra, reorderKeys } from '../../../../shared/utils/json-extra';
 
 export interface ServiceItem {
   id: string;
@@ -83,8 +84,9 @@ export class SmhUiRenderEditorDialog {
   readonly data = inject<SmhUiRenderEditorDialogData>(MAT_DIALOG_DATA);
 
   // Campi sconosciuti (non gestiti dalla UI) associati a ogni FormGroup di lista
-  // (header/body items/widgets/navigation services): permette di non perderli al salvataggio.
-  private readonly extraByGroup = new WeakMap<FormGroup, Record<string, unknown>>();
+  // (header/body items/widgets/navigation services), più l'ordine originale delle
+  // chiavi dell'elemento: permette di non perdere né i campi né il loro ordine.
+  private readonly itemMetaByGroup = new WeakMap<FormGroup, { extra: Record<string, unknown>; order: string[] }>();
 
   readonly form = this.buildForm(this.data.value);
   readonly availableServiceIds: string[] = this.data.availableServiceIds ?? [];
@@ -100,28 +102,26 @@ export class SmhUiRenderEditorDialog {
 
   // Campi sconosciuti (non gestiti dalla UI) sui singoli oggetti: vengono
   // ripristinati al salvataggio così l'editor grafico non li elimina.
-  private readonly loginExtra = this.extractExtra(this.data.value?.login, ['svg_icon']);
-  private readonly splashExtra = this.extractExtra(this.data.value?.splash, ['svg_main_icon']);
-  private readonly appBarExtra = this.extractExtra(this.data.value?.home?.app_bar, ['title', 'svg_icon']);
-  private readonly searchBarExtra = this.extractExtra(this.data.value?.home?.search_bar, ['hint_label']);
-  private readonly homeExtra = this.extractExtra(this.data.value?.home, [
+  private readonly loginExtra = extractExtra(this.data.value?.login, ['svg_icon']);
+  private readonly splashExtra = extractExtra(this.data.value?.splash, ['svg_main_icon']);
+  private readonly appBarExtra = extractExtra(this.data.value?.home?.app_bar, ['title', 'svg_icon']);
+  private readonly searchBarExtra = extractExtra(this.data.value?.home?.search_bar, ['hint_label']);
+  private readonly homeExtra = extractExtra(this.data.value?.home, [
     'app_bar', 'search_bar', 'header', 'body', 'widgets', 'widget',
   ]);
-  private readonly navigationBarExtra = this.extractExtra(this.data.value?.navigation_bar, ['services']);
-  private readonly topExtra = this.extractExtra(
+  private readonly navigationBarExtra = extractExtra(this.data.value?.navigation_bar, ['services']);
+  private readonly topExtra = extractExtra(
     this.data.value as Record<string, unknown> | undefined,
     ['login', 'splash', 'home', 'navigation_bar'],
   );
 
-  // Restituisce le proprietà di `obj` non presenti in `knownKeys`.
-  private extractExtra(obj: object | undefined | null, knownKeys: string[]): Record<string, unknown> {
-    const extra: Record<string, unknown> = {};
-    if (!obj) return extra;
-    for (const [key, value] of Object.entries(obj)) {
-      if (!knownKeys.includes(key)) extra[key] = value;
-    }
-    return extra;
-  }
+  // Ordine originale delle chiavi dei sotto-oggetti semplici (non liste): serve a
+  // riposizionare correttamente eventuali campi extra dopo il merge con i valori form.
+  private readonly loginOrder = Object.keys(this.data.value?.login ?? {});
+  private readonly splashOrder = Object.keys(this.data.value?.splash ?? {});
+  private readonly appBarOrder = Object.keys(this.data.value?.home?.app_bar ?? {});
+  private readonly searchBarOrder = Object.keys(this.data.value?.home?.search_bar ?? {});
+  private readonly navigationBarOrder = Object.keys(this.data.value?.navigation_bar ?? {});
 
   private allUsedIds(): Set<string> {
     const ids = new Set<string>();
@@ -199,10 +199,8 @@ export class SmhUiRenderEditorDialog {
       show_lock: [item?.show_lock ?? false],
       link: [item?.link ?? ''],
     });
-    this.extraByGroup.set(
-      group,
-      this.extractExtra(item, ['id', 'title', 'subtitle', 'svg_icon', 'show_lock', 'link']),
-    );
+    const knownKeys = ['id', 'title', 'subtitle', 'svg_icon', 'show_lock', 'link'];
+    this.itemMetaByGroup.set(group, { extra: extractExtra(item, knownKeys), order: Object.keys(item ?? {}) });
     return group;
   }
 
@@ -213,7 +211,8 @@ export class SmhUiRenderEditorDialog {
       svg_icon: [item?.svg_icon ?? ''],
       show_card: [item?.show_card ?? true],
     });
-    this.extraByGroup.set(group, this.extractExtra(item, ['title', 'subtitle', 'svg_icon', 'show_card']));
+    const knownKeys = ['title', 'subtitle', 'svg_icon', 'show_card'];
+    this.itemMetaByGroup.set(group, { extra: extractExtra(item, knownKeys), order: Object.keys(item ?? {}) });
     return group;
   }
 
@@ -221,7 +220,7 @@ export class SmhUiRenderEditorDialog {
     const group = this.fb.nonNullable.group({
       id: [item?.id ?? '', Validators.required],
     });
-    this.extraByGroup.set(group, this.extractExtra(item, ['id']));
+    this.itemMetaByGroup.set(group, { extra: extractExtra(item, ['id']), order: Object.keys(item ?? {}) });
     return group;
   }
 
@@ -307,53 +306,36 @@ export class SmhUiRenderEditorDialog {
 
     const homeValues: Record<string, unknown> = {
       ...this.homeExtra,
-      app_bar: { ...this.appBarExtra, ...this.appBarGroup.getRawValue() },
-      search_bar: { ...this.searchBarExtra, ...this.searchBarGroup.getRawValue() },
+      app_bar: reorderKeys({ ...this.appBarExtra, ...this.appBarGroup.getRawValue() }, this.appBarOrder),
+      search_bar: reorderKeys({ ...this.searchBarExtra, ...this.searchBarGroup.getRawValue() }, this.searchBarOrder),
       header,
       body,
       ...(widgets.length > 0 ? { [this.widgetsKeyName]: widgets } : {}),
     };
-    const home = this.reorderKeys(homeValues, this.originalHomeKeys) as SmhUiRenderJson['home'];
+    const home = reorderKeys(homeValues, this.originalHomeKeys) as SmhUiRenderJson['home'];
 
     const topValues: Record<string, unknown> = {
       ...this.topExtra,
-      login: { ...this.loginExtra, ...this.loginGroup.getRawValue() },
-      splash: { ...this.splashExtra, ...this.splashGroup.getRawValue() },
+      login: reorderKeys({ ...this.loginExtra, ...this.loginGroup.getRawValue() }, this.loginOrder),
+      splash: reorderKeys({ ...this.splashExtra, ...this.splashGroup.getRawValue() }, this.splashOrder),
       home,
-      navigation_bar: { ...this.navigationBarExtra, services: navServices },
+      navigation_bar: reorderKeys({ ...this.navigationBarExtra, services: navServices }, this.navigationBarOrder),
     };
-    const result = this.reorderKeys(topValues, this.originalTopKeys) as SmhUiRenderJson;
+    const result = reorderKeys(topValues, this.originalTopKeys) as SmhUiRenderJson;
 
     this.dialogRef.close(result);
   }
 
   // Legge i valori di un FormArray unendo, per ciascun elemento, i campi gestiti
-  // dalla UI con gli eventuali campi sconosciuti catturati al caricamento.
+  // dalla UI con gli eventuali campi sconosciuti catturati al caricamento, nel
+  // medesimo ordine di chiavi del JSON originale.
   private readGroupArray<T>(arr: FormArray): T[] {
     return arr.controls.map((ctrl) => {
       const group = ctrl as FormGroup;
-      return { ...this.extraByGroup.get(group), ...group.getRawValue() } as T;
+      const meta = this.itemMetaByGroup.get(group);
+      const merged = { ...(meta?.extra ?? {}), ...group.getRawValue() };
+      return reorderKeys(merged, meta?.order ?? []) as T;
     });
-  }
-
-  // Riordina le chiavi di `values` secondo `originalOrder` (chiavi presenti nel JSON
-  // caricato inizialmente), lasciando in coda eventuali chiavi nuove non presenti prima.
-  private reorderKeys(
-    values: Record<string, unknown>,
-    originalOrder: string[],
-  ): Record<string, unknown> {
-    const result: Record<string, unknown> = {};
-    for (const key of originalOrder) {
-      if (key in values) {
-        result[key] = values[key];
-      }
-    }
-    for (const key of Object.keys(values)) {
-      if (!(key in result)) {
-        result[key] = values[key];
-      }
-    }
-    return result;
   }
 
   private moveInArray(arr: FormArray, from: number, to: number): void {

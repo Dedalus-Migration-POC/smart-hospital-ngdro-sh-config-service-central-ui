@@ -8,6 +8,8 @@ import { MatInputModule } from '@angular/material/input';
 
 import { TranslatePipe } from '@ngx-translate/core';
 
+import { extractExtra, reorderKeys } from '../../../../shared/utils/json-extra';
+
 export interface SmhMinAppVersionJson {
   ios: string;
   android: string;
@@ -43,11 +45,16 @@ export class SmhMinAppVersionEditorDialog {
     android: [this.data.value?.android ?? '1.0', Validators.required],
   });
 
+  // Campi sconosciuti (non gestiti dalla UI) preservati al salvataggio.
+  private readonly topExtra = extractExtra(this.data.value, ['ios', 'android']);
+  private readonly topOrder = Object.keys(this.data.value ?? {});
+
   confirm(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    this.dialogRef.close(this.form.getRawValue() as SmhMinAppVersionJson);
+    const merged = { ...this.topExtra, ...this.form.getRawValue() };
+    this.dialogRef.close(reorderKeys(merged, this.topOrder) as unknown as SmhMinAppVersionJson);
   }
 }

@@ -11,6 +11,7 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { SvgUploadField } from '../../../../shared/components/svg-upload-field/svg-upload-field';
+import { extractExtra, reorderKeys } from '../../../../shared/utils/json-extra';
 
 export interface SpidProvider {
   id: string;
@@ -50,16 +51,28 @@ export class SmhSpidProviderEditorDialog {
   readonly dialogRef = inject<MatDialogRef<SmhSpidProviderEditorDialog, SmhSpidProviderJson>>(MatDialogRef);
   readonly data = inject<SmhSpidProviderEditorDialogData>(MAT_DIALOG_DATA);
 
+  // Campi sconosciuti (non gestiti dalla UI) preservati al salvataggio, con l'ordine
+  // originale delle chiavi (sia a livello top che per ciascun provider).
+  // Deve essere inizializzato prima di providersArray, che usa itemMetaByGroup in makeProviderGroup().
+  private readonly topExtra = extractExtra(this.data.value, ['providers']);
+  private readonly topOrder = Object.keys(this.data.value ?? {});
+  private readonly itemMetaByGroup = new WeakMap<FormGroup, { extra: Record<string, unknown>; order: string[] }>();
+
   readonly providersArray: FormArray = this.fb.array(
     (this.data.value.providers ?? []).map((p) => this.makeProviderGroup(p)),
   );
 
   private makeProviderGroup(p?: Partial<SpidProvider>): FormGroup {
-    return this.fb.nonNullable.group({
+    const group = this.fb.nonNullable.group({
       id:      [p?.id      ?? '', Validators.required],
       name:    [p?.name    ?? '', Validators.required],
       svgCode: [p?.svgCode ?? ''],
     });
+    this.itemMetaByGroup.set(group, {
+      extra: extractExtra(p, ['id', 'name', 'svgCode']),
+      order: Object.keys(p ?? {}),
+    });
+    return group;
   }
 
   asFormGroup(ctrl: unknown): FormGroup { return ctrl as FormGroup; }
@@ -84,7 +97,13 @@ export class SmhSpidProviderEditorDialog {
       this.providersArray.markAllAsTouched();
       return;
     }
-    const providers = this.providersArray.getRawValue() as SpidProvider[];
-    this.dialogRef.close({ providers });
+    const providers: SpidProvider[] = this.providersArray.controls.map((ctrl) => {
+      const group = ctrl as FormGroup;
+      const meta = this.itemMetaByGroup.get(group);
+      const merged = { ...(meta?.extra ?? {}), ...group.getRawValue() };
+      return reorderKeys(merged, meta?.order ?? []) as unknown as SpidProvider;
+    });
+    const result = { ...this.topExtra, providers };
+    this.dialogRef.close(reorderKeys(result, this.topOrder) as unknown as SmhSpidProviderJson);
   }
 }

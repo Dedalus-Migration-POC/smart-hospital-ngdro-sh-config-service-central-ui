@@ -10,6 +10,8 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 
 import { TranslatePipe } from '@ngx-translate/core';
 
+import { extractExtra, reorderKeys } from '../../../../shared/utils/json-extra';
+
 export interface NewsItem {
   title: string;
   url: string;
@@ -44,15 +46,25 @@ export class SmhNewsEditorDialog {
   readonly dialogRef = inject<MatDialogRef<SmhNewsEditorDialog, SmhNewsJson>>(MatDialogRef);
   readonly data = inject<SmhNewsEditorDialogData>(MAT_DIALOG_DATA);
 
+  // Campi sconosciuti (non gestiti dalla UI) associati a ogni voce, più l'ordine
+  // originale delle chiavi: preservati entrambi al salvataggio.
+  // Deve essere inizializzato prima di newsArray, che lo usa in makeGroup().
+  private readonly itemMetaByGroup = new WeakMap<FormGroup, { extra: Record<string, unknown>; order: string[] }>();
+
   readonly newsArray: FormArray = this.fb.array(
     (this.data.value ?? []).map((item) => this.makeGroup(item)),
   );
 
   private makeGroup(item?: Partial<NewsItem>): FormGroup {
-    return this.fb.nonNullable.group({
+    const group = this.fb.nonNullable.group({
       title: [item?.title ?? '', Validators.required],
       url:   [item?.url   ?? '', Validators.required],
     });
+    this.itemMetaByGroup.set(group, {
+      extra: extractExtra(item, ['title', 'url']),
+      order: Object.keys(item ?? {}),
+    });
+    return group;
   }
 
   asFormGroup(ctrl: unknown): FormGroup { return ctrl as FormGroup; }
@@ -77,6 +89,12 @@ export class SmhNewsEditorDialog {
       this.newsArray.markAllAsTouched();
       return;
     }
-    this.dialogRef.close(this.newsArray.getRawValue() as SmhNewsJson);
+    const result: SmhNewsJson = this.newsArray.controls.map((ctrl) => {
+      const group = ctrl as FormGroup;
+      const meta = this.itemMetaByGroup.get(group);
+      const merged = { ...(meta?.extra ?? {}), ...group.getRawValue() };
+      return reorderKeys(merged, meta?.order ?? []) as unknown as NewsItem;
+    });
+    this.dialogRef.close(result);
   }
 }

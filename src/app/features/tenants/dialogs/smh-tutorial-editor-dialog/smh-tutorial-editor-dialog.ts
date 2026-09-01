@@ -8,6 +8,8 @@ import { MatInputModule } from '@angular/material/input';
 
 import { TranslatePipe } from '@ngx-translate/core';
 
+import { extractExtra, reorderKeys } from '../../../../shared/utils/json-extra';
+
 export interface SmhTutorialJson {
   cdnBaseUrl: string;
   youtubePlaylistUrl: string;
@@ -43,11 +45,16 @@ export class SmhTutorialEditorDialog {
     youtubePlaylistUrl: [this.data.value?.youtubePlaylistUrl ?? ''],
   });
 
+  // Campi sconosciuti (non gestiti dalla UI) preservati al salvataggio.
+  private readonly topExtra = extractExtra(this.data.value, ['cdnBaseUrl', 'youtubePlaylistUrl']);
+  private readonly topOrder = Object.keys(this.data.value ?? {});
+
   confirm(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    this.dialogRef.close(this.form.getRawValue() as SmhTutorialJson);
+    const merged = { ...this.topExtra, ...this.form.getRawValue() };
+    this.dialogRef.close(reorderKeys(merged, this.topOrder) as unknown as SmhTutorialJson);
   }
 }

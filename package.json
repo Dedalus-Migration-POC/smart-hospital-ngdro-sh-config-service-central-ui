@@ -1,6 +1,6 @@
 {
   "name": "sh-config-service-central-ui",
-  "version": "1.2.11",
+  "version": "1.2.12",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.local.json",

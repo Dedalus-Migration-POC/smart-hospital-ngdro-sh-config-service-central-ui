@@ -67,6 +67,7 @@ import {
   SmhNewsJson,
 } from '../../dialogs/smh-news-editor-dialog/smh-news-editor-dialog';
 import {
+  ServiceItem,
   SmhServiceConfigEditorDialog,
   SmhServiceConfigEditorDialogData,
   SmhServiceConfigJson,
@@ -831,7 +832,7 @@ export class ConfigChannelSection {
       try { parsed = JSON.parse(raw) as SmhServiceConfigJson; } catch { /* usa vuoto */ }
     }
     const data: SmhServiceConfigEditorDialogData = { value: parsed };
-    const ref = this.dialog.open<SmhServiceConfigEditorDialog, SmhServiceConfigEditorDialogData, SmhServiceConfigJson>(
+    const ref = this.dialog.open<SmhServiceConfigEditorDialog, SmhServiceConfigEditorDialogData, SmhServiceConfigJson | ServiceItem[]>(
       SmhServiceConfigEditorDialog,
       { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px', maxHeight: '90svh' },
     );
