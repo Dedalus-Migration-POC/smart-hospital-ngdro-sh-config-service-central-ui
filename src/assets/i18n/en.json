@@ -1059,7 +1059,6 @@
       "removeCallLabel": "removeCall — call executed when removing from favorites",
       "removeCallSkippedTip": "If favoriteIdField is empty for the item, removeCall is silently skipped (no HTTP call, no error).",
       "removeFromLabel": "removeFrom — removes the item from a state group after success",
-      "rowActionsTip": "Row/menu-item/actionsSheet actions are configured directly in the section (step 3) or in the raw JSON view.",
       "title": "primaryAction (FloatingActionButton, optional)",
       "updateInGroupsLabel": "updateInGroups — also updates the item inside grouped lists in state"
     },
@@ -1381,8 +1380,7 @@
       "globalActionsSheetLabel": "Detail actions (actionsSheet)",
       "actionsSheetTip": "List of actions shown in a bottom sheet from the row detail.",
       "dynamicLabelToggle": "Dynamic label based on a field (field + labelKeyWhenTrue/False)",
-      "actionJsonLabel": "action (raw JSON, manual §6)",
-      "actionJsonHint": "Full declarative action (same structure as the \"Actions\" step) — paste it as JSON. If empty or invalid, this entry is omitted from the generated JSON.",
+      "actionLabel": "Action (manual §6)",
       "addActionButton": "Add action"
     },
     "sectionTypes": {

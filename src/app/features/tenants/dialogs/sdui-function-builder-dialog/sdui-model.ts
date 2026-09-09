@@ -427,10 +427,9 @@ export interface SduiActionSheetItem {
   field?: string;
   labelKeyWhenTrue?: string;
   labelKeyWhenFalse?: string;
-  /** Wizard-only: `action` (§6 manuale) editata come JSON grezzo — evita di dover
-   * reimplementare l'intero editor azione (già molto ricco, vedi step "Azioni") per ogni
-   * voce di actionsSheet; stessa strategia già usata per initialStateJson/call.body. */
-  actionJson: string;
+  /** `action` (§6 manuale) — stesso editor grafico generico riusato per primaryAction e
+   * per le voci di menu (vedi #actionEditor nel template). */
+  action: SduiAction;
   visibleWhenFieldTrue?: string;
   visibleWhenFieldFalse?: string;
 }
@@ -468,7 +467,7 @@ export function createEmptyRowDetailSection(): SduiRowDetailSection {
 }
 
 export function createEmptyActionSheetItem(): SduiActionSheetItem {
-  return { labelKey: '', actionJson: JSON.stringify(createEmptyAction(), null, 2) };
+  return { labelKey: '', action: createEmptyAction() };
 }
 
 export interface SduiMenuItem {
@@ -1347,15 +1346,10 @@ function cleanSection(s: SduiSection): Record<string, unknown> {
   return withRaw(s, SDUI_SECTION_KNOWN_KEYS, out);
 }
 
-/** Serializza una voce di actionsSheet (§3.10 manuale): `action` è editata come JSON
- * grezzo nel wizard (SduiActionSheetItem.actionJson) e riparsata qui a fine flusso.
- * Se il JSON è vuoto/non valido, la voce viene scartata silenziosamente (segnalato dal
- * validatore "Regole", non blocca la generazione delle altre voci). */
-function cleanActionSheetItem(item: SduiActionSheetItem): Record<string, unknown> | null {
-  let action: unknown = null;
-  try { action = item.actionJson?.trim() ? JSON.parse(item.actionJson) : null; } catch { action = null; }
-  if (!action) return null;
-  const out: Record<string, unknown> = { action };
+/** Serializza una voce di actionsSheet (§3.10 manuale): `action` è editata con lo stesso
+ * editor grafico generico di primaryAction/menu (vedi #actionEditor nel template). */
+function cleanActionSheetItem(item: SduiActionSheetItem): Record<string, unknown> {
+  const out: Record<string, unknown> = { action: cleanAction(item.action) };
   if (item.labelKey) out['labelKey'] = item.labelKey;
   if (item.field) out['field'] = item.field;
   if (item.labelKeyWhenTrue) out['labelKeyWhenTrue'] = item.labelKeyWhenTrue;
@@ -1366,7 +1360,7 @@ function cleanActionSheetItem(item: SduiActionSheetItem): Record<string, unknown
 }
 
 function cleanActionsSheet(items: SduiActionSheetItem[] | undefined): Record<string, unknown>[] {
-  return (items ?? []).map(cleanActionSheetItem).filter((x): x is Record<string, unknown> => x !== null);
+  return (items ?? []).map(cleanActionSheetItem);
 }
 
 function cleanRowDetailSection(s: SduiRowDetailSection): Record<string, unknown> {

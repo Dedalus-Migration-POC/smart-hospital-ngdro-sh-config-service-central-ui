@@ -75,6 +75,13 @@ import { SduiIssue, validateDescriptor } from './sdui-validator';
 import { collectTranslationKeys, hasTranslation } from './sdui-translations';
 import { formatPathPreviewValue, PathPreviewResult, resolveSampleFieldKey, resolveSamplePath } from './sdui-path-preview';
 
+/** Localizza un'azione (§6 manuale) all'interno del descriptor: usato dall'editor azione
+ * generico, riusato per primaryAction, menu.items[].action e rowDetail.actionsSheet[].action. */
+export type SduiActionRef =
+  | { kind: 'primary' }
+  | { kind: 'menuItem'; si: number; mi: number }
+  | { kind: 'actionsSheet'; si: number; ai: number; rsi?: number };
+
 export interface SduiFunctionBuilderDialogData {
   /** JSON esistente (se si sta editando una funzione già pubblicata) o null per una nuova. */
   value: Record<string, unknown> | null;
@@ -1139,98 +1146,124 @@ export class SduiFunctionBuilderDialog {
   }
 
   // ------------------------------------------------------------------
-  // Step 5 — Actions (primaryAction)
+  // Editor azione generico — riusato da primaryAction, menu.items[].action
+  // e rowDetail.actionsSheet[].action (§6 manuale). Ogni istanza è individuata
+  // da un SduiActionRef che localizza l'azione all'interno del descriptor.
   // ------------------------------------------------------------------
+
+  readonly primaryActionRef: SduiActionRef = { kind: 'primary' };
+  menuItemActionRef(si: number, mi: number): SduiActionRef { return { kind: 'menuItem', si, mi }; }
+  actionSheetItemActionRef(si: number, ai: number, rsi?: number): SduiActionRef { return { kind: 'actionsSheet', si, ai, rsi }; }
+
+  private actionAt(d: SduiDescriptor, ref: SduiActionRef): SduiAction | null | undefined {
+    switch (ref.kind) {
+      case 'primary': return d.primaryAction;
+      case 'menuItem': return d.sections[ref.si]?.items?.[ref.mi]?.action;
+      case 'actionsSheet': return this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet?.[ref.ai]?.action;
+    }
+  }
+  private setActionAt(d: SduiDescriptor, ref: SduiActionRef, action: SduiAction): void {
+    switch (ref.kind) {
+      case 'primary': d.primaryAction = action; return;
+      case 'menuItem': { const item = d.sections[ref.si]?.items?.[ref.mi]; if (item) item.action = action; return; }
+      case 'actionsSheet': { const item = this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet?.[ref.ai]; if (item) item.action = action; return; }
+    }
+  }
 
   toggleHasPrimaryAction(has: boolean): void {
     this.update(d => { d.primaryAction = has ? createEmptyAction('reload') : null; });
   }
-  setPrimaryActionType(type: SduiActionType): void {
-    this.update(d => { d.primaryAction = createEmptyAction(type); });
+  setActionType(ref: SduiActionRef, type: SduiActionType): void {
+    this.update(d => { this.setActionAt(d, ref, createEmptyAction(type)); });
   }
-  setActionProp<K extends keyof SduiAction>(key: K, value: SduiAction[K]): void {
-    this.update(d => { if (d.primaryAction) d.primaryAction[key] = value; });
+  setActionProp<K extends keyof SduiAction>(ref: SduiActionRef, key: K, value: SduiAction[K]): void {
+    this.update(d => { const a = this.actionAt(d, ref); if (a) a[key] = value; });
   }
   actionWarning(type: SduiActionType): string | undefined {
     return this.actionTypes.find(t => t.value === type)?.warning;
   }
 
   // call / addCall / removeCall (confirmAndCall, toggleField, toggleFavorite)
-  private actionCallSpec(which: 'call' | 'addCall' | 'removeCall'): SduiCallSpec | undefined {
-    return this.descriptor().primaryAction?.[which];
+  private actionCallSpec(ref: SduiActionRef, which: 'call' | 'addCall' | 'removeCall'): SduiCallSpec | undefined {
+    return this.actionAt(this.descriptor(), ref)?.[which];
   }
-  setActionCallProp(which: 'call' | 'addCall' | 'removeCall', key: keyof SduiCallSpec, value: unknown): void {
+  setActionCallProp(ref: SduiActionRef, which: 'call' | 'addCall' | 'removeCall', key: keyof SduiCallSpec, value: unknown): void {
     this.update(d => {
-      if (!d.primaryAction) return;
-      const spec = d.primaryAction[which] ?? { endpoint: '', method: 'POST' };
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      const spec = a[which] ?? { endpoint: '', method: 'POST' };
       (spec as unknown as Record<string, unknown>)[key] = value;
-      d.primaryAction[which] = spec;
+      a[which] = spec;
     });
   }
-  actionCallBodyMappingKeys(which: 'call' | 'addCall' | 'removeCall'): string[] {
-    return Object.keys(this.actionCallSpec(which)?.bodyMapping ?? {});
+  actionCallBodyMappingKeys(ref: SduiActionRef, which: 'call' | 'addCall' | 'removeCall'): string[] {
+    return Object.keys(this.actionCallSpec(ref, which)?.bodyMapping ?? {});
   }
-  addActionCallBodyMapping(which: 'call' | 'addCall' | 'removeCall'): void {
+  addActionCallBodyMapping(ref: SduiActionRef, which: 'call' | 'addCall' | 'removeCall'): void {
     this.update(d => {
-      if (!d.primaryAction) return;
-      const spec = d.primaryAction[which] ?? { endpoint: '', method: 'POST' };
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      const spec = a[which] ?? { endpoint: '', method: 'POST' };
       spec.bodyMapping = { ...(spec.bodyMapping ?? {}), '': '' };
-      d.primaryAction[which] = spec;
+      a[which] = spec;
     });
   }
-  setActionCallBodyMappingValue(which: 'call' | 'addCall' | 'removeCall', key: string, value: string): void {
+  setActionCallBodyMappingValue(ref: SduiActionRef, which: 'call' | 'addCall' | 'removeCall', key: string, value: string): void {
     this.update(d => {
-      const spec = d.primaryAction?.[which];
+      const spec = this.actionAt(d, ref)?.[which];
       if (spec?.bodyMapping) spec.bodyMapping[key] = value;
     });
   }
-  renameActionCallBodyMappingKey(which: 'call' | 'addCall' | 'removeCall', oldKey: string, newKey: string): void {
+  renameActionCallBodyMappingKey(ref: SduiActionRef, which: 'call' | 'addCall' | 'removeCall', oldKey: string, newKey: string): void {
     this.update(d => {
-      const spec = d.primaryAction?.[which];
+      const spec = this.actionAt(d, ref)?.[which];
       if (!spec?.bodyMapping || oldKey === newKey) return;
       const value = spec.bodyMapping[oldKey];
       delete spec.bodyMapping[oldKey];
       spec.bodyMapping[newKey] = value;
     });
   }
-  removeActionCallBodyMappingEntry(which: 'call' | 'addCall' | 'removeCall', key: string): void {
+  removeActionCallBodyMappingEntry(ref: SduiActionRef, which: 'call' | 'addCall' | 'removeCall', key: string): void {
     this.update(d => {
-      const spec = d.primaryAction?.[which];
+      const spec = this.actionAt(d, ref)?.[which];
       if (spec?.bodyMapping) delete spec.bodyMapping[key];
     });
   }
 
   // onSuccess (confirmAndCall)
-  setActionOnSuccessProp(key: 'messageKey' | 'refreshDataSource', value: unknown): void {
+  setActionOnSuccessProp(ref: SduiActionRef, key: 'messageKey' | 'refreshDataSource', value: unknown): void {
     this.update(d => {
-      if (!d.primaryAction) return;
-      d.primaryAction.onSuccess = { ...(d.primaryAction.onSuccess ?? {}), [key]: value };
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      a.onSuccess = { ...(a.onSuccess ?? {}), [key]: value };
     });
   }
-  toggleActionOnSuccessRemoveFrom(has: boolean): void {
+  toggleActionOnSuccessRemoveFrom(ref: SduiActionRef, has: boolean): void {
     this.update(d => {
-      if (!d.primaryAction) return;
-      d.primaryAction.onSuccess = { ...(d.primaryAction.onSuccess ?? {}) };
-      d.primaryAction.onSuccess.removeFrom = has ? { groupsPath: '', groupItemsField: '', matchField: '' } : undefined;
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      a.onSuccess = { ...(a.onSuccess ?? {}) };
+      a.onSuccess.removeFrom = has ? { groupsPath: '', groupItemsField: '', matchField: '' } : undefined;
     });
   }
-  setActionOnSuccessRemoveFromProp(key: 'groupsPath' | 'groupItemsField' | 'matchField', value: string): void {
+  setActionOnSuccessRemoveFromProp(ref: SduiActionRef, key: 'groupsPath' | 'groupItemsField' | 'matchField', value: string): void {
     this.update(d => {
-      const removeFrom = d.primaryAction?.onSuccess?.removeFrom;
+      const removeFrom = this.actionAt(d, ref)?.onSuccess?.removeFrom;
       if (removeFrom) removeFrom[key] = value;
     });
   }
 
   // updateInGroups (toggleField, toggleFavorite)
-  toggleActionUpdateInGroups(has: boolean): void {
+  toggleActionUpdateInGroups(ref: SduiActionRef, has: boolean): void {
     this.update(d => {
-      if (!d.primaryAction) return;
-      d.primaryAction.updateInGroups = has ? { groupsPath: '', groupItemsField: '', matchField: '' } : undefined;
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      a.updateInGroups = has ? { groupsPath: '', groupItemsField: '', matchField: '' } : undefined;
     });
   }
-  setActionUpdateInGroupsProp(key: 'groupsPath' | 'groupItemsField' | 'matchField', value: string): void {
+  setActionUpdateInGroupsProp(ref: SduiActionRef, key: 'groupsPath' | 'groupItemsField' | 'matchField', value: string): void {
     this.update(d => {
-      const groups = d.primaryAction?.updateInGroups;
+      const groups = this.actionAt(d, ref)?.updateInGroups;
       if (groups) groups[key] = value;
     });
   }
@@ -1797,7 +1830,7 @@ function actionSheetItemFromJson(a: Record<string, unknown>): SduiActionSheetIte
     labelKeyWhenFalse: a['labelKeyWhenFalse'] as string | undefined,
     visibleWhenFieldTrue: a['visibleWhenFieldTrue'] as string | undefined,
     visibleWhenFieldFalse: a['visibleWhenFieldFalse'] as string | undefined,
-    actionJson: JSON.stringify(a['action'] ?? { type: 'reload' }, null, 2),
+    action: actionFromJson((a['action'] as Record<string, unknown>) ?? { type: 'reload' }),
   };
 }
 

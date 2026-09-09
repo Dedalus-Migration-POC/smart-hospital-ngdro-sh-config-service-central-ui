@@ -240,20 +240,25 @@ volta che si aggiunge un campo al modello e alla UI, verificare SEMPRE che il co
 `clean*()` lo includa, e testare con un round-trip JSON→wizard→JSON per verificarlo empiricamente.
 
 **Pattern "JSON grezzo" per strutture nidificate complesse/rare**: quando costruire un editor
-grafico completo per una sotto-struttura sarebbe sproporzionato rispetto al beneficio (es. l'`action`
-dichiarativa §6 dentro `rowDetail.actionsSheet[]`, che richiederebbe un editor azione generico e
-indicizzabile — oggi non esiste, l'unico editor azione esistente è legato a `descriptor().primaryAction`
-in modo non riusabile), si memorizza il valore come **stringa JSON grezza wizard-only** (es.
-`actionJson: string`), editata in una textarea e ri-parsata via try/catch solo in fase di
-serializzazione (`clean*()`), scartando silenziosamente la voce se il JSON è vuoto/non valido.
-Precedenti dello stesso pattern: `SduiDescriptor.initialStateJson`, `SduiSequenceCall.body`.
+grafico completo per una sotto-struttura sarebbe sproporzionato rispetto al beneficio, si memorizza
+il valore come **stringa JSON grezza wizard-only** (es. `initialStateJson: string`), editata in una
+textarea e ri-parsata via try/catch solo in fase di serializzazione (`clean*()`), scartando
+silenziosamente la voce se il JSON è vuoto/non valido. Precedenti: `SduiDescriptor.initialStateJson`,
+`SduiSequenceCall.body`.
 
-**Limite noto — nessun editor azione generico riusabile**: sia `menu.items[].action` sia
-(prima di questo pattern) `rowDetail.actionsSheet[].action` non avevano/non hanno un editor grafico
-indicizzabile; l'unico editor azione ricco esistente (step "Azioni") è cablato su un singolo
-`descriptor().primaryAction` globale tramite setter non parametrizzati (`setActionProp` etc.).
-Costruire un editor azione generico multi-istanza sarebbe un refactoring cross-cutting a parte,
-non fatto finora — se richiesto in futuro, va proposto come todo indipendente.
+**Editor azione generico riusabile (`SduiActionRef`)**: l'editor grafico completo per `SduiAction`
+(§6 manuale: `navigateSdui`, `reload`, `openExternal`, `call`, `downloadFile`, `confirmAndCall`,
+`toggleField`, `toggleFavorite`, con relative `bodyMapping`/`onSuccess`) è definito **una sola volta**
+come `<ng-template #actionEditor let-pa="pa" let-ref="ref">` in fondo a
+`sdui-function-builder-dialog.html`, e istanziato in 3 punti: `descriptor().primaryAction` (step
+"Azioni"), ogni `menu.items[].action` (loop sezione MENU), ogni `rowDetail.actionsSheet[].action`
+(template `#actionsSheetEditor`, incluse le varianti nidificate in `rowDetail.sections[]`). Il
+targeting è parametrizzato tramite il tipo `SduiActionRef` (`{kind:'primary'} |
+{kind:'menuItem', si, mi} | {kind:'actionsSheet', si, ai, rsi?}`, definito in
+`sdui-function-builder-dialog.ts`) passato come primo argomento a tutti i metodi di editing azione
+(`setActionType`, `setActionCallProp`, `addActionCallBodyMapping`, `setActionOnSuccessProp`, etc.),
+risolto internamente da `actionAt()`/`setActionAt()`. **Non esistono più** editor azione JSON-textarea
+o azioni prive di UI grafica in nessuno dei tre contesti.
 
 **Opzioni remote (`options.source === 'remote'`, §10 manuale)**: oltre a `endpoint`/`auth`/
 `valueTemplate`/`labelTemplate`, supporta `itemsField`, `sublabelTemplate`, `metaFields`, `pageSize`

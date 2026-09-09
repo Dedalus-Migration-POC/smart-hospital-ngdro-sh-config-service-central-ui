@@ -1052,7 +1052,6 @@
       "removeCallLabel": "removeCall — chiamata eseguita quando si rimuove dai preferiti",
       "removeCallSkippedTip": "Se favoriteIdField è vuoto per l'item, removeCall viene saltata silenziosamente (nessuna chiamata HTTP, nessun errore).",
       "removeFromLabel": "removeFrom — rimuove l'item da un gruppo nello stato dopo il successo",
-      "rowActionsTip": "Le azioni per riga/voce di menu/actionsSheet si configurano direttamente nella sezione (step 3) o nella vista JSON grezza.",
       "title": "primaryAction (FloatingActionButton, opzionale)",
       "updateInGroupsLabel": "updateInGroups — aggiorna l'item anche dentro liste raggruppate nello stato"
     },
@@ -1374,8 +1373,7 @@
       "globalActionsSheetLabel": "Azioni del dettaglio (actionsSheet)",
       "actionsSheetTip": "Elenco di azioni mostrate in un bottom sheet dal dettaglio riga.",
       "dynamicLabelToggle": "Etichetta dinamica in base a un campo (field + labelKeyWhenTrue/False)",
-      "actionJsonLabel": "action (JSON grezzo, §6 manuale)",
-      "actionJsonHint": "Azione dichiarativa completa (stessa struttura dello step \"Azioni\") — incollala come JSON. Se vuota o non valida, questa voce viene omessa dal JSON generato.",
+      "actionLabel": "Azione (§6 manuale)",
       "addActionButton": "Aggiungi azione"
     },
     "sectionTypes": {
