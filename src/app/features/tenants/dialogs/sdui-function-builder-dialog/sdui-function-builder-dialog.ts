@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -125,6 +125,10 @@ const FLOW_WIZARD_STEPS = [
     MatTooltipModule,
     DragDropModule,
     TranslatePipe,
+  ],
+  providers: [
+    // Campi compatti: non riservare spazio fisso per hint/errore quando assenti (662 mat-form-field nel wizard).
+    { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { subscriptSizing: 'dynamic', appearance: 'outline' } },
   ],
   templateUrl: './sdui-function-builder-dialog.html',
   styleUrl: './sdui-function-builder-dialog.scss',

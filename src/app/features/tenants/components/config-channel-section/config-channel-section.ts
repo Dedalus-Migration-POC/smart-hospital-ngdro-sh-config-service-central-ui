@@ -851,7 +851,7 @@ export class ConfigChannelSection {
     const data: SduiFunctionBuilderDialogData = { value, entityName: this.entity(), tenantId: this.tenantId() };
     const ref = this.dialog.open<SduiFunctionBuilderDialog, SduiFunctionBuilderDialogData, Record<string, unknown>>(
       SduiFunctionBuilderDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '1200px', width: '1200px', maxHeight: '92svh' },
+      { data, autoFocus: 'first-tabbable', width: '96vw', maxWidth: '1800px', height: '94vh', maxHeight: '94vh' },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;
