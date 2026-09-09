@@ -947,6 +947,9 @@
                       <input matInput [ngModel]="rqt.targetPath" (ngModelChange)="setRequestTransformProp('targetPath', $event)" />
                     </mat-form-field>
                   </div>
+                  @if (pathPreview(rqt.itemsPath); as pv) {
+                    <p class="sdui-wizard__path-preview" [class.sdui-wizard__path-preview--warn]="!pv.found">{{ pv.display }}</p>
+                  }
                   <h4>{{ 'sduiWizard.dataSource.fieldsMapTitle' | translate }}</h4>
                   @for (key of requestTransformFieldKeys(); track key) {
                     <div class="sdui-wizard__row">
