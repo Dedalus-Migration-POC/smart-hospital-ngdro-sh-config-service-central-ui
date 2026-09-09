@@ -142,6 +142,7 @@ DB locale: customer "asl-latina", installation "localdev" (→ on-prem `:8080`),
 - [x] Browser fallback push config (`PushPackage`): se central non raggiunge on-prem, il browser fa il fetch diretto e poi `pushConfirm`
 - [x] Browser fallback provisioning (`ProvisionPackage`): se central non raggiunge on-prem per provision/rotate READ key o per crea tenant, il browser fa il POST diretto sull'on-prem
 - [x] Wizard costruttore funzioni SDUI (`sdui-function-builder-dialog`): copertura feature HIGH-priority del manuale (toggle favorite, confirmAndCall.onSuccess, toggleField avanzato, showSuccessScreen, radioCardList avanzato, validation errorKeys, opzioni remote avanzate, rowDetail con sections/actionsSheet)
+- [x] Wizard SDUI — chiusura gap avanzati: preservazione raw di chiavi extra non gestite (`withRaw()`), dataSource (bodyMapping/defaultDateRange), flattenNested (trueValue/falseValue/rootFields), onSubmit (requestTransform/multipart), flow (descriptionKey/reviewFields), sezioni (itemTemplate.enabledWhenField*, editor completo `filterButton` per table/groupedTable/cardList)
 - [ ] Build produzione + Dockerfile + Jenkinsfile
 
 ## Note implementative importanti
@@ -287,8 +288,20 @@ JSON" e confrontare l'output rigenerato col JSON incollato (deve corrispondere s
 minori riordini di chiavi sono normali) → **mai cliccare "Salva e pusha"**, ricaricare la pagina per
 confermare che l'entity scratch non sia stata persistita (sparisce dalla lista).
 
-**Warning "dati non gestiti dal wizard"** (diff generico tra JSON originale e rigenerato, todo
-`generic-raw-json-preservation` non ancora affrontato): può segnalare falsi positivi quando un
-`clean*()` omette intenzionalmente un campo perché uguale al default (es. `attachedDocuments.field`
-omesso se `=== 'documents'`) — non è un bug, è un limite noto del diff-tracker attuale, che confronta
-testualmente senza conoscere le regole di default-omission dei vari `clean*()`.
+**Preservazione raw generica (`withRaw()`, todo `generic-raw-json-preservation` completato)**:
+ogni `clean*()` in `sdui-model.ts` chiama `withRaw(out, entity.__raw, KNOWN_KEYS)` come ultimo
+passo, che ricopia nel JSON finale qualunque chiave presente nell'oggetto originale (`__raw`,
+popolato al parsing) ma non in `KNOWN_KEYS` (whitelist esplicita dei campi gestiti dal wizard per
+quel tipo). Così un campo custom/non ancora modellato sopravvive intatto al round-trip
+wizard→JSON anche se nessun editor lo mostra. Il warning "dati non gestiti dal wizard" (diff
+generico tra JSON originale e rigenerato) resta comunque utile per segnalare differenze reali
+(es. riordino non voluto), ma non dovrebbe più mostrare falsi positivi per campi omessi.
+
+**Testing manuale in browser con Playwright MCP**: quando disponibile il tool `playwright-browser_*`,
+preferirlo per verificare davvero le modifiche UI (non solo `tsc`/build) — login con le credenziali
+dev, navigazione a un prodotto/tenant reale, apertura del wizard, interazione con i controlli nuovi
+(click/fill/snapshot), lettura console errori. Chiudere sempre con "Annulla" (mai "Salva e pusha")
+per non alterare dati reali. Utile anche per individuare gap tra feature correlate (es. un campo
+percorso che manca del preview `pathPreview()` presente altrove) che `tsc` da solo non rileva.
+
+
