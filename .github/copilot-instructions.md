@@ -141,6 +141,7 @@ DB locale: customer "asl-latina", installation "localdev" (→ on-prem `:8080`),
 - [x] Zero-touch provisioning: ADMIN key → central crea install → READ key auto-provisionata su on-prem → tenant provisionati al volo
 - [x] Browser fallback push config (`PushPackage`): se central non raggiunge on-prem, il browser fa il fetch diretto e poi `pushConfirm`
 - [x] Browser fallback provisioning (`ProvisionPackage`): se central non raggiunge on-prem per provision/rotate READ key o per crea tenant, il browser fa il POST diretto sull'on-prem
+- [x] Wizard costruttore funzioni SDUI (`sdui-function-builder-dialog`): copertura feature HIGH-priority del manuale (toggle favorite, confirmAndCall.onSuccess, toggleField avanzato, showSuccessScreen, radioCardList avanzato, validation errorKeys, opzioni remote avanzate, rowDetail con sections/actionsSheet)
 - [ ] Build produzione + Dockerfile + Jenkinsfile
 
 ## Note implementative importanti
@@ -216,3 +217,78 @@ Metodi che gestiscono il fallback:
 - `patchImageInItems` aggiorna **solo il primo `IMAGE_BLOCK`** di ogni sezione — gli altri (loghi istituzionali `file`-based) sono preservati intatti.
 - `extractImage(items)` legge tipo+valore dal primo `IMAGE_BLOCK`.
 - `WebPagePreview` usa `logoSrc`/`fLogoSrc` che gestiscono tutti i tipi con fallback retrocompatibile su `logo_svg`/`footer_logo_svg`.
+
+### Wizard costruttore funzioni SDUI (`sdui-function-builder-dialog`)
+
+Wizard che genera i JSON delle funzioni SDUI mobile (`kind: "screen"|"flow"`) consumate dal motore
+Flutter documentato in `sh-core/docs/SDUI_MANUAL.md` (repo gemello, **leggerlo sempre prima** di
+aggiungere/estendere una feature del wizard — è la fonte di verità sullo schema JSON, non il codice
+Dart). Rilevamento "è una funzione SDUI" via `isSduiFunction()` in `config-channel-section.ts`: si
+basa sul campo **`kind`**, non su `type` né sul nome dell'entity.
+
+File principali: `sdui-model.ts` (modello + `clean*()` serializzatori + `parse*()`/`*FromJson()`
+deserializzatori), `sdui-function-builder-dialog.ts` (component, metodi CRUD sul model),
+`sdui-function-builder-dialog.html` (7 step: Base/Origine dati/Sezioni/Salvataggio/Azioni/
+Traduzioni/Anteprima e JSON), `sdui-validator.ts` (regole "Regole", separate dal preservation-diff).
+
+**Gotcha ricorrente — whitelist di serializzazione silenziosa**: ogni `clean*()` in `sdui-model.ts`
+ricostruisce l'oggetto di output campo per campo da una whitelist esplicita. Un campo presente nel
+modello/UI ma dimenticato nella whitelist di `clean*()` viene **silenziosamente scartato** dal JSON
+generato, senza errore di compilazione (bug reale già capitato con `summaryCard.valueField`). Ogni
+volta che si aggiunge un campo al modello e alla UI, verificare SEMPRE che il corrispondente
+`clean*()` lo includa, e testare con un round-trip JSON→wizard→JSON per verificarlo empiricamente.
+
+**Pattern "JSON grezzo" per strutture nidificate complesse/rare**: quando costruire un editor
+grafico completo per una sotto-struttura sarebbe sproporzionato rispetto al beneficio (es. l'`action`
+dichiarativa §6 dentro `rowDetail.actionsSheet[]`, che richiederebbe un editor azione generico e
+indicizzabile — oggi non esiste, l'unico editor azione esistente è legato a `descriptor().primaryAction`
+in modo non riusabile), si memorizza il valore come **stringa JSON grezza wizard-only** (es.
+`actionJson: string`), editata in una textarea e ri-parsata via try/catch solo in fase di
+serializzazione (`clean*()`), scartando silenziosamente la voce se il JSON è vuoto/non valido.
+Precedenti dello stesso pattern: `SduiDescriptor.initialStateJson`, `SduiSequenceCall.body`.
+
+**Limite noto — nessun editor azione generico riusabile**: sia `menu.items[].action` sia
+(prima di questo pattern) `rowDetail.actionsSheet[].action` non avevano/non hanno un editor grafico
+indicizzabile; l'unico editor azione ricco esistente (step "Azioni") è cablato su un singolo
+`descriptor().primaryAction` globale tramite setter non parametrizzati (`setActionProp` etc.).
+Costruire un editor azione generico multi-istanza sarebbe un refactoring cross-cutting a parte,
+non fatto finora — se richiesto in futuro, va proposto come todo indipendente.
+
+**Opzioni remote (`options.source === 'remote'`, §10 manuale)**: oltre a `endpoint`/`auth`/
+`valueTemplate`/`labelTemplate`, supporta `itemsField`, `sublabelTemplate`, `metaFields`, `pageSize`
+e una mappa dichiarativa `fields: Record<string, {path|paths, format?, locale?}>` per
+trasformare i campi grezzi della risposta prima dei template — ha priorità sugli arricchimenti
+legacy impliciti dell'engine Dart (es. shape "medico") quando le chiavi coincidono. Preferire sempre
+`fields` per nuovi descrittori: più esplicito e prevedibile. Stesso helper `parseFlattenFieldsMap`/
+`cleanFlattenFieldsMap` condiviso con `responseTransform: "flattenNested"`.
+
+**Convenzione percorsi**: `equalsField`/`fromState.path`/dot-path nei `fields` map NON usano il
+prefisso `"$."` (quello è riservato a `bodyMapping`/espressioni tipo `$.campo` altrove nel manuale) —
+attenzione a non confondere le due convenzioni quando si aggiunge un nuovo campo path-based.
+
+**Pattern UI riusabile per strutture ricorsive/condivise tra più contesti**: quando una stessa
+sotto-struttura appare in più punti del template (es. `rowDetail` è valido sia per
+`table`/`groupedTable`/`cardList` sia per `calendar`; `actionsSheet[]` è condiviso tra il
+`rowDetail` globale e ciascuna delle sue `sections[]`), non duplicare il markup: definire un
+`<ng-template #xEditor let-...>` e richiamarlo con `*ngTemplateOutlet="xEditor; context: {...}"`
+in ogni punto d'uso, passando un contesto minimo (indici) e non l'intero oggetto — pattern già
+usato da `#cardElementEditor`/`#sequenceEditor`, seguito anche per `#rowDetailEditor`/
+`#actionsSheetEditor`.
+
+**Testing manuale del wizard** (nessun test automatico esiste per questo componente): con backend
+locale + `npm start` attivi, loggarsi, andare su un tenant → tab canale "Mobile" → "Aggiungi entity"
+(nome scratch minuscolo/numeri/trattini/underscore, MAI riusare un'entity reale) → incollare il JSON
+di test direttamente nella textarea "Configurazione JSON" via un setter nativo
+`HTMLTextAreaElement.prototype.value` + evento `input` (bypassa la digitazione carattere-per-carattere,
+molto più veloce/affidabile per JSON lunghi) → il bottone "Modifica con wizard" appare solo se
+`isSduiFunction()` è vero (richiede `"kind": "screen"|"flow"` nel JSON, non `"type"`) → navigare gli
+step per verificare che i valori siano stati letti correttamente → andare allo step 7 "Anteprima e
+JSON" e confrontare l'output rigenerato col JSON incollato (deve corrispondere semanticamente,
+minori riordini di chiavi sono normali) → **mai cliccare "Salva e pusha"**, ricaricare la pagina per
+confermare che l'entity scratch non sia stata persistita (sparisce dalla lista).
+
+**Warning "dati non gestiti dal wizard"** (diff generico tra JSON originale e rigenerato, todo
+`generic-raw-json-preservation` non ancora affrontato): può segnalare falsi positivi quando un
+`clean*()` omette intenzionalmente un campo perché uguale al default (es. `attachedDocuments.field`
+omesso se `=== 'documents'`) — non è un bug, è un limite noto del diff-tracker attuale, che confronta
+testualmente senza conoscere le regole di default-omission dei vari `clean*()`.

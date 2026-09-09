@@ -31,7 +31,7 @@
               <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
                 <mat-label>{{ 'smhServiceConfig.routeName' | translate }}</mat-label>
                 <input matInput formControlName="routeName" [placeholder]="'smhServiceConfig.routeNamePlaceholder' | translate" />
-                <mat-hint>{{ 'smhServiceConfig.routeNameHint' | translate }}</mat-hint>
+                <mat-hint>{{ (isSduiRoute(ctrl) ? 'smhServiceConfig.routeNameHintSdui' : 'smhServiceConfig.routeNameHint') | translate }}</mat-hint>
               </mat-form-field>
             </div>
 
@@ -41,6 +41,31 @@
               <input matInput formControlName="link" type="url" placeholder="https://..." />
               <mat-hint>{{ 'smhServiceConfig.linkHint' | translate }}</mat-hint>
             </mat-form-field>
+
+            <!-- SDUI (solo se routeName === "SduiRoute") -->
+            @if (isSduiRoute(ctrl)) {
+              <div class="smh-editor__inline-row">
+                <mat-form-field appearance="outline" class="smh-editor__text-field smh-editor__text-field--grow">
+                  <mat-label>{{ 'smhServiceConfig.sduiEntity' | translate }}</mat-label>
+                  <input matInput formControlName="sduiEntity" [matAutocomplete]="sduiEntityAuto" />
+                  <mat-autocomplete #sduiEntityAuto="matAutocomplete">
+                    @for (e of getAvailableSduiEntities(asFormGroup(ctrl).controls['sduiEntity'].value); track e) {
+                      <mat-option [value]="e">{{ e }}</mat-option>
+                    }
+                  </mat-autocomplete>
+                  <mat-hint>{{ 'smhServiceConfig.sduiEntityHint' | translate }}</mat-hint>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="smh-editor__text-field">
+                  <mat-label>{{ 'smhServiceConfig.sduiAuthProvider' | translate }}</mat-label>
+                  <mat-select formControlName="sduiAuthProvider">
+                    <mat-option value="">{{ 'smhServiceConfig.sduiAuthProviderDefault' | translate }}</mat-option>
+                    @for (p of authProviders; track p) { <mat-option [value]="p">{{ p }}</mat-option> }
+                  </mat-select>
+                  <mat-hint>{{ 'smhServiceConfig.sduiAuthProviderHint' | translate }}</mat-hint>
+                </mat-form-field>
+              </div>
+            }
 
             <!-- Toggles -->
             <div class="svc__toggles">

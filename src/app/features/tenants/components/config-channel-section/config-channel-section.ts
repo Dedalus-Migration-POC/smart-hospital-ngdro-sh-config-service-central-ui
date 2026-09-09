@@ -30,8 +30,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { of } from 'rxjs';
-import { catchError, startWith } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map, startWith } from 'rxjs/operators';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -72,6 +72,10 @@ import {
   SmhServiceConfigEditorDialogData,
   SmhServiceConfigJson,
 } from '../../dialogs/smh-service-config-editor-dialog/smh-service-config-editor-dialog';
+import {
+  SduiFunctionBuilderDialog,
+  SduiFunctionBuilderDialogData,
+} from '../../dialogs/sdui-function-builder-dialog/sdui-function-builder-dialog';
 import {
   SmhSpidProviderEditorDialog,
   SmhSpidProviderEditorDialogData,
@@ -612,10 +616,38 @@ export class ConfigChannelSection {
   readonly isSmhThemeData  = computed(() => this.entity() === 'smh_theme_data');
   readonly isWebBase       = computed(() => this.channelId() === 'web' && this.entity() === 'base');
 
+  /** Rileva le funzioni SDUI mobile in base al contenuto (`kind: "screen"|"flow"`), non al nome dell'entity. */
+  readonly isSduiFunction = computed(() => {
+    if (this.channelId() !== 'mobile') return false;
+    const raw = this.configValue();
+    if (!raw?.trim()) return false;
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      return !!parsed && typeof parsed === 'object' && (parsed['kind'] === 'screen' || parsed['kind'] === 'flow');
+    } catch {
+      return false;
+    }
+  });
+
+  /** Entity mobile nuova/vuota e non riservata: propone la creazione guidata di una funzione SDUI. */
+  readonly isEmptyMobileFunctionCandidate = computed(() => {
+    if (this.channelId() !== 'mobile') return false;
+    const entity = this.entity();
+    if (!entity || ConfigChannelSection.RESERVED_MOBILE_ENTITIES.has(entity)) return false;
+    if (this.isSduiFunction()) return false;
+    const raw = this.configValue()?.trim() ?? '';
+    return raw === '' || raw === '{}' || raw === '[]';
+  });
+
+
   private static readonly GRAPHIC_EDITOR_ENTITIES = new Set([
     'smh_ui_render', 'smh_spid_provider', 'smh_faq',
     'smh_service_config', 'smh_min_app_version', 'smh_news', 'smh_tutorial',
     'smh_theme_data',
+  ]);
+
+  private static readonly RESERVED_MOBILE_ENTITIES = new Set([
+    ...ConfigChannelSection.GRAPHIC_EDITOR_ENTITIES, 'smh_it', 'smh_en', 'smh_es',
   ]);
 
   private static readonly MOBILE_MANDATORY_ENTITIES = [
@@ -807,6 +839,27 @@ export class ConfigChannelSection {
     });
   }
 
+  openSduiFunctionBuilder(): void {
+    const raw = this.configControl.value ?? '';
+    let value: Record<string, unknown> | null = null;
+    if (raw.trim()) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) value = parsed as Record<string, unknown>;
+      } catch { /* nuova funzione — parte da zero */ }
+    }
+    const data: SduiFunctionBuilderDialogData = { value, entityName: this.entity(), tenantId: this.tenantId() };
+    const ref = this.dialog.open<SduiFunctionBuilderDialog, SduiFunctionBuilderDialogData, Record<string, unknown>>(
+      SduiFunctionBuilderDialog,
+      { data, autoFocus: 'first-tabbable', maxWidth: '1200px', width: '1200px', maxHeight: '92svh' },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === undefined) return;
+      this.configControl.setValue(JSON.stringify(result, null, 2));
+      this.configControl.markAsDirty();
+    });
+  }
+
   openFaqEditor(): void {
     let parsed: SmhFaqJson = [];
     const raw = this.configControl.value ?? '';
@@ -831,16 +884,40 @@ export class ConfigChannelSection {
     if (raw.trim()) {
       try { parsed = JSON.parse(raw) as SmhServiceConfigJson; } catch { /* usa vuoto */ }
     }
-    const data: SmhServiceConfigEditorDialogData = { value: parsed };
-    const ref = this.dialog.open<SmhServiceConfigEditorDialog, SmhServiceConfigEditorDialogData, SmhServiceConfigJson | ServiceItem[]>(
-      SmhServiceConfigEditorDialog,
-      { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px', maxHeight: '90svh' },
-    );
-    ref.afterClosed().subscribe((result) => {
-      if (result === undefined) return;
-      this.configControl.setValue(JSON.stringify(result, null, 2));
-      this.configControl.markAsDirty();
+    this.detectSduiEntities().subscribe((availableSduiEntities) => {
+      const data: SmhServiceConfigEditorDialogData = { value: parsed, availableSduiEntities };
+      const ref = this.dialog.open<SmhServiceConfigEditorDialog, SmhServiceConfigEditorDialogData, SmhServiceConfigJson | ServiceItem[]>(
+        SmhServiceConfigEditorDialog,
+        { data, autoFocus: 'first-tabbable', maxWidth: '720px', width: '720px', maxHeight: '90svh' },
+      );
+      ref.afterClosed().subscribe((result) => {
+        if (result === undefined) return;
+        this.configControl.setValue(JSON.stringify(result, null, 2));
+        this.configControl.markAsDirty();
+      });
     });
+  }
+
+  /** Rileva quali entity mobile sono funzioni SDUI (`kind: "screen"|"flow"`), leggendone il contenuto. */
+  private detectSduiEntities() {
+    const tenantId = this.tenantId();
+    const channelId = this.channelId();
+    const candidates = this.entities().filter(
+      (e) => !ConfigChannelSection.RESERVED_MOBILE_ENTITIES.has(e) && e !== 'smh_service_config',
+    );
+    if (candidates.length === 0) return of<string[]>([]);
+    return forkJoin(
+      candidates.map((entity) =>
+        this.tenantService.getConfig(tenantId, channelId, 'local', entity).pipe(
+          map((cfg) => {
+            const parsed = cfg.configJson as Record<string, unknown> | null;
+            const kind = parsed && typeof parsed === 'object' ? parsed['kind'] : undefined;
+            return kind === 'screen' || kind === 'flow' ? entity : null;
+          }),
+          catchError(() => of(null)),
+        ),
+      ),
+    ).pipe(map((results) => results.filter((e): e is string => !!e)));
   }
 
   onDisableEntity(): void {

@@ -45,3 +45,6 @@ Thumbs.db
 
 # Claude Code (settings locali, non committare)
 .claude/
+
+*.log
+.playwright-mcp/

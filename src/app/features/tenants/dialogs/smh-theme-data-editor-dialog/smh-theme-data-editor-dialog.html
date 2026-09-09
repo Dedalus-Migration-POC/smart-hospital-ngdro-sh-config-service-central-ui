@@ -296,6 +296,131 @@
       </div>
     </mat-tab>
 
+    <!-- ── Tab 6: SDUI ── -->
+    <mat-tab [label]="'smhThemeData.tabSdui' | translate">
+      <div class="smh-editor__tab-content" formGroupName="sduiExtension">
+
+        <p class="smh-editor__desc">{{ 'smhThemeData.sduiExtensionHint' | translate }}</p>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.sduiTitleColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('sduiExtension.titleColor')" (change)="patchColor('sduiExtension.titleColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="titleColor" placeholder="#17233B" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.sduiChipBackground' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('sduiExtension.chipBackground')" (change)="patchColor('sduiExtension.chipBackground', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="chipBackground" placeholder="#EBEEF3" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.sduiPillTabsBackground' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('sduiExtension.pillTabsBackground')" (change)="patchColor('sduiExtension.pillTabsBackground', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="pillTabsBackground" placeholder="#EDF1F7" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.sduiStatusUsed' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('sduiExtension.statusUsed')" (change)="patchColor('sduiExtension.statusUsed', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="statusUsed" placeholder="#2E7D32" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.sduiStatusToBeUsed' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('sduiExtension.statusToBeUsed')" (change)="patchColor('sduiExtension.statusToBeUsed', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="statusToBeUsed" placeholder="#8A5A00" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.sduiSecondaryTextColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('sduiExtension.secondaryTextColor')" (change)="patchColor('sduiExtension.secondaryTextColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="secondaryTextColor" placeholder="#757575" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.sduiDescriptionFontWeight' | translate }}</p>
+          <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+            <mat-select formControlName="descriptionFontWeight">
+              @for (fw of fontWeights; track fw) {
+                <mat-option [value]="fw">{{ fw }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.sduiButtonRow' | translate }}</p>
+          <div class="smh-editor__inline-row">
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.sduiButtonRowWidthPercent' | translate }}</mat-label>
+              <input matInput type="number" formControlName="buttonRowWidthPercent" min="0" max="1" step="0.05" />
+              <mat-hint>{{ 'smhThemeData.sduiButtonRowWidthPercentHint' | translate }}</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.sduiButtonRowGap' | translate }}</mat-label>
+              <input matInput type="number" formControlName="buttonRowGap" min="0" max="64" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.sduiAnimations' | translate }}</p>
+          <div class="smh-editor__inline-row">
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.sduiTabIndicatorMs' | translate }}</mat-label>
+              <input matInput type="number" formControlName="tabIndicatorMs" min="0" max="2000" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.sduiContentFadeMs' | translate }}</mat-label>
+              <input matInput type="number" formControlName="contentFadeMs" min="0" max="2000" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.sduiLabelFadeMs' | translate }}</mat-label>
+              <input matInput type="number" formControlName="labelFadeMs" min="0" max="2000" />
+            </mat-form-field>
+          </div>
+        </div>
+
+      </div>
+    </mat-tab>
+
   </mat-tab-group>
 </mat-dialog-content>
 

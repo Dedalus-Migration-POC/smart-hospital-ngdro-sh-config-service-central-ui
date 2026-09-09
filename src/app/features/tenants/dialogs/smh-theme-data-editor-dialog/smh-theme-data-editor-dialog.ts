@@ -61,6 +61,21 @@ export interface SmhCardTheme {
   shape: SmhCardShape;
 }
 
+export interface SmhSduiExtension {
+  titleColor: string;
+  chipBackground: string;
+  pillTabsBackground: string;
+  statusUsed: string;
+  statusToBeUsed: string;
+  secondaryTextColor: string;
+  buttonRowWidthPercent: number | null;
+  buttonRowGap: number;
+  tabIndicatorMs: number;
+  contentFadeMs: number;
+  labelFadeMs: number;
+  descriptionFontWeight: string;
+}
+
 export interface SmhThemeDataJson {
   primaryColor?: string;
   primarySwatch?: string;
@@ -69,6 +84,7 @@ export interface SmhThemeDataJson {
   textTheme?: SmhTextTheme;
   tabBarTheme?: SmhTabBarTheme;
   cardTheme?: SmhCardTheme;
+  sduiExtension?: SmhSduiExtension;
 }
 
 export interface SmhThemeDataEditorDialogData {
@@ -126,6 +142,10 @@ export class SmhThemeDataEditorDialog {
   );
   private readonly cardThemeExtra = extractExtra(this.data.value?.cardTheme, ['elevation', 'color', 'shape']);
   private readonly cardShapeExtra = extractExtra(this.data.value?.cardTheme?.shape, ['type', 'borderRadius']);
+  private readonly sduiExtensionExtra = extractExtra(this.data.value?.sduiExtension, [
+    'titleColor', 'chipBackground', 'pillTabsBackground', 'statusUsed', 'statusToBeUsed', 'secondaryTextColor',
+    'buttonRowWidthPercent', 'buttonRowGap', 'tabIndicatorMs', 'contentFadeMs', 'labelFadeMs', 'descriptionFontWeight',
+  ]);
 
   // Ordine originale delle chiavi di ciascun (sotto-)oggetto: serve a riposizionare
   // correttamente eventuali campi extra dopo il merge con i valori del form.
@@ -141,6 +161,7 @@ export class SmhThemeDataEditorDialog {
   private readonly tabUnselectedLabelStyleOrder = Object.keys(this.data.value?.tabBarTheme?.unselectedLabelStyle ?? {});
   private readonly cardThemeOrder = Object.keys(this.data.value?.cardTheme ?? {});
   private readonly cardShapeOrder = Object.keys(this.data.value?.cardTheme?.shape ?? {});
+  private readonly sduiExtensionOrder = Object.keys(this.data.value?.sduiExtension ?? {});
 
 
   readonly form: FormGroup = this.fb.nonNullable.group({
@@ -189,6 +210,20 @@ export class SmhThemeDataEditorDialog {
         fontWeight: [this.data.value?.tabBarTheme?.unselectedLabelStyle?.fontWeight ?? 'w600'],
         color:      [this.data.value?.tabBarTheme?.unselectedLabelStyle?.color      ?? '#9E9E9E'],
       }),
+    }),
+    sduiExtension: this.fb.nonNullable.group({
+      titleColor:          [this.data.value?.sduiExtension?.titleColor          ?? '#17233B'],
+      chipBackground:      [this.data.value?.sduiExtension?.chipBackground      ?? '#EBEEF3'],
+      pillTabsBackground:  [this.data.value?.sduiExtension?.pillTabsBackground  ?? '#EDF1F7'],
+      statusUsed:          [this.data.value?.sduiExtension?.statusUsed          ?? '#2E7D32'],
+      statusToBeUsed:      [this.data.value?.sduiExtension?.statusToBeUsed      ?? '#8A5A00'],
+      secondaryTextColor:  [this.data.value?.sduiExtension?.secondaryTextColor  ?? '#757575'],
+      buttonRowWidthPercent: [this.data.value?.sduiExtension?.buttonRowWidthPercent ?? null],
+      buttonRowGap:        [this.data.value?.sduiExtension?.buttonRowGap        ?? 12],
+      tabIndicatorMs:      [this.data.value?.sduiExtension?.tabIndicatorMs      ?? 250],
+      contentFadeMs:       [this.data.value?.sduiExtension?.contentFadeMs       ?? 120],
+      labelFadeMs:         [this.data.value?.sduiExtension?.labelFadeMs         ?? 150],
+      descriptionFontWeight: [this.data.value?.sduiExtension?.descriptionFontWeight ?? 'normal'],
     }),
     cardTheme: this.fb.nonNullable.group({
       elevation: [this.data.value?.cardTheme?.elevation ?? 5],
@@ -246,6 +281,10 @@ export class SmhThemeDataEditorDialog {
         bodySmall: reorderKeys({ ...this.bodySmallExtra, ...raw.textTheme.bodySmall }, this.bodySmallOrder),
         labelSmall: reorderKeys({ ...this.labelSmallExtra, ...raw.textTheme.labelSmall }, this.labelSmallOrder),
       }, this.textThemeOrder),
+      sduiExtension: reorderKeys(
+        { ...this.sduiExtensionExtra, ...raw.sduiExtension },
+        this.sduiExtensionOrder,
+      ),
       tabBarTheme: reorderKeys({
         ...this.tabBarThemeExtra,
         dividerColor: raw.tabBarTheme.dividerColor,

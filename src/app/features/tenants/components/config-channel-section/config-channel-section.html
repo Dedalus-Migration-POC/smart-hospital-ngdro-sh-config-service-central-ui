@@ -282,9 +282,29 @@
           </button>
         </div>
       }
+
+      @if (isSduiFunction()) {
+        <div class="channel__graphic-editor-bar">
+          <mat-icon class="channel__graphic-editor-icon">auto_awesome</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'sduiFunction.editorHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openSduiFunctionBuilder()">
+            <mat-icon>edit</mat-icon>
+            {{ 'sduiFunction.openEditor' | translate }}
+          </button>
+        </div>
+      } @else if (isEmptyMobileFunctionCandidate()) {
+        <div class="channel__graphic-editor-bar channel__graphic-editor-bar--suggestion">
+          <mat-icon class="channel__graphic-editor-icon">auto_awesome</mat-icon>
+          <span class="channel__graphic-editor-hint">{{ 'sduiFunction.suggestionHint' | translate }}</span>
+          <button mat-stroked-button type="button" (click)="openSduiFunctionBuilder()">
+            <mat-icon>add</mat-icon>
+            {{ 'sduiFunction.createNew' | translate }}
+          </button>
+        </div>
+      }
     }
 
-    <mat-expansion-panel class="channel__json-panel" [expanded]="!hasGraphicEditor(entity())">
+    <mat-expansion-panel class="channel__json-panel" [expanded]="!hasGraphicEditor(entity()) && !isSduiFunction()">
       <mat-expansion-panel-header>
         <mat-panel-title>
           <mat-icon class="channel__json-panel-icon">data_object</mat-icon>
