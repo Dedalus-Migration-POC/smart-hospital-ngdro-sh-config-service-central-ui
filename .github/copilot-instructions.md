@@ -143,6 +143,7 @@ DB locale: customer "asl-latina", installation "localdev" (→ on-prem `:8080`),
 - [x] Browser fallback provisioning (`ProvisionPackage`): se central non raggiunge on-prem per provision/rotate READ key o per crea tenant, il browser fa il POST diretto sull'on-prem
 - [x] Wizard costruttore funzioni SDUI (`sdui-function-builder-dialog`): copertura feature HIGH-priority del manuale (toggle favorite, confirmAndCall.onSuccess, toggleField avanzato, showSuccessScreen, radioCardList avanzato, validation errorKeys, opzioni remote avanzate, rowDetail con sections/actionsSheet)
 - [x] Wizard SDUI — chiusura gap avanzati: preservazione raw di chiavi extra non gestite (`withRaw()`), dataSource (bodyMapping/defaultDateRange), flattenNested (trueValue/falseValue/rootFields), onSubmit (requestTransform/multipart), flow (descriptionKey/reviewFields), sezioni (itemTemplate.enabledWhenField*, editor completo `filterButton` per table/groupedTable/cardList)
+- [x] Wizard SDUI — fix gap emersi da entity reali di produzione (`rowDetail.actionsSheet` flat non nidificato, `conclusion.*Action.labelKey`, `onSuccess.navigateBack`, `onError.action`, transform custom opachi in `responseTransform`/`requestTransform`, `options.pageSize` esplicito)
 - [ ] Build produzione + Dockerfile + Jenkinsfile
 
 ## Note implementative importanti
@@ -308,5 +309,30 @@ dev, navigazione a un prodotto/tenant reale, apertura del wizard, interazione co
 (click/fill/snapshot), lettura console errori. Chiudere sempre con "Annulla" (mai "Salva e pusha")
 per non alterare dati reali. Utile anche per individuare gap tra feature correlate (es. un campo
 percorso che manca del preview `pathPreview()` presente altrove) che `tsc` da solo non rileva.
+
+**`rowDetail.actionsSheet[]` è FLAT, non annidato sotto `action:`**: a differenza di
+`menu.items[].action` (correttamente nidificato), ogni elemento di `rowDetail.actionsSheet[]` (e
+delle sue varianti per-sezione) ha i campi dell'azione (`type`, `endpoint`, `call`,
+`confirmTitleKey`, `favoriteIdField`, `addCall`/`removeCall`, `updateInGroups`, ecc. — §6 manuale)
+direttamente sulla radice dell'item, insieme a `labelKey`/`field`/`labelKeyWhenTrue`/
+`labelKeyWhenFalse`/`style`/`visibleWhenFieldTrue`/`visibleWhenFieldFalse`. Confermato empiricamente
+sia dal motore reale (`card_detail_page.dart` passa l'intero item a `runAction()`) sia da JSON di
+produzione reali. Il vecchio `SDUI_MANUAL.md` documentava erroneamente uno schema nidificato
+`action: {...}`: è stato corretto. Nel wizard, `SduiActionSheetItem extends SduiAction` (non più un
+wrapper con campo `action`), e l'editor riusa il template `#actionEditor` passando `pa: item`
+(non `pa: item.action`).
+
+**Gestione transform opachi custom (`responseTransform`/`requestTransform`)**: l'engine reale usa
+talvolta transform con nome hardcoded non generici (es. `buildProfilesList`, `mapConsentsToBackendFormat`)
+che non hanno la forma di `flattenNested`/`wrapAsSingleGroup`/`unflattenNested`. Il wizard li
+preserva senza editarli, ma **senza allargare i tipi TS dell'union** (`SduiResponseTransform` resta
+`SduiFlattenNested | SduiWrapAsSingleGroup`, mai unito con un terzo tipo opaco `{type: string}`):
+allargare l'union rompe il narrowing per discriminazione ovunque nel codice esistente (TS non riesce
+a escludere una variante con `type: string` da un check `=== 'letterale'`). Il pattern corretto è
+un **type-assertion escape hatch** solo ai due confini di parse/clean (`rt as unknown as
+SduiResponseTransform` nel fallback di `parseResponseTransform`, `rt as unknown as Record<string,
+unknown>` nel fallback di `cleanResponseTransform`), e nel template un helper component
+(`transformTypeOf(t)`) per leggere `.type` nel ramo "impossibile per TS" senza forzare un cast
+diffuso in HTML.
 
 

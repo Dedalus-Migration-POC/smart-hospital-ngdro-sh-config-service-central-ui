@@ -70,6 +70,7 @@ import {
   createEmptySequenceCall,
   descriptorToJson,
   parseFlattenFieldsMap,
+  dataSourceFromJson,
 } from './sdui-model';
 import { SduiIssue, validateDescriptor } from './sdui-validator';
 import { collectTranslationKeys, hasTranslation } from './sdui-translations';
@@ -336,6 +337,13 @@ export class SduiFunctionBuilderDialog {
       if (value === null || Number.isNaN(value)) delete d.dataSource.defaultDateRange[key];
       else d.dataSource.defaultDateRange[key] = value;
     });
+  }
+
+  // Legge il "type" di un transform (response/request) senza forzare il narrowing a due sole
+  // varianti: nel template, dopo aver escluso flattenNested/wrapAsSingleGroup (o unflattenNested),
+  // TS considera il ramo custom "never" — questo helper bypassa quel limite solo per leggere il tag.
+  transformTypeOf(t: { type?: string } | null | undefined): string {
+    return t?.type ?? '';
   }
 
   toggleFlattenNested(enabled: boolean): void {
@@ -1163,14 +1171,22 @@ export class SduiFunctionBuilderDialog {
     switch (ref.kind) {
       case 'primary': return d.primaryAction;
       case 'menuItem': return d.sections[ref.si]?.items?.[ref.mi]?.action;
-      case 'actionsSheet': return this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet?.[ref.ai]?.action;
+      case 'actionsSheet': return this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet?.[ref.ai];
     }
   }
   private setActionAt(d: SduiDescriptor, ref: SduiActionRef, action: SduiAction): void {
     switch (ref.kind) {
       case 'primary': d.primaryAction = action; return;
       case 'menuItem': { const item = d.sections[ref.si]?.items?.[ref.mi]; if (item) item.action = action; return; }
-      case 'actionsSheet': { const item = this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet?.[ref.ai]; if (item) item.action = action; return; }
+      case 'actionsSheet': {
+        // A differenza di menuItem, qui l'item stesso E' l'azione (schema flat, non annidato
+        // sotto `action:` — vedi commento su SduiActionSheetItem): cambiare tipo azione deve
+        // preservare gli attributi item-level (style/visibleWhenField*), non sostituirli.
+        const arr = this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet;
+        const old = arr?.[ref.ai];
+        if (arr && old) arr[ref.ai] = { ...action, style: old.style, visibleWhenFieldTrue: old.visibleWhenFieldTrue, visibleWhenFieldFalse: old.visibleWhenFieldFalse };
+        return;
+      }
     }
   }
 
@@ -1351,7 +1367,7 @@ export class SduiFunctionBuilderDialog {
 
   toggleFlowStepDataSource(stepIndex: number, enabled: boolean): void {
     this.update(d => {
-      d.steps[stepIndex].dataSource = enabled ? { method: 'GET', endpoint: '', auth: 'bearer', bodyMapping: {} } : null;
+      d.steps[stepIndex].dataSource = enabled ? createEmptyDataSource() : null;
     });
   }
   setFlowStepDataSourceProp(stepIndex: number, key: 'method' | 'endpoint' | 'auth', value: string): void {
@@ -1484,13 +1500,16 @@ export class SduiFunctionBuilderDialog {
   setPayActionUrl(stepIndex: number, value: string): void {
     this.update(d => { const p = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.payAction; if (p) p.url = value; });
   }
+  setPayActionLabelKey(stepIndex: number, value: string): void {
+    this.update(d => { const p = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.payAction; if (p) p.labelKey = value; });
+  }
   toggleDownloadAction(stepIndex: number, enabled: boolean): void {
     this.update(d => {
       const c = d.steps[stepIndex].onSubmit?.onSuccess.conclusion;
       if (c) c.downloadAction = enabled ? { endpoint: '', auth: 'bearer', fileName: '' } : null;
     });
   }
-  setDownloadActionProp(stepIndex: number, key: 'endpoint' | 'auth' | 'fileName', value: string): void {
+  setDownloadActionProp(stepIndex: number, key: 'endpoint' | 'auth' | 'fileName' | 'labelKey', value: string): void {
     this.update(d => {
       const da = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.downloadAction;
       if (da) (da as unknown as Record<string, unknown>)[key] = value;
@@ -1502,7 +1521,7 @@ export class SduiFunctionBuilderDialog {
       if (c) c.cancelAction = enabled ? { endpoint: '', method: 'PUT', auth: 'bearer', bodyMapping: {}, confirmTitleKey: '', confirmMessageKey: '' } : null;
     });
   }
-  setCancelActionProp(stepIndex: number, key: 'endpoint' | 'method' | 'auth' | 'confirmTitleKey' | 'confirmMessageKey', value: string): void {
+  setCancelActionProp(stepIndex: number, key: 'endpoint' | 'method' | 'auth' | 'confirmTitleKey' | 'confirmMessageKey' | 'labelKey', value: string): void {
     this.update(d => {
       const ca = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.cancelAction;
       if (ca) (ca as unknown as Record<string, unknown>)[key] = value;
@@ -1745,32 +1764,7 @@ function jsonToDescriptor(json: Record<string, unknown>, fallbackEntityName: str
 
   if (kind === 'screen') {
     const ds = json['dataSource'] as Record<string, unknown> | undefined;
-    if (ds) {
-      d.dataSource.method = (ds['method'] as string) ?? 'GET';
-      d.dataSource.endpoint = (ds['endpoint'] as string) ?? '';
-      d.dataSource.auth = (ds['auth'] as string) ?? 'bearer';
-      d.dataSource.bodyMapping = (ds['bodyMapping'] as Record<string, string>) ?? {};
-      const rt = ds['responseTransform'] as Record<string, unknown> | undefined;
-      if (rt?.['type'] === 'flattenNested') {
-        const fields = parseFlattenFieldsMap(rt['fields'] as Record<string, unknown>);
-        d.dataSource.responseTransform = {
-          type: 'flattenNested',
-          arrayPath: (rt['arrayPath'] as string) ?? '',
-          targetPath: (rt['targetPath'] as string) ?? '',
-          fields,
-          rootFields: (rt['rootFields'] as Record<string, string>) ?? {},
-        };
-      } else if (rt?.['type'] === 'wrapAsSingleGroup') {
-        d.dataSource.responseTransform = {
-          type: 'wrapAsSingleGroup',
-          itemsPath: (rt['itemsPath'] as string) ?? 'items',
-          targetPath: (rt['targetPath'] as string) ?? 'groupedItems',
-          groupLabelKey: rt['groupLabelKey'] as string | undefined,
-          staticItemFields: (rt['staticItemFields'] as Record<string, string>) ?? {},
-        };
-      }
-      if (ds['defaultDateRange']) d.dataSource.defaultDateRange = ds['defaultDateRange'] as never;
-    }
+    if (ds) d.dataSource = dataSourceFromJson(ds);
     d.sections = ((json['sections'] as Record<string, unknown>[]) ?? []).map(sectionFromJson);
     if (json['primaryAction']) d.primaryAction = actionFromJson(json['primaryAction'] as Record<string, unknown>);
     if (json['onSubmit']) d.onSubmit = onSubmitFromJson(json['onSubmit'] as Record<string, unknown>);
@@ -1785,7 +1779,7 @@ function jsonToDescriptor(json: Record<string, unknown>, fallbackEntityName: str
         next: s['next'] as string | undefined,
         reviewFields: s['reviewFields'] as string[] | undefined,
         isLastStep: Boolean(s['onSubmit']) || i === arr.length - 1 && !s['next'],
-        dataSource: s['dataSource'] ? flowDataSourceFromJson(s['dataSource'] as Record<string, unknown>) : null,
+        dataSource: s['dataSource'] ? dataSourceFromJson(s['dataSource'] as Record<string, unknown>) : null,
         prefetchSequence: ((s['prefetchSequence'] as Record<string, unknown>[]) ?? []).map(sequenceCallFromJson),
       };
       if (s['onSubmit']) step.onSubmit = onSubmitFromJson(s['onSubmit'] as Record<string, unknown>);
@@ -1828,13 +1822,10 @@ function sectionFromJson(s: Record<string, unknown>): SduiSection {
 
 function actionSheetItemFromJson(a: Record<string, unknown>): SduiActionSheetItem {
   return {
-    labelKey: a['labelKey'] as string | undefined,
-    field: a['field'] as string | undefined,
-    labelKeyWhenTrue: a['labelKeyWhenTrue'] as string | undefined,
-    labelKeyWhenFalse: a['labelKeyWhenFalse'] as string | undefined,
+    ...actionFromJson(a),
+    style: a['style'] as 'filled' | 'outline' | undefined,
     visibleWhenFieldTrue: a['visibleWhenFieldTrue'] as string | undefined,
     visibleWhenFieldFalse: a['visibleWhenFieldFalse'] as string | undefined,
-    action: actionFromJson((a['action'] as Record<string, unknown>) ?? { type: 'reload' }),
   };
 }
 
@@ -1915,14 +1906,5 @@ function sequenceCallFromJson(c: Record<string, unknown>): SduiSequenceCall {
     captureOptions: c['captureOptions']
       ? ({ ...createEmptyCaptureOptions(), ...(c['captureOptions'] as object) } as SduiCaptureOptions)
       : null,
-  };
-}
-
-function flowDataSourceFromJson(ds: Record<string, unknown>): { method: string; endpoint: string; auth?: string; bodyMapping: Record<string, string> } {
-  return {
-    method: (ds['method'] as string) ?? 'GET',
-    endpoint: (ds['endpoint'] as string) ?? '',
-    auth: (ds['auth'] as string) ?? 'bearer',
-    bodyMapping: (ds['bodyMapping'] as Record<string, string>) ?? {},
   };
 }

@@ -57,6 +57,14 @@ export interface SduiWrapAsSingleGroup {
   staticItemFields: Record<string, string>;
 }
 
+/** Transform di risposta custom con logica hardcoded nell'engine Dart (es.
+ * "buildProfilesList"), non generica/editabile dal wizard: preservata as-is
+ * su un giro JSON -> wizard -> JSON invece di essere ricostruita. */
+export interface SduiCustomTransform {
+  type: string;
+  [key: string]: unknown;
+}
+
 export type SduiResponseTransform = SduiFlattenNested | SduiWrapAsSingleGroup;
 
 export interface SduiDataSource {
@@ -66,6 +74,47 @@ export interface SduiDataSource {
   bodyMapping: Record<string, string>;
   responseTransform: SduiResponseTransform | null;
   defaultDateRange?: { fromField: string; toField: string; daysAgo?: number; daysForward?: number };
+}
+
+/** Legge un `dataSource` grezzo (screen o flow-step: stessa forma) da JSON. */
+export function dataSourceFromJson(ds: Record<string, unknown>): SduiDataSource {
+  return {
+    method: (ds['method'] as string) ?? 'GET',
+    endpoint: (ds['endpoint'] as string) ?? '',
+    auth: (ds['auth'] as string) ?? 'bearer',
+    bodyMapping: (ds['bodyMapping'] as Record<string, string>) ?? {},
+    responseTransform: parseResponseTransform(ds['responseTransform'] as Record<string, unknown> | undefined) ?? null,
+    defaultDateRange: ds['defaultDateRange'] as SduiDataSource['defaultDateRange'] | undefined,
+  };
+}
+
+/** Legge un `responseTransform` grezzo, riconoscendo i due tipi generici editabili dal
+ * wizard (`flattenNested`/`wrapAsSingleGroup`, §4 manuale); qualunque altro tipo (transform
+ * custom hardcoded nell'engine) viene preservato as-is. */
+export function parseResponseTransform(rt: Record<string, unknown> | undefined): SduiResponseTransform | undefined {
+  if (!rt) return undefined;
+  if (rt['type'] === 'flattenNested') {
+    return {
+      type: 'flattenNested',
+      arrayPath: (rt['arrayPath'] as string) ?? '',
+      targetPath: (rt['targetPath'] as string) ?? '',
+      fields: parseFlattenFieldsMap(rt['fields'] as Record<string, unknown>),
+      rootFields: (rt['rootFields'] as Record<string, string>) ?? {},
+    };
+  }
+  if (rt['type'] === 'wrapAsSingleGroup') {
+    return {
+      type: 'wrapAsSingleGroup',
+      itemsPath: (rt['itemsPath'] as string) ?? 'items',
+      targetPath: (rt['targetPath'] as string) ?? 'groupedItems',
+      groupLabelKey: rt['groupLabelKey'] as string | undefined,
+      staticItemFields: (rt['staticItemFields'] as Record<string, string>) ?? {},
+    };
+  }
+  // Transform custom con logica hardcoded nell'engine (es. "buildProfilesList"): il wizard
+  // non la conosce/edita, la preserva as-is per non perderla su un giro JSON -> wizard -> JSON
+  // (vedi SduiCustomTransform — non fa parte dell'union per non rompere il narrowing altrove).
+  return rt as unknown as SduiResponseTransform;
 }
 
 export function createEmptyDataSource(): SduiDataSource {
@@ -422,14 +471,15 @@ export interface SduiBadgeEntry {
   color: string;
 }
 
-export interface SduiActionSheetItem {
-  labelKey?: string;
-  field?: string;
-  labelKeyWhenTrue?: string;
-  labelKeyWhenFalse?: string;
-  /** `action` (§6 manuale) — stesso editor grafico generico riusato per primaryAction e
-   * per le voci di menu (vedi #actionEditor nel template). */
-  action: SduiAction;
+/** Voce di `rowDetail.actionsSheet` (§6 manuale). A differenza di `menu.items[].action`
+ * (correttamente annidato), il runtime Dart (`card_detail_page.dart` -> `runAction()`) legge
+ * i campi dell'azione DIRETTAMENTE dalla root dell'item, senza un wrapper `action:` — per
+ * questo `SduiActionSheetItem` estende `SduiAction` invece di contenerla, e riusa lo stesso
+ * editor grafico generico (#actionEditor) passando l'item stesso come `pa`. `style` e le due
+ * `visibleWhenField*` sono le uniche proprietà genuinamente item-level (lette da
+ * `card_detail_page.dart` stesso, non passate a `runAction`). */
+export interface SduiActionSheetItem extends SduiAction {
+  style?: 'filled' | 'outline';
   visibleWhenFieldTrue?: string;
   visibleWhenFieldFalse?: string;
 }
@@ -467,7 +517,7 @@ export function createEmptyRowDetailSection(): SduiRowDetailSection {
 }
 
 export function createEmptyActionSheetItem(): SduiActionSheetItem {
-  return { labelKey: '', action: createEmptyAction() };
+  return { ...createEmptyAction() };
 }
 
 export interface SduiMenuItem {
@@ -756,8 +806,8 @@ export interface SduiConclusion {
   facilityField?: string;
   addressField?: string;
   cityField?: string;
-  payAction?: { url: string } | null;
-  downloadAction?: { endpoint: string; auth?: string; fileName: string } | null;
+  payAction?: { url: string; labelKey?: string } | null;
+  downloadAction?: { endpoint: string; auth?: string; fileName: string; labelKey?: string } | null;
   cancelAction?: {
     endpoint: string;
     method: string;
@@ -765,6 +815,7 @@ export interface SduiConclusion {
     bodyMapping: Record<string, string>;
     confirmTitleKey: string;
     confirmMessageKey: string;
+    labelKey?: string;
   } | null;
 }
 
@@ -780,24 +831,31 @@ export interface SduiOnSubmit {
   bodyMapping: Record<string, string>;
   /** Solo per l'onSubmit dell'ultimo step di un flow: sequenza di chiamate al posto di un singolo endpoint. */
   sequence?: SduiSequenceCall[] | null;
-  requestTransform: {
+  requestTransform: ({
     type: 'unflattenNested';
     itemsPath: string;
     targetPath: string;
     fields: Record<string, string>;
-  } | null;
+  }) | null;
   multipart?: boolean;
   fileField?: string;
   fileFieldName?: string;
   onSuccess: {
     action?: 'toast' | 'setActivePatient' | 'navigateBack';
+    /** Convenzione alternativa/legacy a `action: 'navigateBack'` (screen_renderer.dart:
+     * `onSuccess['navigateBack'] == true`) — l'engine controlla entrambe in OR, il wizard
+     * preserva qualunque delle due forme fosse presente nel JSON originale. */
+    navigateBack?: boolean;
     messageKey?: string;
     valuePath?: string;
     showSuccessScreen?: SduiSuccessScreen | null;
     /** Solo flow, ultimo step: schermata di recap post-conferma (§7.1). */
     conclusion?: SduiConclusion | null;
   };
-  onError: { messageKey?: string };
+  /** `action` qui non è letto da nessun handler engine (verificato su `flow_renderer.dart`/
+   * `screen_renderer.dart`, che leggono solo `messageKey`): dato legacy/extra presente in
+   * produzione (es. "toast"), preservato as-is per non perderlo su un giro JSON -> wizard -> JSON. */
+  onError: { messageKey?: string; action?: string };
 }
 
 export function createEmptyOnSubmit(): SduiOnSubmit {
@@ -826,8 +884,9 @@ export interface SduiFlowStep {
   next?: string;
   reviewFields?: string[];
   isLastStep: boolean; // helper solo-UI: determina se mostrare onSubmit invece di next
-  /** Ping/prefetch "usa e getta": la risposta viene scartata (§7 manuale). */
-  dataSource?: { method: string; endpoint: string; auth?: string; bodyMapping: Record<string, string> } | null;
+  /** Ping/prefetch "usa e getta": la risposta viene scartata (§7 manuale). Stessa forma del
+   * `dataSource` a livello screen (incluso `responseTransform`/`defaultDateRange`). */
+  dataSource?: SduiDataSource | null;
   /** Sequenza ordinata di chiamate con captureMapping verso lo stato — un errore qui blocca lo step. */
   prefetchSequence: SduiSequenceCall[];
   onSubmit?: SduiOnSubmit;
@@ -903,11 +962,7 @@ export function descriptorToJson(d: SduiDescriptor): Record<string, unknown> {
         auth: d.dataSource.auth || 'bearer',
       };
       if (Object.keys(d.dataSource.bodyMapping ?? {}).length > 0) ds['bodyMapping'] = d.dataSource.bodyMapping;
-      if (d.dataSource.responseTransform) {
-        ds['responseTransform'] = d.dataSource.responseTransform.type === 'wrapAsSingleGroup'
-          ? cleanWrapAsSingleGroup(d.dataSource.responseTransform)
-          : cleanFlattenNested(d.dataSource.responseTransform);
-      }
+      if (d.dataSource.responseTransform) ds['responseTransform'] = cleanResponseTransform(d.dataSource.responseTransform);
       if (d.dataSource.defaultDateRange) ds['defaultDateRange'] = d.dataSource.defaultDateRange;
       out['dataSource'] = ds;
     }
@@ -985,6 +1040,15 @@ function cleanFlattenNested(f: SduiFlattenNested): Record<string, unknown> {
   return out;
 }
 
+/** Serializza un `responseTransform`: i due tipi generici editabili dal wizard vengono
+ * ricostruiti campo per campo, qualunque altro tipo (custom, hardcoded nell'engine) viene
+ * riemesso as-is — vedi `parseResponseTransform`. */
+export function cleanResponseTransform(rt: SduiResponseTransform): Record<string, unknown> {
+  if (rt.type === 'wrapAsSingleGroup') return cleanWrapAsSingleGroup(rt);
+  if (rt.type === 'flattenNested') return cleanFlattenNested(rt);
+  return rt as Record<string, unknown>;
+}
+
 function cleanWrapAsSingleGroup(f: SduiWrapAsSingleGroup): Record<string, unknown> {
   const out: Record<string, unknown> = {
     type: 'wrapAsSingleGroup',
@@ -1014,7 +1078,9 @@ function cleanOptions(o: SduiOptions): Record<string, unknown> {
     if (o.labelTemplate) out['labelTemplate'] = o.labelTemplate;
     if (o.sublabelTemplate) out['sublabelTemplate'] = o.sublabelTemplate;
     if (o.metaFields.length > 0) out['metaFields'] = o.metaFields;
-    if (o.pageSize && o.pageSize !== 5) out['pageSize'] = o.pageSize;
+    // 5 e' il default SOLO del wizard (createEmptyOptions), non un valore da omettere: se
+    // l'entity originale lo aveva esplicito, va riemesso identico per non falsare il diff.
+    if (o.pageSize) out['pageSize'] = o.pageSize;
   }
   return withRaw(o, SDUI_OPTIONS_KNOWN_KEYS, out);
 }
@@ -1349,11 +1415,8 @@ function cleanSection(s: SduiSection): Record<string, unknown> {
 /** Serializza una voce di actionsSheet (§3.10 manuale): `action` è editata con lo stesso
  * editor grafico generico di primaryAction/menu (vedi #actionEditor nel template). */
 function cleanActionSheetItem(item: SduiActionSheetItem): Record<string, unknown> {
-  const out: Record<string, unknown> = { action: cleanAction(item.action) };
-  if (item.labelKey) out['labelKey'] = item.labelKey;
-  if (item.field) out['field'] = item.field;
-  if (item.labelKeyWhenTrue) out['labelKeyWhenTrue'] = item.labelKeyWhenTrue;
-  if (item.labelKeyWhenFalse) out['labelKeyWhenFalse'] = item.labelKeyWhenFalse;
+  const out = cleanAction(item);
+  if (item.style) out['style'] = item.style;
   if (item.visibleWhenFieldTrue) out['visibleWhenFieldTrue'] = item.visibleWhenFieldTrue;
   if (item.visibleWhenFieldFalse) out['visibleWhenFieldFalse'] = item.visibleWhenFieldFalse;
   return out;
@@ -1431,10 +1494,15 @@ function cleanConclusion(c: SduiConclusion): Record<string, unknown> {
   if (c.facilityField) out['facilityField'] = c.facilityField;
   if (c.addressField) out['addressField'] = c.addressField;
   if (c.cityField) out['cityField'] = c.cityField;
-  if (c.payAction?.url) out['payAction'] = { url: c.payAction.url };
+  if (c.payAction?.url) {
+    const p: Record<string, unknown> = { url: c.payAction.url };
+    if (c.payAction.labelKey) p['labelKey'] = c.payAction.labelKey;
+    out['payAction'] = p;
+  }
   if (c.downloadAction?.endpoint) {
     const d: Record<string, unknown> = { endpoint: c.downloadAction.endpoint, fileName: c.downloadAction.fileName };
     if (c.downloadAction.auth && c.downloadAction.auth !== 'bearer') d['auth'] = c.downloadAction.auth;
+    if (c.downloadAction.labelKey) d['labelKey'] = c.downloadAction.labelKey;
     out['downloadAction'] = d;
   }
   if (c.cancelAction?.endpoint) {
@@ -1446,6 +1514,7 @@ function cleanConclusion(c: SduiConclusion): Record<string, unknown> {
     };
     if (c.cancelAction.auth && c.cancelAction.auth !== 'bearer') ca['auth'] = c.cancelAction.auth;
     if (Object.keys(c.cancelAction.bodyMapping ?? {}).length > 0) ca['bodyMapping'] = c.cancelAction.bodyMapping;
+    if (c.cancelAction.labelKey) ca['labelKey'] = c.cancelAction.labelKey;
     out['cancelAction'] = ca;
   }
   return out;
@@ -1462,7 +1531,7 @@ function cleanOnSubmit(o: SduiOnSubmit): Record<string, unknown> {
   }
   if (o.submitLabelKey) out['submitLabelKey'] = o.submitLabelKey;
   if (Object.keys(o.bodyMapping ?? {}).length > 0) out['bodyMapping'] = o.bodyMapping;
-  if (o.requestTransform?.itemsPath) out['requestTransform'] = o.requestTransform;
+  if (o.requestTransform?.type) out['requestTransform'] = o.requestTransform;
   if (o.multipart) {
     out['multipart'] = true;
     if (o.fileField) out['fileField'] = o.fileField;
@@ -1473,12 +1542,18 @@ function cleanOnSubmit(o: SduiOnSubmit): Record<string, unknown> {
     onSuccess['showSuccessScreen'] = o.onSuccess.showSuccessScreen;
   } else {
     if (o.onSuccess?.action) onSuccess['action'] = o.onSuccess.action;
+    if (o.onSuccess?.navigateBack) onSuccess['navigateBack'] = true;
     if (o.onSuccess?.messageKey) onSuccess['messageKey'] = o.onSuccess.messageKey;
     if (o.onSuccess?.valuePath) onSuccess['valuePath'] = o.onSuccess.valuePath;
   }
   if (o.onSuccess?.conclusion?.titleKey) onSuccess['conclusion'] = cleanConclusion(o.onSuccess.conclusion);
   if (Object.keys(onSuccess).length > 0) out['onSuccess'] = onSuccess;
-  if (o.onError?.messageKey) out['onError'] = { messageKey: o.onError.messageKey };
+  if (o.onError?.messageKey || o.onError?.action) {
+    const onError: Record<string, unknown> = {};
+    if (o.onError.messageKey) onError['messageKey'] = o.onError.messageKey;
+    if (o.onError.action) onError['action'] = o.onError.action;
+    out['onError'] = onError;
+  }
   return out;
 }
 
@@ -1490,6 +1565,8 @@ function cleanFlowStep(s: SduiFlowStep): Record<string, unknown> {
     if (s.dataSource.method && s.dataSource.method !== 'GET') ds['method'] = s.dataSource.method;
     if (s.dataSource.auth && s.dataSource.auth !== 'bearer') ds['auth'] = s.dataSource.auth;
     if (Object.keys(s.dataSource.bodyMapping ?? {}).length > 0) ds['bodyMapping'] = s.dataSource.bodyMapping;
+    if (s.dataSource.responseTransform) ds['responseTransform'] = cleanResponseTransform(s.dataSource.responseTransform);
+    if (s.dataSource.defaultDateRange) ds['defaultDateRange'] = s.dataSource.defaultDateRange;
     out['dataSource'] = ds;
   }
   if (s.prefetchSequence?.length) out['prefetchSequence'] = s.prefetchSequence.map(cleanSequenceCall);
