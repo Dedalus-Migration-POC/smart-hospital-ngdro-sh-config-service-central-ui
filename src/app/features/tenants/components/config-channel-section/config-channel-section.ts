@@ -32,7 +32,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { forkJoin, of } from 'rxjs';
-import { catchError, map, startWith } from 'rxjs/operators';
+import { catchError, map, startWith, timeout } from 'rxjs/operators';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -559,7 +559,6 @@ export class ConfigChannelSection {
     const pkg = version.pushPackage!;
 
     this.snackbar.open(this.translate.instant('config.browserPushChecking'), 'OK', { duration: 4000 });
-
     const reachable = await fetch(`${pkg.baseUrl}/actuator/health`, {
       mode: 'no-cors',
       signal: AbortSignal.timeout(5000),
@@ -583,7 +582,42 @@ export class ConfigChannelSection {
 
     if (!confirmed) return;
 
-    this.snackbar.open(this.translate.instant('config.browserPushInProgress'), undefined, { duration: 0 });
+    // Se presente, provisiona prima il tenant on-prem (idempotente lato on-prem):
+    // copre il caso in cui l'on-prem abbia perso il tenant (es. dopo un factory-reset)
+    // senza che il central se ne sia accorto — altrimenti il push successivo fallirebbe
+    // con 404 "Tenant non trovato".
+    if (pkg.tenantProvisionPackage) {
+      const tpkg = pkg.tenantProvisionPackage;
+      try {
+        const tRes = await fetch(tpkg.targetUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': tpkg.adminApiKey },
+          body: tpkg.body,
+          signal: AbortSignal.timeout(15000),
+        });
+        if (!tRes.ok) {
+          this.snackbar.open(
+            `${this.translate.instant('config.browserPushTenantProvisionError')} (${tRes.status})`,
+            'OK',
+            { duration: 8000 },
+          );
+          return;
+        }
+      } catch (e) {
+        this.snackbar.open(
+          this.translate.instant('config.browserPushTenantProvisionError'),
+          'OK',
+          { duration: 8000 },
+        );
+        return;
+      }
+    }
+
+    // Toast persistente (duration:0) finché il push non è confermato: teniamo il
+    // riferimento per poterlo chiudere esplicitamente in ogni caso (successo,
+    // fallimento o timeout), invece di affidarci solo alla sostituzione implicita
+    // di MatSnackBar quando si apre il prossimo toast.
+    const progressRef = this.snackbar.open(this.translate.instant('config.browserPushInProgress'), undefined, { duration: 0 });
 
     let remoteVersion: number | null = null;
     let pushError: string | null = null;
@@ -607,20 +641,27 @@ export class ConfigChannelSection {
       pushError = e instanceof Error ? e.message : 'Errore rete';
     }
 
-    this.tenantService.pushConfirm(tenantId, channelId, entity, pushOk, remoteVersion, pushError).subscribe({
-      next: (confirmed) => {
-        this.activeVersion.set(confirmed);
-        this.loadHistory(tenantId, channelId, entity);
-        this.snackbar.open(
-          this.translate.instant(pushOk ? 'config.browserPushSynced' : 'config.browserPushFailed'),
-          'OK',
-          { duration: pushOk ? 3000 : 6000 },
-        );
-      },
-      error: () => {
-        this.snackbar.open(this.translate.instant('config.browserPushConfirmError'), 'OK', { duration: 6000 });
-      },
-    });
+    this.tenantService.pushConfirm(tenantId, channelId, entity, pushOk, remoteVersion, pushError)
+      .pipe(
+        // Timeout di sicurezza: se il central non risponde entro 15s (es. lock DB,
+        // rete lenta) evitiamo che il toast "Push in corso" resti visibile per sempre.
+        timeout(15000),
+        catchError(() => of(null)),
+      )
+      .subscribe((confirmed) => {
+        progressRef.dismiss();
+        if (confirmed) {
+          this.activeVersion.set(confirmed);
+          this.loadHistory(tenantId, channelId, entity);
+          this.snackbar.open(
+            this.translate.instant(pushOk ? 'config.browserPushSynced' : 'config.browserPushFailed'),
+            'OK',
+            { duration: pushOk ? 3000 : 6000 },
+          );
+        } else {
+          this.snackbar.open(this.translate.instant('config.browserPushConfirmError'), 'OK', { duration: 6000 });
+        }
+      });
   }
 
   readonly isAdmin = computed(() => {

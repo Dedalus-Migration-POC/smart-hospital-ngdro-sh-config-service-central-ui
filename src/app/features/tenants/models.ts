@@ -50,12 +50,17 @@ export type SyncStatus = 'SYNCED' | 'DRAFT' | null;
  *   PUT targetUrl
  *   Headers: Content-Type: application/json, X-API-Key: apiKey
  *   Body: { payload: encryptedPayload }
+ *
+ * Se tenantProvisionPackage è presente, il browser deve prima provisionare il tenant
+ * (POST) — copre il caso in cui l'on-prem abbia perso il tenant (es. dopo un
+ * factory-reset) senza che il central se ne sia accorto.
  */
 export interface PushPackage {
   encryptedPayload: string;
   apiKey: string;
   targetUrl: string;
   baseUrl: string;
+  tenantProvisionPackage?: ProvisionPackage | null;
 }
 
 /**

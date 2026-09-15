@@ -483,6 +483,7 @@
     "browserPushConfirmMessage": "Il server centrale non riesce a raggiungere l'on-prem, ma è raggiungibile dalla tua sessione (probabilmente via VPN). Vuoi effettuare il push direttamente dal tuo browser?",
     "browserPushConfirmButton": "Procedi con il push",
     "browserPushInProgress": "Push in corso via browser…",
+    "browserPushTenantProvisionError": "Impossibile provisionare il tenant sull'on-prem prima del push",
     "browserPushSynced": "Push diretto completato. Configurazione sincronizzata.",
     "browserPushFailed": "Push diretto fallito. Configurazione rimasta come bozza.",
     "browserPushConfirmError": "Push completato ma impossibile aggiornare lo stato sul server.",
