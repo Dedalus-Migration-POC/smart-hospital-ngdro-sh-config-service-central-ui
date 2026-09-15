@@ -82,6 +82,7 @@ export interface ResyncAllPendingPush {
     apiKey: string;
     targetUrl: string;
     baseUrl: string;
+    tenantProvisionPackage?: ProvisionPackage | null;
   };
 }
 

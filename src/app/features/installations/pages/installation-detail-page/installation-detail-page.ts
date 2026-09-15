@@ -451,11 +451,42 @@ export class InstallationDetailPage {
     this.snackbar.open(this.translate.instant('config.browserPushInProgress'), undefined, { duration: 0 });
 
     let browserSynced = 0;
+    // Un tenant può comparire più volte (una per entity): provisioniamo una sola
+    // volta per tenant, non prima di ogni singolo push.
+    const provisionedTenantIds = new Set<string>();
+
     for (const item of pending) {
       const pkg = item.pushPackage;
       let remoteVersion: number | null = null;
       let pushError: string | null = null;
       let pushOk = false;
+
+      if (pkg.tenantProvisionPackage && !provisionedTenantIds.has(item.tenantId)) {
+        const tpkg = pkg.tenantProvisionPackage;
+        try {
+          const tRes = await fetch(tpkg.targetUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': tpkg.adminApiKey },
+            body: tpkg.body,
+            signal: AbortSignal.timeout(15000),
+          });
+          if (tRes.ok) {
+            provisionedTenantIds.add(item.tenantId);
+          } else {
+            pushError = `${this.translate.instant('config.browserPushTenantProvisionError')} (${tRes.status})`;
+          }
+        } catch (e) {
+          pushError = this.translate.instant('config.browserPushTenantProvisionError');
+        }
+        if (pushError) {
+          await firstValueFrom(
+            this.tenantService.pushConfirm(item.tenantId, item.channelId, item.entity, false, null, pushError)
+          ).catch(() => { /* ignora errori push-confirm singoli */ });
+          continue;
+        }
+      } else if (pkg.tenantProvisionPackage) {
+        provisionedTenantIds.add(item.tenantId);
+      }
 
       try {
         const res = await fetch(pkg.targetUrl, {
