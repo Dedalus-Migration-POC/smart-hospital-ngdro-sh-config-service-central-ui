@@ -137,6 +137,25 @@ export interface PushSendResult {
   tokens: number;
 }
 
+/**
+ * Manifest incluso nello zip di backup ("manifest.json"), con l'elenco delle entity esportate.
+ * Ogni entity ha il proprio file JSON nello zip (percorso `file`), leggibile/editabile a mano.
+ */
+export interface TenantConfigBackupManifestEntry {
+  channelId: ChannelId;
+  entity: string;
+  enabled: boolean;
+  /** Percorso del file JSON nello zip, relativo alla root (es. "mobile/base.json"). */
+  file: string;
+}
+
+export interface TenantConfigBackupManifest {
+  formatVersion: 2;
+  exportedAt: string;
+  sourceTenantSlug: string;
+  entries: TenantConfigBackupManifestEntry[];
+}
+
 export interface DraftConfigSummary {
   configId: string;
   tenantId: string;

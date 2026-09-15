@@ -98,6 +98,22 @@
         <mat-card-title>{{ 'product.configs' | translate }}</mat-card-title>
         <mat-card-subtitle>{{ 'product.configsSubtitle' | translate }}</mat-card-subtitle>
       </mat-card-header>
+      @if (canManageTenants()) {
+        <mat-card-content class="detail__backup-actions">
+          <button mat-stroked-button type="button" (click)="exportBackup()" [disabled]="exportingBackup()">
+            @if (exportingBackup()) {
+              <mat-progress-spinner mode="indeterminate" diameter="18" />
+            } @else {
+              <mat-icon>download</mat-icon>
+            }
+            {{ 'product.backupExportButton' | translate }}
+          </button>
+          <button mat-stroked-button type="button" (click)="openImportBackup()">
+            <mat-icon>upload</mat-icon>
+            {{ 'product.backupImportButton' | translate }}
+          </button>
+        </mat-card-content>
+      }
       <mat-card-content class="detail__configs">
         <mat-tab-group animationDuration="150ms" class="detail__tabs">
           @for (ch of channels; track ch) {

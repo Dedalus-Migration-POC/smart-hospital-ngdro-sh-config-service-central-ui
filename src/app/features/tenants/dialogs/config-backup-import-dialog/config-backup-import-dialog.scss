@@ -1,0 +1,68 @@
+.backup-import {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 420px;
+  max-height: 60vh;
+
+  &__select-all {
+    border-bottom: 1px solid var(--mat-sys-outline-variant, #ccc);
+    padding-bottom: 8px;
+  }
+
+  &__channel-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    h4 {
+      margin: 4px 0;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  &__disabled-badge {
+    margin-left: 6px;
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: var(--mat-sys-surface-variant, #eee);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__summary {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  &__warning,
+  &__error,
+  &__result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+  }
+
+  &__warning {
+    color: var(--mat-sys-tertiary, #8a6d00);
+  }
+
+  &__error {
+    color: var(--mat-sys-error, #b3261e);
+  }
+
+  &__ok-icon {
+    color: var(--mat-sys-primary, #2e7d32);
+  }
+
+  &__error-list {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--mat-sys-error, #b3261e);
+    font-size: 0.85em;
+  }
+}

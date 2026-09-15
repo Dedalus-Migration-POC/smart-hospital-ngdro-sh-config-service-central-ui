@@ -1,0 +1,98 @@
+<h2 mat-dialog-title>{{ 'config.backupImportTitle' | translate }}</h2>
+
+<mat-dialog-content class="backup-import">
+  @if (state() === 'pick') {
+    <p>{{ 'config.backupImportHint' | translate }}</p>
+
+    <input type="file" accept=".zip,application/zip" (change)="onFileSelected($event)" #fileInput hidden />
+    <button mat-stroked-button type="button" (click)="fileInput.click()">
+      <mat-icon>upload_file</mat-icon>
+      {{ 'config.backupImportChooseFile' | translate }}
+    </button>
+
+    @if (parseError(); as err) {
+      <p class="backup-import__error" role="alert">{{ err }}</p>
+    }
+  }
+
+  @if (state() === 'ready') {
+    <p>
+      <strong>{{ fileName() }}</strong> —
+      {{ 'config.backupImportSourceTenant' | translate }} <code>{{ sourceTenantSlug() }}</code>
+    </p>
+
+    <div class="backup-import__select-all">
+      <mat-checkbox [checked]="allSelected()" (change)="toggleAll()">
+        {{ 'config.backupImportSelectAll' | translate }} ({{ selectedCount() }}/{{ rows().length }})
+      </mat-checkbox>
+    </div>
+
+    @for (group of channelGroups(); track group.channelId) {
+      <div class="backup-import__channel-group">
+        <h4>{{ group.channelId }}</h4>
+        @for (row of group.rows; track row.entity) {
+          <mat-checkbox [checked]="row.selected" (change)="toggleRow(row)">
+            {{ row.entity }}
+            @if (!row.enabled) {
+              <span class="backup-import__disabled-badge">{{ 'config.backupImportDisabledBadge' | translate }}</span>
+            }
+          </mat-checkbox>
+        }
+      </div>
+    }
+
+    <p class="backup-import__warning">
+      <mat-icon>warning</mat-icon>
+      {{ 'config.backupImportOverwriteWarning' | translate: { tenant: data.tenantSlug } }}
+    </p>
+  }
+
+  @if (state() === 'running') {
+    <p>{{ 'config.backupImportRunning' | translate }} ({{ progressDone() }}/{{ progressTotal() }})</p>
+    <mat-progress-bar mode="determinate" [value]="progressTotal() ? (progressDone() / progressTotal()) * 100 : 0" />
+  }
+
+  @if (state() === 'done') {
+    <p class="backup-import__result">
+      <mat-icon class="backup-import__ok-icon">check_circle</mat-icon>
+      {{ 'config.backupImportDoneSynced' | translate: { count: syncedCount() } }}
+    </p>
+    @if (draftCount() > 0) {
+      <p class="backup-import__warning">
+        <mat-icon>info</mat-icon>
+        {{ 'config.backupImportDoneDraft' | translate: { count: draftCount() } }}
+      </p>
+    }
+    @if (errorCount() > 0) {
+      <p class="backup-import__error">
+        <mat-icon>error_outline</mat-icon>
+        {{ 'config.backupImportDoneErrors' | translate: { count: errorCount() } }}
+      </p>
+      <ul class="backup-import__error-list">
+        @for (e of errorLog(); track e.channelId + e.entity) {
+          <li>{{ e.channelId }} / {{ e.entity }}: {{ e.message }}</li>
+        }
+      </ul>
+    }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (state() === 'pick') {
+    <button mat-button type="button" (click)="close()">{{ 'common.cancel' | translate }}</button>
+  }
+  @if (state() === 'ready') {
+    <button mat-button type="button" (click)="reset()">{{ 'common.cancel' | translate }}</button>
+    <button mat-flat-button color="primary" type="button" [disabled]="selectedCount() === 0" (click)="startImport()">
+      {{ 'config.backupImportConfirm' | translate }} ({{ selectedCount() }})
+    </button>
+  }
+  @if (state() === 'running') {
+    <button mat-button type="button" disabled>
+      <mat-progress-spinner mode="indeterminate" diameter="20" />
+    </button>
+  }
+  @if (state() === 'done') {
+    <button mat-flat-button color="primary" type="button" (click)="close()">{{ 'common.close' | translate }}</button>
+  }
+</mat-dialog-actions>

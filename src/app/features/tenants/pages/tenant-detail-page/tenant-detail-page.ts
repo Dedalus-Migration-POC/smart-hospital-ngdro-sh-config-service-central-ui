@@ -24,6 +24,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../../core/auth/auth';
 import { toUserMessage } from '../../../../core/http/api-error';
@@ -37,11 +38,24 @@ import {
   ConfigApiDocDialogData,
 } from '../../dialogs/config-api-doc-dialog/config-api-doc-dialog';
 import {
+  ConfigBackupImportDialog,
+  ConfigBackupImportDialogData,
+} from '../../dialogs/config-backup-import-dialog/config-backup-import-dialog';
+import {
   ConfigEndpointsDialog,
   ConfigEndpointsDialogData,
 } from '../../dialogs/config-endpoints-dialog/config-endpoints-dialog';
-import { CHANNELS, ChannelId, PushNotificationConfig, Tenant } from '../../models';
+import {
+  CHANNELS,
+  ChannelId,
+  EntityInfo,
+  PushNotificationConfig,
+  Tenant,
+  TenantConfigBackupManifest,
+  TenantConfigBackupManifestEntry,
+} from '../../models';
 import { TenantService } from '../../services/tenants';
+import JSZip from 'jszip';
 
 @Component({
   selector: 'app-tenant-detail-page',
@@ -92,6 +106,8 @@ export class TenantDetailPage {
   readonly pushConfig = signal<PushNotificationConfig | null>(null);
   readonly pushConfigLoading = signal(false);
   readonly pushConfigSaving = signal(false);
+
+  readonly exportingBackup = signal(false);
 
   readonly channels = CHANNELS;
 
@@ -280,6 +296,81 @@ export class TenantDetailPage {
       baseUrl: '',
     };
     this.dialog.open<ConfigApiDocDialog, ConfigApiDocDialogData>(ConfigApiDocDialog, { data });
+  }
+
+  /**
+   * Esporta uno zip con un file JSON per ogni entity (percorso `<canale>/<entity>.json`,
+   * contenuto = configJson grezzo, direttamente ispezionabile/editabile a mano) più un
+   * `manifest.json` con l'elenco delle entity e il loro stato enabled/disabled.
+   */
+  async exportBackup(): Promise<void> {
+    const t = this.tenant();
+    if (!t || this.exportingBackup()) return;
+    this.exportingBackup.set(true);
+    try {
+      const zip = new JSZip();
+      const entries: TenantConfigBackupManifestEntry[] = [];
+
+      for (const ch of CHANNELS) {
+        const list = await firstValueFrom(this.tenants.getEntities(t.id, ch)).catch(
+          () => [] as EntityInfo[],
+        );
+        const disabled = new Set(list.filter((e) => !e.enabled).map((e) => e.entity));
+        const entityNames = new Set([...list.map((e) => e.entity), 'base']);
+
+        for (const name of entityNames) {
+          try {
+            const cfg = await firstValueFrom(this.tenants.getConfig(t.id, ch, 'local', name));
+            const file = `${ch}/${name}.json`;
+            zip.file(file, JSON.stringify(cfg.configJson, null, 2));
+            entries.push({ channelId: ch, entity: name, enabled: !disabled.has(name), file });
+          } catch {
+            // entity non configurata per questo tenant/canale: viene semplicemente omessa dal backup
+          }
+        }
+      }
+
+      const manifest: TenantConfigBackupManifest = {
+        formatVersion: 2,
+        exportedAt: new Date().toISOString(),
+        sourceTenantSlug: t.slug,
+        entries,
+      };
+      zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup-${t.slug}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      this.snackbar.open(this.translate.instant('product.backupExportSuccess'), 'OK', { duration: 3000 });
+    } catch (err: unknown) {
+      this.snackbar.open(
+        toUserMessage(err, this.translate.instant('product.backupExportError')),
+        'OK',
+        { duration: 6000 },
+      );
+    } finally {
+      this.exportingBackup.set(false);
+    }
+  }
+
+  openImportBackup(): void {
+    const t = this.tenant();
+    if (!t) return;
+    const data: ConfigBackupImportDialogData = { tenantId: t.id, tenantSlug: t.slug };
+    const ref = this.dialog.open<ConfigBackupImportDialog, ConfigBackupImportDialogData, boolean>(
+      ConfigBackupImportDialog,
+      { data, width: '520px', disableClose: true },
+    );
+    ref.afterClosed().subscribe((imported) => {
+      if (imported) {
+        // Ricarica per riflettere le nuove entity/config importate nelle sezioni canale già montate.
+        window.location.reload();
+      }
+    });
   }
 
   channelLabel(ch: ChannelId): string {

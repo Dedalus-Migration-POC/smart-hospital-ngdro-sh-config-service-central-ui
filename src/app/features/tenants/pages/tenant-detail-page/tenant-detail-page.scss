@@ -64,6 +64,14 @@
   padding-top: 0;
 }
 
+.detail__backup-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 0;
+  padding-bottom: 8px;
+}
+
 .detail__tabs {
   width: 100%;
 }
