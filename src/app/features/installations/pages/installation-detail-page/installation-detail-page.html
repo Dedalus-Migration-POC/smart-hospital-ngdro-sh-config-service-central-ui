@@ -237,6 +237,14 @@
                 <mat-icon>visibility</mat-icon>
                 {{ 'installation.show' | translate }}
               </button>
+              <button
+                mat-button
+                type="button"
+                (click)="rotatePayloadMasterKey()"
+              >
+                <mat-icon>autorenew</mat-icon>
+                {{ 'installation.rotateButton' | translate }}
+              </button>
             </div>
           </div>
         </mat-card-content>
