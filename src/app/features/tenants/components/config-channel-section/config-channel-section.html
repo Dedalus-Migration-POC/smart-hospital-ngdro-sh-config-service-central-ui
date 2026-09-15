@@ -2,8 +2,24 @@
 <div class="channel__main">
 
   <!-- Entity selector — always visible, non si nasconde durante il loading -->
+  <div class="channel__entity-search">
+    <mat-form-field appearance="outline" class="channel__entity-search-field" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        [formControl]="entitySearchControl"
+        [placeholder]="'config.entitySearchPlaceholder' | translate"
+        autocomplete="off"
+      />
+      @if (entitySearchControl.value) {
+        <button matSuffix mat-icon-button type="button" (click)="entitySearchControl.reset('')" [attr.aria-label]="'common.cancel' | translate">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+  </div>
   <div class="channel__entity-bar">
-    @for (e of entities(); track e) {
+    @for (e of filteredEntities(); track e) {
       <button
         type="button"
         class="entity-chip"
@@ -19,6 +35,9 @@
           <mat-icon class="entity-chip__editor-icon">palette</mat-icon>
         }
       </button>
+    }
+    @if (filteredEntities().length === 0) {
+      <span class="channel__entity-empty">{{ 'config.entitySearchNoResults' | translate }}</span>
     }
     @if (isAdmin() && !addingEntity()) {
       <button
@@ -435,10 +454,27 @@
 </div><!-- /channel__main -->
 
 @if (showPreview()) {
-  <div class="channel__preview-side">
-    <div class="channel__preview-label">
+  <div
+    class="channel__preview-side"
+    [class.channel__preview-side--detached]="previewDetached()"
+    cdkDrag
+    [cdkDragDisabled]="!previewDetached()"
+    [cdkDragFreeDragPosition]="previewDragPosition()"
+    cdkDragBoundary="body"
+    (cdkDragEnded)="onPreviewDragEnded($event)"
+  >
+    <div class="channel__preview-label" cdkDragHandle [class.channel__preview-label--draggable]="previewDetached()">
       <mat-icon class="channel__preview-label-icon">smartphone</mat-icon>
       <span>{{ 'config.previewTitle' | translate }}</span>
+      <button
+        type="button"
+        mat-icon-button
+        class="channel__preview-detach-btn"
+        (click)="togglePreviewDetached()"
+        [matTooltip]="(previewDetached() ? 'config.previewDock' : 'config.previewDetach') | translate"
+      >
+        <mat-icon>{{ previewDetached() ? 'push_pin' : 'open_in_full' }}</mat-icon>
+      </button>
     </div>
     @if (previewLangs().length > 1) {
       <mat-form-field appearance="outline" class="channel__preview-lang-select">
@@ -450,7 +486,7 @@
         </mat-select>
       </mat-form-field>
     }
-    <app-smh-phone-preview [renderData]="previewJson()" [themeData]="previewThemeJson()" [translations]="previewTranslationsJson()" [serviceConfig]="previewServiceConfig()" />
+    <app-smh-phone-preview [renderData]="previewJson()" [themeData]="previewThemeJson()" [translations]="previewTranslationsJson()" [serviceConfig]="previewServiceConfig()" [dashboardVariant]="previewDashboardVariant()" />
   </div>
 }
 

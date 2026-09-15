@@ -421,6 +421,210 @@
       </div>
     </mat-tab>
 
+    <!-- ── Tab 7: FSE Dashboard ── -->
+    <mat-tab [label]="'smhThemeData.tabFse' | translate" formGroupName="fseDashboard">
+      <div class="smh-editor__tab-content">
+
+        <p class="smh-editor__desc">{{ 'smhThemeData.fseHint' | translate }}</p>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.fsePreviewCounts' | translate }}</p>
+          <div class="smh-editor__inline-row">
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseServiziPrincipaliCount' | translate }}</mat-label>
+              <input matInput type="number" formControlName="servizi_principali_preview_count" min="0" max="20" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseAltriServiziCount' | translate }}</mat-label>
+              <input matInput type="number" formControlName="altri_servizi_preview_count" min="0" max="20" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="smh-editor__section" formGroupName="welcome_heading">
+          <mat-slide-toggle formControlName="visible">{{ 'smhThemeData.fseWelcomeVisible' | translate }}</mat-slide-toggle>
+        </div>
+
+        <!-- Tema FSE -->
+        <div class="smh-editor__section" formGroupName="theme">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.fseThemeColors' | translate }}</p>
+
+          @for (field of fseThemeColorFields; track field.key) {
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('fseDashboard.theme.' + field.key)"
+                     (change)="patchColor('fseDashboard.theme.' + field.key, $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <mat-label>{{ field.labelKey | translate }}</mat-label>
+                <input matInput [formControlName]="field.key" [placeholder]="field.hint ?? ''" />
+                <mat-hint>{{ field.hint }}</mat-hint>
+              </mat-form-field>
+            </div>
+          }
+
+          <mat-slide-toggle formControlName="background_pattern_visible">
+            {{ 'smhThemeData.fseBackgroundPatternVisible' | translate }}
+          </mat-slide-toggle>
+          <mat-form-field appearance="outline" class="smh-editor__text-field--full">
+            <mat-label>{{ 'smhThemeData.fseBackgroundPatternSvg' | translate }}</mat-label>
+            <textarea matInput formControlName="background_pattern_svg" rows="3"></textarea>
+          </mat-form-field>
+
+          <p class="smh-editor__section-title" style="margin-top: 12px">{{ 'smhThemeData.fseCardStyle' | translate }}</p>
+          <div class="smh-editor__inline-row">
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseCardRadius' | translate }}</mat-label>
+              <input matInput type="number" formControlName="card_radius" min="0" max="50" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseCardShadowOpacity' | translate }}</mat-label>
+              <input matInput type="number" formControlName="card_shadow_opacity" min="0" max="1" step="0.01" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseCardShadowBlur' | translate }}</mat-label>
+              <input matInput type="number" formControlName="card_shadow_blur_radius" min="0" max="60" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseCardShadowSpread' | translate }}</mat-label>
+              <input matInput type="number" formControlName="card_shadow_spread_radius" min="-20" max="20" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseCardShadowOffsetY' | translate }}</mat-label>
+              <input matInput type="number" formControlName="card_shadow_offset_y" min="-20" max="20" />
+            </mat-form-field>
+          </div>
+
+          <p class="smh-editor__section-title" style="margin-top: 12px">{{ 'smhThemeData.fseBannerStyle' | translate }}</p>
+          <div class="smh-editor__inline-row">
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseBannerBorderWidth' | translate }}</mat-label>
+              <input matInput type="number" formControlName="banner_border_width" min="0" max="10" step="0.5" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseBannerShadowOpacity' | translate }}</mat-label>
+              <input matInput type="number" formControlName="banner_shadow_opacity" min="0" max="1" step="0.01" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseBannerShadowBlur' | translate }}</mat-label>
+              <input matInput type="number" formControlName="banner_shadow_blur_radius" min="0" max="60" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseBannerShadowSpread' | translate }}</mat-label>
+              <input matInput type="number" formControlName="banner_shadow_spread_radius" min="-20" max="20" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseBannerShadowOffsetY' | translate }}</mat-label>
+              <input matInput type="number" formControlName="banner_shadow_offset_y" min="-20" max="20" />
+            </mat-form-field>
+          </div>
+
+          <p class="smh-editor__section-title" style="margin-top: 12px">{{ 'smhThemeData.fseIconStyle' | translate }}</p>
+          <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+            <mat-label>{{ 'smhThemeData.fseIconRadius' | translate }}</mat-label>
+            <input matInput type="number" formControlName="icon_radius" min="0" max="999" />
+          </mat-form-field>
+        </div>
+
+        <!-- App bar FSE -->
+        <div class="smh-editor__section" formGroupName="app_bar">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.fseAppBar' | translate }}</p>
+
+          <mat-slide-toggle formControlName="visible">{{ 'smhThemeData.fseAppBarVisible' | translate }}</mat-slide-toggle>
+
+          <div class="smh-editor__field-row">
+            <input type="color" [value]="getColor('fseDashboard.app_bar.background_color')"
+                   (change)="patchColor('fseDashboard.app_bar.background_color', $event)" class="smh-editor__color-swatch" />
+            <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+              <mat-label>{{ 'smhThemeData.fseAppBarBackgroundColor' | translate }}</mat-label>
+              <input matInput formControlName="background_color" />
+            </mat-form-field>
+          </div>
+
+          <div class="smh-editor__inline-row">
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseAppBarHeight' | translate }}</mat-label>
+              <input matInput type="number" formControlName="height" min="40" max="120" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+              <mat-label>{{ 'smhThemeData.fseAppBarTitleText' | translate }}</mat-label>
+              <input matInput formControlName="title_text" />
+            </mat-form-field>
+          </div>
+
+          <div class="smh-editor__field-row">
+            <input type="color" [value]="getColor('fseDashboard.app_bar.title_text_color')"
+                   (change)="patchColor('fseDashboard.app_bar.title_text_color', $event)" class="smh-editor__color-swatch" />
+            <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+              <mat-label>{{ 'smhThemeData.fseAppBarTitleTextColor' | translate }}</mat-label>
+              <input matInput formControlName="title_text_color" />
+            </mat-form-field>
+          </div>
+
+          <mat-slide-toggle formControlName="show_notification_bell">
+            {{ 'smhThemeData.fseAppBarShowBell' | translate }}
+          </mat-slide-toggle>
+          <mat-slide-toggle formControlName="show_profile_avatar">
+            {{ 'smhThemeData.fseAppBarShowAvatar' | translate }}
+          </mat-slide-toggle>
+
+          <div class="smh-editor__field-row">
+            <input type="color" [value]="getColor('fseDashboard.app_bar.profile_avatar_background_color')"
+                   (change)="patchColor('fseDashboard.app_bar.profile_avatar_background_color', $event)" class="smh-editor__color-swatch" />
+            <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+              <mat-label>{{ 'smhThemeData.fseAppBarAvatarBg' | translate }}</mat-label>
+              <input matInput formControlName="profile_avatar_background_color" />
+            </mat-form-field>
+          </div>
+          <div class="smh-editor__field-row">
+            <input type="color" [value]="getColor('fseDashboard.app_bar.profile_avatar_icon_color')"
+                   (change)="patchColor('fseDashboard.app_bar.profile_avatar_icon_color', $event)" class="smh-editor__color-swatch" />
+            <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+              <mat-label>{{ 'smhThemeData.fseAppBarAvatarIconColor' | translate }}</mat-label>
+              <input matInput formControlName="profile_avatar_icon_color" />
+            </mat-form-field>
+          </div>
+
+          <!-- Logos -->
+          <p class="smh-editor__section-title" style="margin-top: 12px">{{ 'smhThemeData.fseAppBarLogos' | translate }}</p>
+          @for (logo of fseLogosArray.controls; track $index; let i = $index) {
+            <div class="smh-editor__field-row" [formGroup]="asFormGroup(logo)">
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <mat-label>{{ 'smhThemeData.fseSvgIcon' | translate }}</mat-label>
+                <textarea matInput formControlName="svg_icon" rows="2"></textarea>
+              </mat-form-field>
+              <button mat-icon-button type="button" (click)="removeFseLogo(i)" [matTooltip]="'smhThemeData.fseRemoveItem' | translate">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          }
+          <button mat-stroked-button type="button" (click)="addFseLogo()">
+            <mat-icon>add</mat-icon> {{ 'smhThemeData.fseAddLogo' | translate }}
+          </button>
+
+          <!-- Extra actions -->
+          <p class="smh-editor__section-title" style="margin-top: 12px">{{ 'smhThemeData.fseAppBarExtraActions' | translate }}</p>
+          @for (action of fseExtraActionsArray.controls; track $index; let i = $index) {
+            <div class="smh-editor__field-row" [formGroup]="asFormGroup(action)">
+              <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                <mat-label>{{ 'smhThemeData.fseActionId' | translate }}</mat-label>
+                <input matInput formControlName="id" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <mat-label>{{ 'smhThemeData.fseSvgIcon' | translate }}</mat-label>
+                <textarea matInput formControlName="svg_icon" rows="2"></textarea>
+              </mat-form-field>
+              <button mat-icon-button type="button" (click)="removeFseExtraAction(i)" [matTooltip]="'smhThemeData.fseRemoveItem' | translate">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          }
+          <button mat-stroked-button type="button" (click)="addFseExtraAction()">
+            <mat-icon>add</mat-icon> {{ 'smhThemeData.fseAddExtraAction' | translate }}
+          </button>
+        </div>
+
+      </div>
+    </mat-tab>
+
   </mat-tab-group>
 </mat-dialog-content>
 

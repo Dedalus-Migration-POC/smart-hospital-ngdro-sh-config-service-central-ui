@@ -26,6 +26,19 @@
   gap: 8px;
   position: sticky;
   top: 16px;
+
+  // "Sganciata": esce dal flusso del layout, diventa un pannello fluttuante
+  // trascinabile (cdkDrag) ovunque nella viewport, sopra al resto del contenuto.
+  &--detached {
+    position: fixed;
+    top: 90px;
+    right: 24px;
+    z-index: 1000;
+    background: var(--mat-sys-surface-container-high);
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  }
 }
 
 .channel__preview-label {
@@ -37,12 +50,48 @@
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--mat-sys-on-surface-variant);
+  width: 100%;
+
+  &--draggable {
+    cursor: move;
+  }
 }
 
 .channel__preview-label-icon {
   font-size: 14px;
   width: 14px;
   height: 14px;
+}
+
+.channel__preview-detach-btn {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  line-height: 24px;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.channel__entity-search {
+  display: flex;
+}
+
+.channel__entity-search-field {
+  width: 260px;
+  max-width: 100%;
+  font-size: 0.85rem;
+}
+
+.channel__entity-empty {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--mat-sys-on-surface-variant);
+  padding: 4px 0;
 }
 
 .channel__preview-lang-select {

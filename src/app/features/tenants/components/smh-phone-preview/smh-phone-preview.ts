@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SmhUiRenderJson, ServiceItem, WidgetItem } from '../../dialogs/smh-ui-render-editor-dialog/smh-ui-render-editor-dialog';
-import { SmhThemeDataJson } from '../../dialogs/smh-theme-data-editor-dialog/smh-theme-data-editor-dialog';
+import { SmhThemeDataJson, SmhFseAppBarConfig, SmhFseDashboardTheme } from '../../dialogs/smh-theme-data-editor-dialog/smh-theme-data-editor-dialog';
 import { SmhServiceConfigJson } from '../../dialogs/smh-service-config-editor-dialog/smh-service-config-editor-dialog';
 
 type HomeSection =
@@ -9,6 +9,12 @@ type HomeSection =
   | { type: 'widgets'; items: WidgetItem[] };
 
 const RESERVED_HOME_KEYS = new Set(['app_bar', 'search_bar', 'header']);
+
+/** Logo di default della fse app bar quando `fse_dashboard.app_bar.logos` non è configurato — vedi sh-core `kFseDefaultLogoSvg`. */
+const FSE_DEFAULT_LOGO_SVG = `<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <rect width="40" height="40" rx="10" fill="#19509A"/>
+  <path d="M20 9v22M9 20h22" stroke="white" stroke-width="4" stroke-linecap="round"/>
+</svg>`;
 
 @Component({
   selector: 'app-smh-phone-preview',
@@ -22,6 +28,10 @@ export class SmhPhonePreview {
   readonly themeData     = input<SmhThemeDataJson | null>(null);
   readonly translations  = input<Record<string, unknown> | null>(null);
   readonly serviceConfig = input<SmhServiceConfigJson | null>(null);
+  /** Valore di `dashboardVariant` letto dall'entity mobile `base`. `"fse"` attiva la variante "Fse Dashboard". */
+  readonly dashboardVariant = input<string | null>(null);
+
+  readonly isFse = computed(() => this.dashboardVariant() === 'fse');
 
   readonly themeVars = computed(() => {
     const t = this.themeData();
@@ -35,6 +45,98 @@ export class SmhPhonePreview {
       '--phone-on-surface':  t.colorScheme?.onSurface   ?? '#000000',
     };
   });
+
+  private readonly fseConfig = computed(() => this.themeData()?.fse_dashboard ?? {});
+
+  /** CSS custom properties per la variante Fse Dashboard, con gli stessi default di sh-core `fse_theme.dart`. */
+  readonly fseThemeVars = computed(() => {
+    const primary = this.themeVars()['--phone-primary'] ?? '#19509A';
+    const t: SmhFseDashboardTheme = this.fseConfig().theme ?? {};
+    return {
+      // Passthrough del colore primario globale — riusato dalla bottom nav
+      // (stessa regola di sh-core: Theme.of(context).primaryColor, non ctaButtonColor).
+      '--phone-primary':            primary,
+      '--fse-scaffold-bg':          t.scaffold_background_color ?? '#F0F3F8',
+      '--fse-card-bg':              t.card_background_color     ?? '#FFFFFF',
+      '--fse-card-radius':          `${t.card_radius             ?? 8}px`,
+      '--fse-card-shadow-color':    t.card_shadow_color          ?? '#1F2A44',
+      '--fse-card-shadow-opacity':  `${t.card_shadow_opacity     ?? 0.10}`,
+      '--fse-card-shadow-blur':     `${t.card_shadow_blur_radius ?? 10}px`,
+      '--fse-card-shadow-spread':   `${t.card_shadow_spread_radius ?? 0}px`,
+      '--fse-card-shadow-offset-y': `${t.card_shadow_offset_y    ?? 3}px`,
+      '--fse-banner-border-color':  t.banner_border_color        ?? primary,
+      '--fse-banner-border-width':  `${t.banner_border_width     ?? 1.5}px`,
+      '--fse-banner-shadow-color':  t.banner_shadow_color        ?? '#1F2A44',
+      '--fse-banner-shadow-opacity': `${t.banner_shadow_opacity  ?? 0.22}`,
+      '--fse-banner-shadow-blur':   `${t.banner_shadow_blur_radius ?? 18}px`,
+      '--fse-banner-shadow-spread': `${t.banner_shadow_spread_radius ?? 1}px`,
+      '--fse-banner-shadow-offset-y': `${t.banner_shadow_offset_y ?? 6}px`,
+      '--fse-icon-bg':              t.icon_background_color      ?? '#F1F2F4',
+      '--fse-icon-color':           t.icon_color                 ?? '#1F2A44',
+      '--fse-icon-radius':          `${t.icon_radius              ?? 999}px`,
+      '--fse-badge-border-color':   t.badge_border_color         ?? primary,
+      '--fse-badge-text-color':     t.badge_text_color           ?? primary,
+      '--fse-title-color':          t.title_color                ?? '#111827',
+      '--fse-subtitle-color':       t.subtitle_color              ?? '#6B7280',
+      '--fse-cta-button-color':     t.cta_button_color            ?? primary,
+    };
+  });
+
+  readonly fseBackgroundPatternVisible = computed(() => this.fseConfig().theme?.background_pattern_visible ?? true);
+  readonly fseBackgroundPatternUri = computed(() => {
+    if (!this.fseBackgroundPatternVisible()) return '';
+    return this.svgUri(this.fseConfig().theme?.background_pattern_svg);
+  });
+
+  readonly fseWelcomeVisible = computed(() => this.fseConfig().welcome_heading?.visible ?? true);
+
+  /** Config app bar della fse dashboard, con default (vedi sh-core `FseAppBarConfig.fromThemeDataMap`). */
+  readonly fseAppBar = computed(() => {
+    const cfg: SmhFseAppBarConfig = this.fseConfig().app_bar ?? {};
+    const logos = (cfg.logos ?? []).map(l => l.svg_icon).filter((s): s is string => !!s);
+    return {
+      visible: cfg.visible ?? true,
+      backgroundColor: cfg.background_color ?? '#FFFFFF',
+      height: cfg.height ?? 72,
+      logos: logos.length > 0 ? logos : [FSE_DEFAULT_LOGO_SVG],
+      titleText: cfg.title_text ?? '',
+      titleTextColor: cfg.title_text_color ?? '#0F2A4A',
+      showNotificationBell: cfg.show_notification_bell ?? true,
+      showProfileAvatar: cfg.show_profile_avatar ?? true,
+      profileAvatarBackgroundColor: cfg.profile_avatar_background_color ?? '#1F2A44',
+      profileAvatarIconColor: cfg.profile_avatar_icon_color ?? '#FFFFFF',
+      extraActions: cfg.extra_actions ?? [],
+    };
+  });
+
+  private previewCount(key: 'servizi_principali_preview_count' | 'altri_servizi_preview_count', fallback: number): number {
+    const v = this.fseConfig()[key];
+    return typeof v === 'number' ? v : fallback;
+  }
+
+  /** Sole sezioni "categoria" di `home.body`, nell'ordine JSON — la 1ª è "Servizi principali", la 2ª "Altri servizi" (stessa regola di sh-core `FseHomeScreen`). */
+  private readonly fseCategorySections = computed(() =>
+    this.homeSections().filter((s): s is Extract<HomeSection, { type: 'category' }> => s.type === 'category'),
+  );
+  readonly fseWidgetSections = computed(() => this.homeSections().filter(s => s.type === 'widgets'));
+
+  readonly fsePrincipaliSectionName = computed(() => this.fseCategorySections()[0]?.name ?? null);
+  readonly fseAltriSectionName = computed(() => this.fseCategorySections()[1]?.name ?? null);
+
+  readonly fsePrincipaliItems = computed(() =>
+    (this.fseCategorySections()[0]?.items ?? []).slice(0, this.previewCount('servizi_principali_preview_count', 4)),
+  );
+  readonly fseAltriItems = computed(() =>
+    (this.fseCategorySections()[1]?.items ?? []).slice(0, this.previewCount('altri_servizi_preview_count', 2)),
+  );
+
+  /** Item con lock/link "badge": in preview l'utente è sempre considerato non loggato, come per il resto del simulatore. */
+  fseIsLink(item: ServiceItem): boolean {
+    return !!item.link;
+  }
+  fseShowLock(item: ServiceItem): boolean {
+    return !!item.show_lock && !this.fseIsLink(item);
+  }
 
   /** Mappa id → { hidden, disabled, link } dal service config */
   private readonly svcMap = computed((): Map<string, { hidden: boolean; disabled: boolean; link?: string }> => {

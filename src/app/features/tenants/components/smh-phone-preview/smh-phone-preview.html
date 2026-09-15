@@ -1,3 +1,198 @@
+@if (isFse()) {
+<!-- ============================================================= -->
+<!-- Variante "Fse Dashboard" — attivata da entity `base`.dashboardVariant === "fse". -->
+<!-- Riusa gli stessi dati (smh_ui_render.home.body/header, smh_service_config,       -->
+<!-- navigation_bar) del dashboard standard: cambia solo il layout, secondo le regole  -->
+<!-- di sh-core (fse_dashboard_render_utils.dart / fse_theme.dart / fse_app_bar.dart). -->
+<!-- ============================================================= -->
+<div class="phone phone--fse" [style]="fseThemeVars()">
+  <!-- Status bar -->
+  <div class="phone__status-bar phone__status-bar--fse">
+    <span>4:27</span>
+    <span>5G ▲</span>
+  </div>
+
+  <!-- Fse App bar -->
+  @if (fseAppBar().visible) {
+    <div class="fse-app-bar" [style.background]="fseAppBar().backgroundColor" [style.height.px]="fseAppBar().height / 2">
+      <div class="fse-app-bar__logos">
+        @for (logo of fseAppBar().logos; track $index; let last = $last) {
+          @if (svgUri(logo); as uri) {
+            <img class="fse-app-bar__logo" [src]="uri" alt="" />
+          }
+          @if (!last) {
+            <span class="fse-app-bar__divider"></span>
+          }
+        }
+        @if (fseAppBar().titleText) {
+          <span class="fse-app-bar__title" [style.color]="fseAppBar().titleTextColor">{{ fseAppBar().titleText }}</span>
+        }
+      </div>
+      <div class="fse-app-bar__actions">
+        @for (action of fseAppBar().extraActions; track $index) {
+          <div class="fse-app-bar__avatar" [style.background]="fseAppBar().profileAvatarBackgroundColor">
+            @if (svgUri(action.svg_icon); as uri) {
+              <img [src]="uri" alt="" />
+            }
+          </div>
+        }
+        @if (fseAppBar().showNotificationBell) {
+          <div class="fse-app-bar__avatar" [style.background]="fseAppBar().profileAvatarBackgroundColor">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11" [style.color]="fseAppBar().profileAvatarIconColor">
+              <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <span class="fse-app-bar__dot"></span>
+          </div>
+        }
+        @if (fseAppBar().showProfileAvatar) {
+          <div class="fse-app-bar__avatar" [style.background]="fseAppBar().profileAvatarBackgroundColor">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12" [style.color]="fseAppBar().profileAvatarIconColor">
+              <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/>
+            </svg>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Scrollable body: pattern di sfondo fisso + contenuto scrollabile sopra,
+       come lo Stack{background, content} dentro il body dello ShScaffold in
+       fse_home_screen.dart — il pattern non deve scorrere col contenuto. -->
+  <div class="phone__body--fse">
+    @if (fseBackgroundPatternUri(); as bgUri) {
+      <img class="fse-bg-pattern" [src]="bgUri" alt="" />
+    }
+    <div class="phone__scroll phone__scroll--fse">
+    @if (fseWelcomeVisible()) {
+      <div class="fse-welcome">{{ t('home_screen.header.welcome_title') || 'Benvenuto' }}</div>
+    }
+
+    <!-- Banner(s) -->
+    @for (banner of renderData()?.home?.header ?? []; track banner.title) {
+      @if (banner.show_card && banner.title) {
+        <div class="fse-banner">
+          <svg class="fse-banner__icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2zm0-8h-2V7h2z"/>
+          </svg>
+          <div class="fse-banner__text">
+            <div class="fse-banner__title">{{ t(banner.title) }}</div>
+            @if (banner.subtitle) {
+              <div class="fse-banner__sub">{{ t(banner.subtitle) }}</div>
+            }
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Widget section (identico allo standard: stesso HomeWidgetSection riusato da sh-core) -->
+    @for (section of fseWidgetSections(); track $index) {
+      @for (widget of section.items; track widget.id) {
+        <div class="phone__widget">
+          <span class="phone__widget-label">{{ widget.id }}</span>
+        </div>
+      }
+    }
+
+    <!-- Servizi principali — griglia 2 colonne, limitata da servizi_principali_preview_count -->
+    @if (fsePrincipaliSectionName(); as name) {
+      <div class="fse-section-header">
+        <span class="fse-section-header__title">{{ t(name) }}</span>
+        <span class="fse-section-header__cta">{{ t('dashboard_fse.cta.vedi_tutti') || 'Vedi tutti' }}</span>
+      </div>
+      <div class="fse-grid">
+        @for (item of fsePrincipaliItems(); track item.id) {
+          <div class="fse-card fse-card--elevated fse-grid__card" [class.fse-card--disabled]="item.disabled">
+            <div class="fse-grid__icon-row">
+              <div class="fse-icon-box">
+                @if (svgUri(item.svg_icon); as uri) {
+                  <img [src]="uri" alt="" />
+                }
+              </div>
+              @if (fseShowLock(item) || fseIsLink(item)) {
+                <div class="fse-badge">
+                  @if (fseIsLink(item)) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="7" height="7">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <span>{{ t('home_screen.body.link') || 'Link' }}</span>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="7" height="7">
+                      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                    </svg>
+                    <span>{{ t('home_screen.body.login_required') || 'Accedi' }}</span>
+                  }
+                </div>
+              }
+            </div>
+            <div class="fse-grid__title">{{ t(item.title) || '…' }}</div>
+            @if (item.subtitle) {
+              <div class="fse-grid__sub">{{ t(item.subtitle) }}</div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Altri servizi — lista, limitata da altri_servizi_preview_count -->
+    @if (fseAltriSectionName(); as name) {
+      <div class="fse-section-header">
+        <span class="fse-section-header__title">{{ t(name) }}</span>
+        <span class="fse-section-header__cta">{{ t('dashboard_fse.cta.vedi_tutti') || 'Vedi tutti' }}</span>
+      </div>
+      @for (item of fseAltriItems(); track item.id) {
+        <div class="fse-card fse-card--elevated fse-list-row" [class.fse-card--disabled]="item.disabled">
+          <div class="fse-icon-box">
+            @if (svgUri(item.svg_icon); as uri) {
+              <img [src]="uri" alt="" />
+            }
+          </div>
+          <span class="fse-list-row__title">{{ t(item.title) || '…' }}</span>
+          @if (fseShowLock(item) || fseIsLink(item)) {
+            <div class="fse-badge">
+              @if (fseIsLink(item)) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="7" height="7">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="currentColor" width="7" height="7">
+                  <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                </svg>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+    </div>
+  </div>
+
+  <!-- Navigation bar -->
+  @if ((renderData()?.navigation_bar?.services ?? []).length > 0) {
+    <div class="phone__nav-bar">
+      <div class="phone__nav-item phone__nav-item--active">
+        <svg class="phone__nav-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+        <span class="phone__nav-label">{{ t('navigation_bar.home') || 'Home' }}</span>
+      </div>
+      @for (svc of renderData()!.navigation_bar!.services!; track svc.id) {
+        <div class="phone__nav-item">
+          @if (svgUri(svc.svg_icon); as uri) {
+            <img class="phone__nav-icon" [src]="uri" alt="" />
+          } @else {
+            <svg class="phone__nav-icon phone__nav-icon--placeholder" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          }
+          <span class="phone__nav-label">{{ t(svc.title) }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>
+} @else {
 <div class="phone" [style]="themeVars()">
   <!-- Status bar -->
   <div class="phone__status-bar">
@@ -119,3 +314,4 @@
     </div>
   }
 </div>
+}

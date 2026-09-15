@@ -17,6 +17,7 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
+import { CdkDragEnd, DragDropModule } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
@@ -170,6 +171,7 @@ function extractServiceIds(config: unknown): string[] {
     MatTooltipModule,
     TranslatePipe,
     SmhPhonePreview,
+    DragDropModule,
   ],
   templateUrl: './config-channel-section.html',
   styleUrl: './config-channel-section.scss',
@@ -190,6 +192,18 @@ export class ConfigChannelSection {
     computation: () => 'base',
   });
   readonly entities = signal<string[]>(['base']);
+  readonly entitySearchControl = new FormControl('', { nonNullable: true });
+  readonly entitySearch = toSignal(
+    this.entitySearchControl.valueChanges.pipe(startWith(this.entitySearchControl.value)),
+    { initialValue: this.entitySearchControl.value },
+  );
+  /** Entity filtrate dalla ricerca — l'entity attiva resta sempre visibile anche se non combacia. */
+  readonly filteredEntities = computed(() => {
+    const q = this.entitySearch().trim().toLowerCase();
+    if (!q) return this.entities();
+    const current = this.entity();
+    return this.entities().filter((e) => e === current || e.toLowerCase().includes(q));
+  });
   readonly addingEntity = signal(false);
   readonly newEntityControl = new FormControl('', [
     Validators.required,
@@ -314,6 +328,11 @@ export class ConfigChannelSection {
           this.cachedServiceConfigJson.set(parsed);
         }
       });
+    this.tenantService.getConfig(tenantId, 'mobile', 'local', 'base')
+      .pipe(catchError(() => of(null)))
+      .subscribe((cfg) => {
+        if (cfg) this.cachedBaseJson.set(cfg.configJson as Record<string, unknown>);
+      });
     const translationEntity = ConfigChannelSection.translationEntity();
     const fallbackToIt$ = this.tenantService.getConfig(tenantId, 'mobile', 'local', 'smh_it').pipe(catchError(() => of(null)));
     const fallbackToEn$ = translationEntity !== 'smh_en'
@@ -386,6 +405,9 @@ export class ConfigChannelSection {
             ? { services: raw as SmhServiceConfigJson['services'] }
             : (raw as SmhServiceConfigJson) ?? { services: [] };
           this.cachedServiceConfigJson.set(parsed);
+        }
+        if (channelId === 'mobile' && entity === 'base') {
+          this.cachedBaseJson.set(active.configJson as Record<string, unknown>);
         }
         if (channelId === 'mobile' && entity === ConfigChannelSection.translationEntity()) {
           this.translationsCache.update(m => new Map(m).set(entity, active.configJson as Record<string, string>));
@@ -724,6 +746,7 @@ export class ConfigChannelSection {
   private readonly cachedUiRenderJson  = signal<SmhUiRenderJson | null>(null);
   private readonly cachedThemeDataJson = signal<SmhThemeDataJson | null>(null);
   private readonly cachedServiceConfigJson = signal<SmhServiceConfigJson | null>(null);
+  private readonly cachedBaseJson = signal<Record<string, unknown> | null>(null);
   private readonly translationsCache   = signal<Map<string, Record<string, unknown>>>(new Map());
 
   /** Ricava l'entity di traduzione dalla lingua del browser (es. "it" → "smh_it"). Default: "smh_en". */
@@ -748,6 +771,20 @@ export class ConfigChannelSection {
   readonly showPreview = computed(() =>
     this.channelId() === 'mobile' && (this.isSmhUiRender() || this.isSmhThemeData()),
   );
+
+  /** Se true, la preview è "sganciata" dal flusso della pagina: diventa un pannello fisso, trascinabile ovunque sullo schermo. Default: sganciata. */
+  readonly previewDetached = signal(true);
+  readonly previewDragPosition = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  togglePreviewDetached(): void {
+    this.previewDetached.update((v) => !v);
+    this.previewDragPosition.set({ x: 0, y: 0 });
+  }
+
+  onPreviewDragEnded(event: CdkDragEnd): void {
+    const pos = event.source.getFreeDragPosition();
+    this.previewDragPosition.set(pos);
+  }
 
   readonly previewJson = computed((): SmhUiRenderJson | null => {
     if (!this.showPreview()) return null;
@@ -779,6 +816,24 @@ export class ConfigChannelSection {
       } catch { return this.cachedServiceConfigJson(); }
     }
     return this.cachedServiceConfigJson();
+  });
+
+  private readonly isMobileBase = computed(() => this.channelId() === 'mobile' && this.entity() === 'base');
+
+  /** Variante dashboard mobile letta dall'entity `base` (`dashboardVariant: "fse"`), riflette anche l'editing live se si sta modificando proprio quell'entity. */
+  readonly previewDashboardVariant = computed((): string | null => {
+    if (!this.showPreview()) return null;
+    if (this.isMobileBase()) {
+      const raw = this.configValue();
+      if (!raw?.trim()) return (this.cachedBaseJson()?.['dashboardVariant'] as string | undefined) ?? null;
+      try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        return (parsed['dashboardVariant'] as string | undefined) ?? null;
+      } catch {
+        return (this.cachedBaseJson()?.['dashboardVariant'] as string | undefined) ?? null;
+      }
+    }
+    return (this.cachedBaseJson()?.['dashboardVariant'] as string | undefined) ?? null;
   });
 
   readonly previewTranslationsJson = computed((): Record<string, unknown> | null => {

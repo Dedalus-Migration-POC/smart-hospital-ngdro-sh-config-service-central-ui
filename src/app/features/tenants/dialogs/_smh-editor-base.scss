@@ -169,6 +169,7 @@
 
     &--grow { flex: 1; min-width: 0; }
     &--sm   { max-width: 110px; }
+    &--full { width: 100%; flex-basis: 100%; }
   }
 
   .smh-editor__inline-row {
