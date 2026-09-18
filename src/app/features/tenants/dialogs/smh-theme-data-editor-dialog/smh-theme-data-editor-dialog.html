@@ -38,6 +38,20 @@
           </div>
         </div>
 
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.backgroundPattern' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <mat-slide-toggle formControlName="background_pattern_visible">
+              {{ 'smhThemeData.backgroundPatternVisible' | translate }}
+            </mat-slide-toggle>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--full">
+              <mat-label>{{ 'smhThemeData.backgroundPatternSvg' | translate }}</mat-label>
+              <textarea matInput formControlName="background_pattern_svg" rows="3"></textarea>
+              <mat-hint>{{ 'smhThemeData.backgroundPatternHint' | translate }}</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+
       </div>
     </mat-tab>
 

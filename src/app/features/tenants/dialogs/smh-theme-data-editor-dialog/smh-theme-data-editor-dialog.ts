@@ -137,6 +137,10 @@ export interface SmhThemeDataJson {
   primaryColor?: string;
   primarySwatch?: string;
   scaffoldBackgroundColor?: string;
+  /** Sfondo decorativo globale ShScaffold (SDUI + tutte le screen native), indipendente
+   * da fse_dashboard.theme.background_pattern_visible/svg (§14 SDUI_MANUAL.md). */
+  background_pattern_visible?: boolean;
+  background_pattern_svg?: string;
   colorScheme?: SmhColorScheme;
   textTheme?: SmhTextTheme;
   tabBarTheme?: SmhTabBarTheme;
@@ -223,8 +227,8 @@ export class SmhThemeDataEditorDialog {
 
   // Campi sconosciuti (non gestiti dalla UI) preservati al salvataggio.
   private readonly topExtra = extractExtra(this.data.value, [
-    'primaryColor', 'primarySwatch', 'scaffoldBackgroundColor', 'colorScheme', 'textTheme', 'tabBarTheme', 'cardTheme',
-    'sduiExtension', 'fse_dashboard',
+    'primaryColor', 'primarySwatch', 'scaffoldBackgroundColor', 'background_pattern_visible', 'background_pattern_svg',
+    'colorScheme', 'textTheme', 'tabBarTheme', 'cardTheme', 'sduiExtension', 'fse_dashboard',
   ]);
   private readonly colorSchemeExtra = extractExtra(this.data.value?.colorScheme, [
     'brightness', 'primary', 'onPrimary', 'secondary', 'onSecondary', 'error', 'onError', 'surface', 'onSurface',
@@ -310,6 +314,8 @@ export class SmhThemeDataEditorDialog {
     primaryColor:             [this.data.value?.primaryColor ?? '#19509A'],
     primarySwatch:            [this.data.value?.primarySwatch ?? 'blue'],
     scaffoldBackgroundColor:  [this.data.value?.scaffoldBackgroundColor ?? '#E9F1FC'],
+    background_pattern_visible: [this.data.value?.background_pattern_visible ?? false],
+    background_pattern_svg:     [this.data.value?.background_pattern_svg     ?? ''],
     colorScheme: this.fb.nonNullable.group({
       brightness:   [this.data.value?.colorScheme?.brightness ?? 'light'],
       primary:      [this.data.value?.colorScheme?.primary    ?? '#19509A'],
@@ -456,6 +462,8 @@ export class SmhThemeDataEditorDialog {
       primaryColor: raw.primaryColor,
       primarySwatch: raw.primarySwatch,
       scaffoldBackgroundColor: raw.scaffoldBackgroundColor,
+      background_pattern_visible: raw.background_pattern_visible,
+      background_pattern_svg: raw.background_pattern_svg,
       colorScheme: reorderKeys(
         { ...this.colorSchemeExtra, ...raw.colorScheme },
         this.colorSchemeOrder,
