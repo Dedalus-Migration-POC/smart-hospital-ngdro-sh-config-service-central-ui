@@ -701,15 +701,16 @@
     "linkHint": "Compila solo se il servizio apre un URL esterno (alternativo a route nativa).",
     "sduiEntity": "sduiEntity (funzione SDUI)",
     "sduiEntityHint": "Entity mobile con kind screen/flow da aprire con routeName SduiRoute.",
-    "sduiAuthProvider": "sduiAuthProvider",
-    "sduiAuthProviderDefault": "(default: app — richiede login)",
-    "sduiAuthProviderHint": "\"none\" = pubblico, senza login: ogni dataSource/onSubmit/options.endpoint della funzione deve avere auth: public.",
+    "sduiBaseUrl": "sduiBaseUrl (override base URL)",
+    "sduiBaseUrlHint": "Opzionale: sovrascrive il base URL delle chiamate API di questa funzione SDUI (default: base URL standard dell'app).",
+    "sduiWithoutAuth": "Entry point pubblico (senza login)",
+    "sduiWithoutAuthHint": "Se attivo (sduiWithoutAuth: true), la funzione è accessibile senza login: ogni dataSource/onSubmit/options.endpoint della funzione deve avere auth: public.",
     "hidden": "Nascosto",
     "disabled": "Disabilitato",
     "fieldRequired": "Campo obbligatorio.",
     "empty": "Nessun servizio. Usa il pulsante qui sopra per aggiungerne uno.",
     "apply": "Applica",
-    "routeNameHintSdui": "Se il valore è esattamente \"SduiRoute\", compaiono i campi sduiEntity/sduiAuthProvider per collegare una funzione SDUI."
+    "routeNameHintSdui": "Se il valore è esattamente \"SduiRoute\", compaiono i campi sduiEntity/sduiWithoutAuth per collegare una funzione SDUI."
   },
   "smhFaq": {
     "openEditor": "Modifica grafico",
@@ -1133,7 +1134,7 @@
     },
 
     "base": {
-      "authTip": "Nota autenticazione: l'auth \"bearer\" (default) richiede login. Se questa funzione verrà aperta da una voce di menu con <code>sduiAuthProvider: \"none\"</code> (entry point pubblico, senza login), imposta \"auth\": \"public\" su <strong>ogni</strong> dataSource/onSubmit/options.endpoint qui sotto, altrimenti la chiamata lancerà sempre un'eccezione.",
+      "authTip": "Nota autenticazione: l'auth \"bearer\" (default) richiede login. Se questa funzione verrà aperta da una voce di menu con <code>sduiWithoutAuth: true</code> (entry point pubblico, senza login), imposta \"auth\": \"public\" su <strong>ogni</strong> dataSource/onSubmit/options.endpoint qui sotto, altrimenti la chiamata lancerà sempre un'eccezione.",
       "confirmLeaveIfDirtyLabel": "confirmLeaveIfDirty — chiedi conferma se si esce senza salvare",
       "idHint": "Identificativo libero, coincide di norma col nome dell'entity mobile su cui verrà salvata.",
       "initialStateHint": "Mappa merge-ata nello stato prima del load — utile per iniettare contesto noto (es. patientId).",

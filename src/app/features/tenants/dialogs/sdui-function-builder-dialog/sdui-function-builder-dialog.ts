@@ -148,7 +148,7 @@ export class SduiFunctionBuilderDialog {
   readonly menuIcons = SDUI_MENU_ICONS;
   readonly badgeColors = SDUI_BADGE_COLORS;
   /** "bearer" = header di autorizzazione col token utente (default). "public" = nessun header —
-   * unico valore valido quando l'entry point ha sduiAuthProvider: "none" (nessun login, vedi manuale §1). */
+   * unico valore valido quando l'entry point ha sduiWithoutAuth: true (nessun login, vedi manuale §1). */
   readonly authModes = ['bearer', 'public'];
   readonly httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 

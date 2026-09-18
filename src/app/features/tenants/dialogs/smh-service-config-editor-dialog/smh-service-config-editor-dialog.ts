@@ -6,7 +6,6 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
@@ -24,7 +23,8 @@ export interface ServiceItem {
   hidden: boolean;
   disabled: boolean;
   sduiEntity?: string;
-  sduiAuthProvider?: string;
+  sduiBaseUrl?: string;
+  sduiWithoutAuth?: boolean;
 }
 
 export interface SmhServiceConfigJson {
@@ -48,7 +48,6 @@ export interface SmhServiceConfigEditorDialogData {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
     MatIconModule,
     MatSlideToggleModule,
     MatTooltipModule,
@@ -65,8 +64,6 @@ export class SmhServiceConfigEditorDialog {
 
   /** Entity mobile rilevate come funzioni SDUI (kind: "screen"|"flow"), proposte per sduiEntity. */
   readonly availableSduiEntities = this.data.availableSduiEntities ?? [];
-  /** Provider di autenticazione dell'entry point (vedi manuale SDUI §1 — SduiAuthProviderRegistry). */
-  readonly authProviders = ['app', 'fse_sso', 'none'];
 
   // Campi sconosciuti (non gestiti dalla UI) sui singoli servizi, più l'ordine
   // originale delle chiavi: preservati entrambi al salvataggio.
@@ -111,10 +108,11 @@ export class SmhServiceConfigEditorDialog {
       hidden:           [item?.hidden            ?? false],
       disabled:         [item?.disabled          ?? false],
       sduiEntity:       [item?.sduiEntity        ?? ''],
-      sduiAuthProvider: [item?.sduiAuthProvider  ?? ''],
+      sduiBaseUrl:      [item?.sduiBaseUrl       ?? ''],
+      sduiWithoutAuth:  [item?.sduiWithoutAuth   ?? false],
     });
     this.itemMetaByGroup.set(group, {
-      extra: extractExtra(item, ['id', 'routeName', 'link', 'hidden', 'disabled', 'sduiEntity', 'sduiAuthProvider']),
+      extra: extractExtra(item, ['id', 'routeName', 'link', 'hidden', 'disabled', 'sduiEntity', 'sduiBaseUrl', 'sduiWithoutAuth']),
       order: Object.keys(item ?? {}),
     });
     return group;
@@ -122,7 +120,7 @@ export class SmhServiceConfigEditorDialog {
 
   asFormGroup(ctrl: unknown): FormGroup { return ctrl as FormGroup; }
 
-  /** I campi sduiEntity/sduiAuthProvider hanno senso solo quando routeName è esattamente "SduiRoute". */
+  /** I campi sduiEntity/sduiWithoutAuth hanno senso solo quando routeName è esattamente "SduiRoute". */
   isSduiRoute(ctrl: unknown): boolean {
     return this.asFormGroup(ctrl).controls['routeName'].value?.trim() === SDUI_ROUTE_NAME;
   }
@@ -158,7 +156,8 @@ export class SmhServiceConfigEditorDialog {
       if (s.link?.trim()) known.link = s.link.trim();
       if (s.routeName?.trim() === SDUI_ROUTE_NAME) {
         if (s.sduiEntity?.trim()) known.sduiEntity = s.sduiEntity.trim();
-        if (s.sduiAuthProvider?.trim()) known.sduiAuthProvider = s.sduiAuthProvider.trim();
+        if (s.sduiBaseUrl?.trim()) known.sduiBaseUrl = s.sduiBaseUrl.trim();
+        if (s.sduiWithoutAuth) known.sduiWithoutAuth = true;
       }
       const merged = { ...(meta?.extra ?? {}), ...known };
       return reorderKeys(merged, meta?.order ?? []) as unknown as ServiceItem;

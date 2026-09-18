@@ -701,15 +701,16 @@
     "linkHint": "Fill in only if the service opens an external URL (alternative to native route).",
     "sduiEntity": "sduiEntity (SDUI function)",
     "sduiEntityHint": "Mobile entity with kind screen/flow to open with routeName SduiRoute.",
-    "sduiAuthProvider": "sduiAuthProvider",
-    "sduiAuthProviderDefault": "(default: app — requires login)",
-    "sduiAuthProviderHint": "\"none\" = public, no login: every dataSource/onSubmit/options.endpoint of the function must have auth: public.",
+    "sduiBaseUrl": "sduiBaseUrl (base URL override)",
+    "sduiBaseUrlHint": "Optional: overrides the API base URL for this SDUI function (default: the app's standard base URL).",
+    "sduiWithoutAuth": "Public entry point (no login)",
+    "sduiWithoutAuthHint": "If enabled (sduiWithoutAuth: true), the function is accessible without login: every dataSource/onSubmit/options.endpoint of the function must have auth: public.",
     "hidden": "Hidden",
     "disabled": "Disabled",
     "fieldRequired": "Field required.",
     "empty": "No services. Use the button above to add one.",
     "apply": "Apply",
-    "routeNameHintSdui": "If the value is exactly \"SduiRoute\", the sduiEntity/sduiAuthProvider fields appear to link an SDUI function."
+    "routeNameHintSdui": "If the value is exactly \"SduiRoute\", the sduiEntity/sduiWithoutAuth fields appear to link an SDUI function."
   },
   "smhFaq": {
     "openEditor": "Graphic editor",
@@ -1140,7 +1141,7 @@
     },
 
     "base": {
-      "authTip": "Authentication note: \"bearer\" auth (default) requires login. If this function will be opened from a menu entry with <code>sduiAuthProvider: \"none\"</code> (public entry point, no login), set \"auth\": \"public\" on <strong>every</strong> dataSource/onSubmit/options.endpoint below, otherwise the call will always throw an exception.",
+      "authTip": "Authentication note: \"bearer\" auth (default) requires login. If this function will be opened from a menu entry with <code>sduiWithoutAuth: true</code> (public entry point, no login), set \"auth\": \"public\" on <strong>every</strong> dataSource/onSubmit/options.endpoint below, otherwise the call will always throw an exception.",
       "confirmLeaveIfDirtyLabel": "confirmLeaveIfDirty — ask for confirmation before leaving without saving",
       "idHint": "Free identifier, usually matching the name of the mobile entity it will be saved on.",
       "initialStateHint": "Map merged into state before load — useful to inject known context (e.g. patientId).",

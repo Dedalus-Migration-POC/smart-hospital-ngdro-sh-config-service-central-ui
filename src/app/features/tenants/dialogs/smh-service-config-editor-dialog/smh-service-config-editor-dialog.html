@@ -55,16 +55,17 @@
                   </mat-autocomplete>
                   <mat-hint>{{ 'smhServiceConfig.sduiEntityHint' | translate }}</mat-hint>
                 </mat-form-field>
-
-                <mat-form-field appearance="outline" class="smh-editor__text-field">
-                  <mat-label>{{ 'smhServiceConfig.sduiAuthProvider' | translate }}</mat-label>
-                  <mat-select formControlName="sduiAuthProvider">
-                    <mat-option value="">{{ 'smhServiceConfig.sduiAuthProviderDefault' | translate }}</mat-option>
-                    @for (p of authProviders; track p) { <mat-option [value]="p">{{ p }}</mat-option> }
-                  </mat-select>
-                  <mat-hint>{{ 'smhServiceConfig.sduiAuthProviderHint' | translate }}</mat-hint>
-                </mat-form-field>
               </div>
+
+              <mat-form-field appearance="outline" class="smh-editor__text-field">
+                <mat-label>{{ 'smhServiceConfig.sduiBaseUrl' | translate }}</mat-label>
+                <input matInput formControlName="sduiBaseUrl" type="url" placeholder="https://..." />
+                <mat-hint>{{ 'smhServiceConfig.sduiBaseUrlHint' | translate }}</mat-hint>
+              </mat-form-field>
+
+              <mat-slide-toggle formControlName="sduiWithoutAuth" [matTooltip]="'smhServiceConfig.sduiWithoutAuthHint' | translate">
+                {{ 'smhServiceConfig.sduiWithoutAuth' | translate }}
+              </mat-slide-toggle>
             }
 
             <!-- Toggles -->
