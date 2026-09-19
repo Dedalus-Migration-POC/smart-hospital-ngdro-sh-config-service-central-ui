@@ -813,8 +813,6 @@
     "sduiSecondaryTextColor": "Colore testo secondario",
     "sduiDescriptionFontWeight": "Peso font descrizioni",
     "sduiButtonRow": "Riga pulsanti",
-    "sduiButtonRowWidthPercent": "Larghezza (0-1)",
-    "sduiButtonRowWidthPercentHint": "Frazione della larghezza disponibile (es. 0.5 = 50%). Vuoto = calcolo automatico del motore.",
     "sduiButtonRowGap": "Spaziatura (px)",
     "sduiAnimations": "Animazioni",
     "sduiTabIndicatorMs": "Durata indicatore tab (ms)",
@@ -1566,7 +1564,8 @@
       "reviewFieldsHint": "Solo per l'ultimo step: id dei field (raccolti in questo o negli step precedenti) da mostrare in un riepilogo read-only prima della conferma finale.",
       "showConclusionLabel": "Mostra schermata di conclusione dedicata (recap + azioni post-conferma)",
       "stepLabel": "Step {{n}}",
-      "title": "Step del flow"
+      "title": "Step del flow",
+      "visibleIfHint": "Nasconde titolo/descrizione e i bottoni footer dello step (non i field, che restano governati dal proprio visibleIf individuale)."
     },
     "submit": {
       "addSuccessActionButton": "Aggiungi bottone",

@@ -1774,6 +1774,7 @@ function jsonToDescriptor(json: Record<string, unknown>, fallbackEntityName: str
         id: (s['id'] as string) ?? '',
         titleKey: (s['titleKey'] as string) ?? '',
         descriptionKey: s['descriptionKey'] as string | undefined,
+        visibleIf: s['visibleIf'] as string | undefined,
         fields: ((s['fields'] as Record<string, unknown>[]) ?? []).map(fieldFromJson),
         canProceed: (s['canProceed'] as string[]) ?? [],
         next: s['next'] as string | undefined,

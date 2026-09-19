@@ -879,6 +879,8 @@ export interface SduiFlowStep {
   id: string;
   titleKey: string;
   descriptionKey?: string;
+  /** Nasconde titleKey+descriptionKey e i bottoni footer dello step quando falsa (§7/§11 manuale). */
+  visibleIf?: string;
   fields: SduiField[];
   canProceed: string[];
   next?: string;
@@ -1560,6 +1562,7 @@ function cleanOnSubmit(o: SduiOnSubmit): Record<string, unknown> {
 function cleanFlowStep(s: SduiFlowStep): Record<string, unknown> {
   const out: Record<string, unknown> = { id: s.id, titleKey: s.titleKey };
   if (s.descriptionKey) out['descriptionKey'] = s.descriptionKey;
+  if (s.visibleIf) out['visibleIf'] = s.visibleIf;
   if (s.dataSource?.endpoint) {
     const ds: Record<string, unknown> = { endpoint: s.dataSource.endpoint };
     if (s.dataSource.method && s.dataSource.method !== 'GET') ds['method'] = s.dataSource.method;

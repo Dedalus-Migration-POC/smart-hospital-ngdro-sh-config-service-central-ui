@@ -813,8 +813,6 @@
     "sduiSecondaryTextColor": "Secondary text color",
     "sduiDescriptionFontWeight": "Description font weight",
     "sduiButtonRow": "Button row",
-    "sduiButtonRowWidthPercent": "Width (0-1)",
-    "sduiButtonRowWidthPercentHint": "Fraction of available width (e.g. 0.5 = 50%). Empty = engine auto-calculates.",
     "sduiButtonRowGap": "Gap (px)",
     "sduiAnimations": "Animations",
     "sduiTabIndicatorMs": "Tab indicator duration (ms)",
@@ -1573,7 +1571,8 @@
       "reviewFieldsHint": "Last step only: ids of fields (collected in this or previous steps) to show in a read-only summary before the final confirmation.",
       "showConclusionLabel": "Show a dedicated conclusion screen (recap + post-confirmation actions)",
       "stepLabel": "Step {{n}}",
-      "title": "Flow steps"
+      "title": "Flow steps",
+      "visibleIfHint": "Hides the step's title/description and footer buttons (not the fields, which remain governed by their own individual visibleIf)."
     },
     "submit": {
       "addSuccessActionButton": "Add button",

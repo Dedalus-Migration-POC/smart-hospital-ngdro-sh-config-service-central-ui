@@ -1107,6 +1107,11 @@
                     <mat-label>{{ 'sduiWizard.labels.descriptionKey' | translate }}</mat-label>
                     <input matInput [ngModel]="step.descriptionKey ?? ''" (ngModelChange)="setFlowStepProp(si, 'descriptionKey', $event)" />
                   </mat-form-field>
+                  <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                    <mat-label>{{ 'sduiWizard.labels.visibleIfOptional' | translate }}</mat-label>
+                    <input matInput [ngModel]="step.visibleIf ?? ''" (ngModelChange)="setFlowStepProp(si, 'visibleIf', $event)" [placeholder]="'sduiWizard.ph.visibleIfExample' | translate" />
+                    <mat-hint>{{ 'sduiWizard.steps.visibleIfHint' | translate }}</mat-hint>
+                  </mat-form-field>
 
                   <div class="sdui-wizard__chips">
                     @for (c of fieldComponents; track c.value) {

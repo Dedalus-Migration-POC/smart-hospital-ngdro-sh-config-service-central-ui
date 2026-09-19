@@ -70,7 +70,6 @@ export interface SmhSduiExtension {
   statusUsed: string;
   statusToBeUsed: string;
   secondaryTextColor: string;
-  buttonRowWidthPercent: number | null;
   buttonRowGap: number;
   tabIndicatorMs: number;
   contentFadeMs: number;
@@ -251,7 +250,7 @@ export class SmhThemeDataEditorDialog {
   private readonly cardShapeExtra = extractExtra(this.data.value?.cardTheme?.shape, ['type', 'borderRadius']);
   private readonly sduiExtensionExtra = extractExtra(this.data.value?.sduiExtension, [
     'titleColor', 'chipBackground', 'pillTabsBackground', 'statusUsed', 'statusToBeUsed', 'secondaryTextColor',
-    'buttonRowWidthPercent', 'buttonRowGap', 'tabIndicatorMs', 'contentFadeMs', 'labelFadeMs', 'descriptionFontWeight',
+    'buttonRowGap', 'tabIndicatorMs', 'contentFadeMs', 'labelFadeMs', 'descriptionFontWeight',
   ]);
   private readonly fseDashboardExtra = extractExtra(this.data.value?.fse_dashboard, [
     'servizi_principali_preview_count', 'altri_servizi_preview_count', 'theme', 'app_bar', 'welcome_heading',
@@ -366,7 +365,6 @@ export class SmhThemeDataEditorDialog {
       statusUsed:          [this.data.value?.sduiExtension?.statusUsed          ?? '#2E7D32'],
       statusToBeUsed:      [this.data.value?.sduiExtension?.statusToBeUsed      ?? '#8A5A00'],
       secondaryTextColor:  [this.data.value?.sduiExtension?.secondaryTextColor  ?? '#757575'],
-      buttonRowWidthPercent: [this.data.value?.sduiExtension?.buttonRowWidthPercent ?? null],
       buttonRowGap:        [this.data.value?.sduiExtension?.buttonRowGap        ?? 12],
       tabIndicatorMs:      [this.data.value?.sduiExtension?.tabIndicatorMs      ?? 250],
       contentFadeMs:       [this.data.value?.sduiExtension?.contentFadeMs       ?? 120],
