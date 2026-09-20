@@ -60,7 +60,7 @@ Channel statici: `mobile`, `web`, `totem`. Default `entity = "base"`.
 - **Angular 21.2**, Node 20.19+
 - **Angular Material 21.2** — tema `azure-blue` M3, typography globale, animations abilitate
 - **Standalone components**, routing, TypeScript strict, SCSS
-- HTTP: `HttpClient` + `HttpInterceptor` per JWT da `localStorage`
+- HTTP: `HttpClient` + `HttpInterceptor` per JWT via cookie HttpOnly (`sh_jwt`/`sh_refresh`)
 - Auth guard, redirect a `/login` su 401
 - State: **Signals** + service DI (no NgRx)
 - Niente SSR/SSG — builder `@angular/build:application`
@@ -89,7 +89,7 @@ src/environments/       # environment.ts (prod) + environment.development.ts (de
 - **Naming file**: niente suffissi `.service.ts` / `.component.ts` (convenzione Angular 19+). Una classe per file, nome in kebab-case.
 - **API client**: un service per dominio, tipi TS allineati ai DTO Java (records → interfaces). Niente `any`.
 - **Errori HTTP**: shape `{error: string, timestamp, fieldErrors?}`. Usare `toUserMessage(err, fallback?)` da `core/http/api-error.ts` per estrarre il messaggio user-facing.
-- **Auth storage**: token in `localStorage` con chiavi `sh.cs.authToken` / `sh.cs.authTokenExpiresAt`. Stato in `AuthService.currentUser` (signal).
+- **Auth storage**: cookie HttpOnly `sh_jwt` (accesso, default 1h) + `sh_refresh` (refresh, default 24h, path `/api/auth`) — mai in `localStorage`. Refresh silenzioso automatico via interceptor su 401 (`POST /auth/refresh`). Stato in `AuthService.currentUser` (signal).
 - **Routing**: `/login` è route bare (no shell). Tutto il resto è child di `''` con `AdminShell` e `canActivate: [authGuard]`.
 - **Sidenav**: `AdminShell.navItems` è la fonte di verità del menu. Item senza `path` → "prossimamente".
 - **Messaggi utente**: `MatSnackBar` — errori 6000ms, conferme 3000–4000ms.
@@ -335,4 +335,6 @@ unknown>` nel fallback di `cleanResponseTransform`), e nel template un helper co
 (`transformTypeOf(t)`) per leggere `.type` nel ramo "impossibile per TS" senza forzare un cast
 diffuso in HTML.
 
+
+nel progetto app sh-core esiste un manuale interno che documenta le convenzioni e le best practice per la gestione delle azioni e dei transform opachi custom. Si consiglia di fare riferimento a questo manuale per comprendere le regole specifiche e le linee guida adottate nel progetto. in questo modo puoi capire meglio come strutturare correttamente le azioni e come gestire i transform opachi senza introdurre errori o comportamenti imprevisti.
 

@@ -223,10 +223,12 @@ Casi di provisioning via browser:
 
 ## Auth
 
-- Login: `POST /api/auth/login` → `{token, expiresAt}` salvato in `localStorage` (`sh.cs.authToken`, `sh.cs.authTokenExpiresAt`).
-- Identità: `GET /api/auth/me` chiamato dopo il login e dal route guard quando il token è in storage ma il signal è vuoto (caso refresh).
-- Interceptor: attacca `Authorization: Bearer <token>` a tutte le chiamate verso `apiBaseUrl` eccetto `/auth/login`. Su `401` pulisce lo stato e redirige a `/login?returnUrl=...`.
+- Login: `POST /api/auth/login` → il backend imposta due cookie **HttpOnly**: `sh_jwt` (token di accesso, default 1h, path `/`) e `sh_refresh` (refresh token, default 24h, path `/api/auth`). Nessun token è mai esposto/salvato in `localStorage` — il browser li invia automaticamente.
+- Identità: `GET /api/auth/me` chiamato dopo il login e dal route guard al refresh pagina (il signal `currentUser` è vuoto ma il cookie è ancora valido).
+- Refresh silenzioso: `POST /api/auth/refresh` — l'interceptor lo chiama automaticamente su un `401` (token di accesso scaduto), usando il cookie `sh_refresh`; se va a buon fine ripete la richiesta originale in modo trasparente e ruota entrambi i cookie, altrimenti pulisce lo stato e redirige a `/login?returnUrl=...`. Richieste concorrenti condividono lo stesso ciclo di refresh (nessuna chiamata duplicata).
+- Interceptor: aggiunge `withCredentials: true` a tutte le chiamate verso `apiBaseUrl`. Su `401` non recuperabile (login/refresh/logout stessi, o refresh fallito) pulisce lo stato e redirige a `/login?returnUrl=...`.
 - Guard: `authGuard` (functional `CanActivateFn`) protegge le route che richiedono utente loggato.
+- Durate configurabili lato backend (tabella `system_setting`, categoria `security`): `security.jwt-expiration-seconds` (default 3600) e `security.refresh-token-expiration-seconds` (default 86400).
 
 ### reCAPTCHA Enterprise
 

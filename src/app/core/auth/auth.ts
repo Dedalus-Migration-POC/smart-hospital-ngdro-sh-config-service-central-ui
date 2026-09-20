@@ -48,6 +48,16 @@ export class AuthService {
     );
   }
 
+  /**
+   * POST /auth/refresh — rinnova il cookie `sh_jwt` (e ne ruota uno nuovo) usando il
+   * refresh token httpOnly `sh_refresh` (durata più lunga, default 24h). Il browser
+   * invia entrambi i cookie automaticamente; non serve leggerli/scriverli da JS.
+   * Usato dall'interceptor su 401 per evitare un re-login manuale ogni ora.
+   */
+  refresh(): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${environment.apiBaseUrl}/auth/refresh`, {}, { withCredentials: true });
+  }
+
   /** Logout esplicito: invalida il cookie lato server e pulisce lo stato. */
   logout(): void {
     this.http.post(`${environment.apiBaseUrl}/auth/logout`, {}, { withCredentials: true }).subscribe({
