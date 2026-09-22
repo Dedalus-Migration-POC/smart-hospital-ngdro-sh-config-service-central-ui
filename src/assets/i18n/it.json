@@ -1131,6 +1131,7 @@
       "removeCallLabel": "removeCall — chiamata eseguita quando si rimuove dai preferiti",
       "removeCallSkippedTip": "Se favoriteIdField è vuoto per l'item, removeCall viene saltata silenziosamente (nessuna chiamata HTTP, nessun errore).",
       "removeFromLabel": "removeFrom — rimuove l'item da un gruppo nello stato dopo il successo",
+      "showSuccessScreenRowTip": "Ha priorità su messageKey se entrambe sono presenti. Niente card di riepilogo (summary): il motore apre solo titolo/sottotitolo + bottoni, che chiudono sempre la pagina alla pressione (nessun resetForm sensato per un'azione di riga).",
       "title": "primaryAction (FloatingActionButton, opzionale)",
       "updateInGroupsLabel": "updateInGroups — aggiorna l'item anche dentro liste raggruppate nello stato"
     },

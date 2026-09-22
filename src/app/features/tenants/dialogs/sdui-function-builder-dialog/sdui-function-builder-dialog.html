@@ -2598,6 +2598,42 @@
                   <button mat-stroked-button type="button" (click)="addActionCallBodyMapping(ref, 'call')"><mat-icon>add</mat-icon> bodyMapping</button>
                 }
                 <p class="sdui-wizard__label-strong">{{ 'sduiWizard.actions.onSuccessLabel' | translate }}</p>
+                <mat-checkbox [checked]="!!pa.onSuccess?.showSuccessScreen" (change)="toggleActionOnSuccessShowSuccessScreen(ref, $event.checked)">
+                  {{ 'sduiWizard.submit.showSuccessScreenLabel' | translate }}
+                </mat-checkbox>
+                @if (pa.onSuccess?.showSuccessScreen; as ss) {
+                  <p class="sdui-wizard__tip">{{ 'sduiWizard.actions.showSuccessScreenRowTip' | translate }}</p>
+                  <div class="sdui-wizard__row">
+                    <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                      <mat-label>{{ 'sduiWizard.labels.titleKeyRequired' | translate }}</mat-label>
+                      <input matInput [ngModel]="ss.titleKey" (ngModelChange)="setActionOnSuccessShowSuccessScreenProp(ref, 'titleKey', $event)" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                      <mat-label>{{ 'sduiWizard.labels.subtitleKeyOptional' | translate }}</mat-label>
+                      <input matInput [ngModel]="ss.subtitleKey ?? ''" (ngModelChange)="setActionOnSuccessShowSuccessScreenProp(ref, 'subtitleKey', $event)" />
+                    </mat-form-field>
+                  </div>
+                  <p class="sdui-wizard__label-strong">{{ 'sduiWizard.submit.successActionsLabel' | translate }}</p>
+                  @for (act of ss.actions; track $index; let ai = $index) {
+                    <div class="sdui-wizard__row">
+                      <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                        <mat-label>{{ 'sduiWizard.labels.labelKeyRequired' | translate }}</mat-label>
+                        <input matInput [ngModel]="act.labelKey" (ngModelChange)="setActionOnSuccessShowSuccessScreenActionProp(ref, ai, 'labelKey', $event)" />
+                      </mat-form-field>
+                      <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
+                        <mat-label>{{ 'sduiWizard.labels.style' | translate }}</mat-label>
+                        <mat-select [value]="act.style ?? 'outlined'" (selectionChange)="setActionOnSuccessShowSuccessScreenActionProp(ref, ai, 'style', $event.value)">
+                          <mat-option value="filled">filled</mat-option>
+                          <mat-option value="outlined">outlined</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                      <button mat-icon-button type="button" (click)="removeActionOnSuccessShowSuccessScreenAction(ref, ai)"><mat-icon>delete</mat-icon></button>
+                    </div>
+                  }
+                  @if (ss.actions.length < 2) {
+                    <button mat-stroked-button type="button" (click)="addActionOnSuccessShowSuccessScreenAction(ref)"><mat-icon>add</mat-icon> {{ 'sduiWizard.submit.addSuccessActionButton' | translate }}</button>
+                  }
+                }
                 <div class="sdui-wizard__row">
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.onSuccessMessageKey' | translate }}</mat-label>

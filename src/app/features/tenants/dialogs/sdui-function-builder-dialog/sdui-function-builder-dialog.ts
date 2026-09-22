@@ -40,6 +40,7 @@ import {
   SduiSectionType,
   SduiSequenceCall,
   SduiSuccessScreenAction,
+  SduiRowActionSuccessScreen,
   SduiFlatField,
   SduiDetailAction,
   SduiRowDetail,
@@ -66,6 +67,7 @@ import {
   createEmptyRowDetail,
   createEmptyRowDetailSection,
   createEmptyActionSheetItem,
+  createEmptyRowActionSuccessScreen,
   createEmptySection,
   createEmptySequenceCall,
   descriptorToJson,
@@ -1270,6 +1272,41 @@ export class SduiFunctionBuilderDialog {
     this.update(d => {
       const removeFrom = this.actionAt(d, ref)?.onSuccess?.removeFrom;
       if (removeFrom) removeFrom[key] = value;
+    });
+  }
+
+  // onSuccess.showSuccessScreen (confirmAndCall, §6 manuale) — alternativa a messageKey,
+  // ha priorità su di esso se presente. Niente "summary"/"type" per azione (vedi
+  // SduiRowActionSuccessScreen): il motore chiude sempre la pagina alla pressione.
+  toggleActionOnSuccessShowSuccessScreen(ref: SduiActionRef, has: boolean): void {
+    this.update(d => {
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      a.onSuccess = { ...(a.onSuccess ?? {}) };
+      a.onSuccess.showSuccessScreen = has ? createEmptyRowActionSuccessScreen() : null;
+    });
+  }
+  setActionOnSuccessShowSuccessScreenProp(ref: SduiActionRef, key: 'titleKey' | 'subtitleKey', value: string): void {
+    this.update(d => {
+      const ss = this.actionAt(d, ref)?.onSuccess?.showSuccessScreen;
+      if (ss) ss[key] = value;
+    });
+  }
+  addActionOnSuccessShowSuccessScreenAction(ref: SduiActionRef): void {
+    this.update(d => {
+      const ss = this.actionAt(d, ref)?.onSuccess?.showSuccessScreen;
+      if (ss && ss.actions.length < 2) ss.actions.push({ labelKey: '', style: 'outlined' });
+    });
+  }
+  removeActionOnSuccessShowSuccessScreenAction(ref: SduiActionRef, i: number): void {
+    this.update(d => { this.actionAt(d, ref)?.onSuccess?.showSuccessScreen?.actions.splice(i, 1); });
+  }
+  setActionOnSuccessShowSuccessScreenActionProp(
+    ref: SduiActionRef, i: number, key: 'labelKey' | 'style', value: string,
+  ): void {
+    this.update(d => {
+      const action = this.actionAt(d, ref)?.onSuccess?.showSuccessScreen?.actions[i];
+      if (action) (action as Record<string, string>)[key] = value;
     });
   }
 

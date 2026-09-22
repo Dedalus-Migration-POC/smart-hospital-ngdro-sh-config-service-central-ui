@@ -1138,6 +1138,7 @@
       "removeCallLabel": "removeCall — call executed when removing from favorites",
       "removeCallSkippedTip": "If favoriteIdField is empty for the item, removeCall is silently skipped (no HTTP call, no error).",
       "removeFromLabel": "removeFrom — removes the item from a state group after success",
+      "showSuccessScreenRowTip": "Takes priority over messageKey if both are present. No summary card: the engine only shows title/subtitle + buttons, which always close the page on press (no sensible resetForm for a row action).",
       "title": "primaryAction (FloatingActionButton, optional)",
       "updateInGroupsLabel": "updateInGroups — also updates the item inside grouped lists in state"
     },

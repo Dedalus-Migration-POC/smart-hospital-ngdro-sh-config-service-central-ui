@@ -349,6 +349,19 @@ export interface SduiCallSpec {
   bodyMapping?: Record<string, string>;
 }
 
+/** Variante "leggera" di SduiSuccessScreen (§5.3 manuale) per confirmAndCall (azioni di
+ * riga): niente `summary` (nessun equivalente sensato per un delete), niente `type` per
+ * azione (il motore chiude sempre la pagina alla pressione, indipendentemente dal valore). */
+export interface SduiRowActionSuccessScreen {
+  titleKey: string;
+  subtitleKey?: string;
+  actions: { labelKey: string; style?: 'filled' | 'outlined' }[];
+}
+
+export function createEmptyRowActionSuccessScreen(): SduiRowActionSuccessScreen {
+  return { titleKey: '', actions: [{ labelKey: '', style: 'filled' }] };
+}
+
 export interface SduiAction {
   type: SduiActionType;
   // primaryAction (icona + label del FloatingActionButton — §6 manuale)
@@ -372,6 +385,11 @@ export interface SduiAction {
     messageKey?: string;
     refreshDataSource?: boolean;
     removeFrom?: { groupsPath: string; groupItemsField: string; matchField: string };
+    /** Alternativa a messageKey (priorità su di esso se presente) — riusa lo stesso widget
+     * generico `SduiSuccessScreen` di §5.3, senza "summary": qui il motore (action_runner.dart)
+     * ignora `type` e chiude sempre la pagina alla pressione, quindi non esiste un vero
+     * "resetForm" per un'azione di riga come un delete (§6 manuale). */
+    showSuccessScreen?: SduiRowActionSuccessScreen | null;
   };
   // toggleField
   field?: string;
