@@ -52,6 +52,21 @@ export interface SmhTabBarTheme {
   unselectedLabelStyle: SmhLabelStyle;
 }
 
+export interface SmhNavigationBarTheme {
+  backgroundColor: string;
+  indicatorColor: string;
+  unselectedIconColor: string;
+  elevation: number;
+  height: number;
+  surfaceTintColor?: string;
+  shadowColor?: string;
+  labelBehavior?: 'alwaysShow' | 'alwaysHide' | 'onlyShowSelected' | '';
+  selectedIconColor?: string;
+  iconSize?: number;
+  selectedLabelStyle: SmhLabelStyle;
+  unselectedLabelStyle: SmhLabelStyle;
+}
+
 export interface SmhCardShape {
   type: string;
   borderRadius: number;
@@ -143,6 +158,7 @@ export interface SmhThemeDataJson {
   colorScheme?: SmhColorScheme;
   textTheme?: SmhTextTheme;
   tabBarTheme?: SmhTabBarTheme;
+  navigationBarTheme?: SmhNavigationBarTheme;
   cardTheme?: SmhCardTheme;
   sduiExtension?: SmhSduiExtension;
   /** Blocco additivo per la variante mobile "Fse Dashboard" (vedi sh-core/fse_theme.dart). */
@@ -227,7 +243,7 @@ export class SmhThemeDataEditorDialog {
   // Campi sconosciuti (non gestiti dalla UI) preservati al salvataggio.
   private readonly topExtra = extractExtra(this.data.value, [
     'primaryColor', 'primarySwatch', 'scaffoldBackgroundColor', 'background_pattern_visible', 'background_pattern_svg',
-    'colorScheme', 'textTheme', 'tabBarTheme', 'cardTheme', 'sduiExtension', 'fse_dashboard',
+    'colorScheme', 'textTheme', 'tabBarTheme', 'navigationBarTheme', 'cardTheme', 'sduiExtension', 'fse_dashboard',
   ]);
   private readonly colorSchemeExtra = extractExtra(this.data.value?.colorScheme, [
     'brightness', 'primary', 'onPrimary', 'secondary', 'onSecondary', 'error', 'onError', 'surface', 'onSurface',
@@ -245,6 +261,17 @@ export class SmhThemeDataEditorDialog {
   private readonly tabLabelStyleExtra = extractExtra(this.data.value?.tabBarTheme?.labelStyle, ['fontSize', 'fontWeight', 'color']);
   private readonly tabUnselectedLabelStyleExtra = extractExtra(
     this.data.value?.tabBarTheme?.unselectedLabelStyle, ['fontSize', 'fontWeight', 'color'],
+  );
+  private readonly navBarThemeExtra = extractExtra(this.data.value?.navigationBarTheme, [
+    'backgroundColor', 'indicatorColor', 'unselectedIconColor', 'elevation', 'height',
+    'surfaceTintColor', 'shadowColor', 'labelBehavior', 'selectedIconColor', 'iconSize',
+    'selectedLabelStyle', 'unselectedLabelStyle',
+  ]);
+  private readonly navBarSelectedLabelStyleExtra = extractExtra(
+    this.data.value?.navigationBarTheme?.selectedLabelStyle, ['fontSize', 'fontWeight', 'color'],
+  );
+  private readonly navBarUnselectedLabelStyleExtra = extractExtra(
+    this.data.value?.navigationBarTheme?.unselectedLabelStyle, ['fontSize', 'fontWeight', 'color'],
   );
   private readonly cardThemeExtra = extractExtra(this.data.value?.cardTheme, ['elevation', 'color', 'shape']);
   private readonly cardShapeExtra = extractExtra(this.data.value?.cardTheme?.shape, ['type', 'borderRadius']);
@@ -271,6 +298,9 @@ export class SmhThemeDataEditorDialog {
   private readonly tabBarThemeOrder = Object.keys(this.data.value?.tabBarTheme ?? {});
   private readonly tabLabelStyleOrder = Object.keys(this.data.value?.tabBarTheme?.labelStyle ?? {});
   private readonly tabUnselectedLabelStyleOrder = Object.keys(this.data.value?.tabBarTheme?.unselectedLabelStyle ?? {});
+  private readonly navBarThemeOrder = Object.keys(this.data.value?.navigationBarTheme ?? {});
+  private readonly navBarSelectedLabelStyleOrder = Object.keys(this.data.value?.navigationBarTheme?.selectedLabelStyle ?? {});
+  private readonly navBarUnselectedLabelStyleOrder = Object.keys(this.data.value?.navigationBarTheme?.unselectedLabelStyle ?? {});
   private readonly cardThemeOrder = Object.keys(this.data.value?.cardTheme ?? {});
   private readonly cardShapeOrder = Object.keys(this.data.value?.cardTheme?.shape ?? {});
   private readonly sduiExtensionOrder = Object.keys(this.data.value?.sduiExtension ?? {});
@@ -356,6 +386,28 @@ export class SmhThemeDataEditorDialog {
         fontSize:   [this.data.value?.tabBarTheme?.unselectedLabelStyle?.fontSize   ?? 16],
         fontWeight: [this.data.value?.tabBarTheme?.unselectedLabelStyle?.fontWeight ?? 'w600'],
         color:      [this.data.value?.tabBarTheme?.unselectedLabelStyle?.color      ?? '#9E9E9E'],
+      }),
+    }),
+    navigationBarTheme: this.fb.nonNullable.group({
+      backgroundColor:       [this.data.value?.navigationBarTheme?.backgroundColor       ?? '#FFFFFF'],
+      indicatorColor:        [this.data.value?.navigationBarTheme?.indicatorColor        ?? '#1F19509A'],
+      unselectedIconColor:   [this.data.value?.navigationBarTheme?.unselectedIconColor   ?? '#0A0A0A'],
+      elevation:             [this.data.value?.navigationBarTheme?.elevation             ?? 3],
+      height:                [this.data.value?.navigationBarTheme?.height                ?? 65],
+      surfaceTintColor:      [this.data.value?.navigationBarTheme?.surfaceTintColor       ?? ''],
+      shadowColor:           [this.data.value?.navigationBarTheme?.shadowColor            ?? ''],
+      labelBehavior:         [this.data.value?.navigationBarTheme?.labelBehavior          ?? ''],
+      selectedIconColor:     [this.data.value?.navigationBarTheme?.selectedIconColor      ?? ''],
+      iconSize:              [this.data.value?.navigationBarTheme?.iconSize               ?? null],
+      selectedLabelStyle: this.fb.nonNullable.group({
+        fontSize:   [this.data.value?.navigationBarTheme?.selectedLabelStyle?.fontSize   ?? 12],
+        fontWeight: [this.data.value?.navigationBarTheme?.selectedLabelStyle?.fontWeight ?? 'w600'],
+        color:      [this.data.value?.navigationBarTheme?.selectedLabelStyle?.color      ?? '#0A0A0A'],
+      }),
+      unselectedLabelStyle: this.fb.nonNullable.group({
+        fontSize:   [this.data.value?.navigationBarTheme?.unselectedLabelStyle?.fontSize   ?? 12],
+        fontWeight: [this.data.value?.navigationBarTheme?.unselectedLabelStyle?.fontWeight ?? 'w400'],
+        color:      [this.data.value?.navigationBarTheme?.unselectedLabelStyle?.color      ?? '#0A0A0A'],
       }),
     }),
     sduiExtension: this.fb.nonNullable.group({
@@ -489,6 +541,30 @@ export class SmhThemeDataEditorDialog {
           this.tabUnselectedLabelStyleOrder,
         ),
       }, this.tabBarThemeOrder),
+      navigationBarTheme: reorderKeys(
+        stripEmpty({
+          ...this.navBarThemeExtra,
+          backgroundColor: raw.navigationBarTheme.backgroundColor,
+          indicatorColor: raw.navigationBarTheme.indicatorColor,
+          unselectedIconColor: raw.navigationBarTheme.unselectedIconColor,
+          elevation: raw.navigationBarTheme.elevation,
+          height: raw.navigationBarTheme.height,
+          surfaceTintColor: raw.navigationBarTheme.surfaceTintColor,
+          shadowColor: raw.navigationBarTheme.shadowColor,
+          labelBehavior: raw.navigationBarTheme.labelBehavior,
+          selectedIconColor: raw.navigationBarTheme.selectedIconColor,
+          iconSize: raw.navigationBarTheme.iconSize,
+          selectedLabelStyle: reorderKeys(
+            { ...this.navBarSelectedLabelStyleExtra, ...raw.navigationBarTheme.selectedLabelStyle },
+            this.navBarSelectedLabelStyleOrder,
+          ),
+          unselectedLabelStyle: reorderKeys(
+            { ...this.navBarUnselectedLabelStyleExtra, ...raw.navigationBarTheme.unselectedLabelStyle },
+            this.navBarUnselectedLabelStyleOrder,
+          ),
+        }),
+        this.navBarThemeOrder,
+      ),
       cardTheme: reorderKeys({
         ...this.cardThemeExtra,
         elevation: raw.cardTheme.elevation,

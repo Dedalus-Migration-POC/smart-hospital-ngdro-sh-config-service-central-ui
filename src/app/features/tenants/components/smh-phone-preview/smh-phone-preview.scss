@@ -611,12 +611,28 @@ $phone-bg: #ecf0f5;
   padding: 6px 8px;
   margin-bottom: 5px;
 
-  &__title {
+  &__text {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__title {
     font-size: 9.5px;
     font-weight: 700;
     color: var(--fse-title-color, #111827);
+    line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__sub {
+    font-size: 8px;
+    color: var(--fse-subtitle-color, #6B7280);
+    margin-top: 0;
+    line-height: 1.15;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

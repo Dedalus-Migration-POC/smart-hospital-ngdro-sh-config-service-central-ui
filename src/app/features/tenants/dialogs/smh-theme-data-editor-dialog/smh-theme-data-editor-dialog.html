@@ -272,6 +272,168 @@
       </div>
     </mat-tab>
 
+    <!-- ── Tab: Navigation bar ── -->
+    <mat-tab [label]="'smhThemeData.tabNavigationBar' | translate">
+      <div class="smh-editor__tab-content" formGroupName="navigationBarTheme">
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.navBackgroundColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('navigationBarTheme.backgroundColor')" (change)="patchColor('navigationBarTheme.backgroundColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="backgroundColor" placeholder="#FFFFFF" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.navIndicatorColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('navigationBarTheme.indicatorColor')" (change)="patchColor('navigationBarTheme.indicatorColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="indicatorColor" placeholder="#1F19509A" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.navUnselectedIconColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('navigationBarTheme.unselectedIconColor')" (change)="patchColor('navigationBarTheme.unselectedIconColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="unselectedIconColor" placeholder="#0A0A0A" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.navSelectedIconColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('navigationBarTheme.selectedIconColor') || '#000000'" (change)="patchColor('navigationBarTheme.selectedIconColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="selectedIconColor" placeholder="{{ 'smhThemeData.navOptionalHint' | translate }}" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.navSurfaceTintColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('navigationBarTheme.surfaceTintColor') || '#000000'" (change)="patchColor('navigationBarTheme.surfaceTintColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="surfaceTintColor" placeholder="{{ 'smhThemeData.navOptionalHint' | translate }}" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.navShadowColor' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__field-row">
+              <input type="color" [value]="getColor('navigationBarTheme.shadowColor') || '#000000'" (change)="patchColor('navigationBarTheme.shadowColor', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="shadowColor" placeholder="{{ 'smhThemeData.navOptionalHint' | translate }}" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.navLabelBehavior' | translate }}</p>
+          <mat-form-field appearance="outline" class="smh-editor__text-field">
+            <mat-select formControlName="labelBehavior">
+              <mat-option value="">{{ 'smhThemeData.navLabelBehaviorDefault' | translate }}</mat-option>
+              <mat-option value="alwaysShow">{{ 'smhThemeData.navLabelBehaviorAlwaysShow' | translate }}</mat-option>
+              <mat-option value="alwaysHide">{{ 'smhThemeData.navLabelBehaviorAlwaysHide' | translate }}</mat-option>
+              <mat-option value="onlyShowSelected">{{ 'smhThemeData.navLabelBehaviorOnlySelected' | translate }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="smh-editor__section">
+          <div class="smh-editor__inline-row">
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.navElevation' | translate }}</mat-label>
+              <input matInput type="number" formControlName="elevation" min="0" max="24" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.navHeight' | translate }}</mat-label>
+              <input matInput type="number" formControlName="height" min="40" max="120" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.navIconSize' | translate }}</mat-label>
+              <input matInput type="number" formControlName="iconSize" min="10" max="60" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="smh-editor__section" formGroupName="selectedLabelStyle">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.labelStyleActive' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__inline-row">
+              <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                <mat-label>{{ 'smhThemeData.fontSize' | translate }}</mat-label>
+                <input matInput type="number" formControlName="fontSize" min="6" max="72" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <mat-label>{{ 'smhThemeData.fontWeight' | translate }}</mat-label>
+                <mat-select formControlName="fontWeight">
+                  @for (fw of fontWeights; track fw) {
+                    <mat-option [value]="fw">{{ fw }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div class="smh-editor__field-row">
+              <span class="smh-editor__field-label">{{ 'smhThemeData.color' | translate }}</span>
+              <input type="color" [value]="getColor('navigationBarTheme.selectedLabelStyle.color')" (change)="patchColor('navigationBarTheme.selectedLabelStyle.color', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="color" placeholder="#0A0A0A" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="smh-editor__section" formGroupName="unselectedLabelStyle">
+          <p class="smh-editor__section-title">{{ 'smhThemeData.labelStyleInactive' | translate }}</p>
+          <div class="smh-editor__section-body">
+            <div class="smh-editor__inline-row">
+              <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+                <mat-label>{{ 'smhThemeData.fontSize' | translate }}</mat-label>
+                <input matInput type="number" formControlName="fontSize" min="6" max="72" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <mat-label>{{ 'smhThemeData.fontWeight' | translate }}</mat-label>
+                <mat-select formControlName="fontWeight">
+                  @for (fw of fontWeights; track fw) {
+                    <mat-option [value]="fw">{{ fw }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div class="smh-editor__field-row">
+              <span class="smh-editor__field-label">{{ 'smhThemeData.color' | translate }}</span>
+              <input type="color" [value]="getColor('navigationBarTheme.unselectedLabelStyle.color')" (change)="patchColor('navigationBarTheme.unselectedLabelStyle.color', $event)" class="smh-editor__color-swatch" />
+              <mat-form-field appearance="outline" class="smh-editor__text-field--grow">
+                <input matInput formControlName="color" placeholder="#0A0A0A" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </mat-tab>
+
     <!-- ── Tab 5: Card ── -->
     <mat-tab [label]="'smhThemeData.tabCard' | translate">
       <div class="smh-editor__tab-content" formGroupName="cardTheme">
