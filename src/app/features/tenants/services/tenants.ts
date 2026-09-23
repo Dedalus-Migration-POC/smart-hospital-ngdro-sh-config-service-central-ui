@@ -1,6 +1,7 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, defer } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
 import {
@@ -95,11 +96,33 @@ export class TenantService {
     entity: string,
     configJson: unknown,
   ): Observable<AppConfigVersion> {
-    return this.http.put<AppConfigVersion>(
-      `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}`,
-      { configJson },
-      { params: new HttpParams().set('entity', entity) },
+    return defer(() => TenantService.compressJsonBody({ configJson })).pipe(
+      switchMap(({ body, gzip }) =>
+        this.http.put<AppConfigVersion>(
+          `${this.baseUrl}/tenants/${tenantId}/configs/${channelId}`,
+          body,
+          {
+            params: new HttpParams().set('entity', entity),
+            headers: gzip ? new HttpHeaders({ 'Content-Encoding': 'gzip' }) : undefined,
+          },
+        ),
+      ),
     );
+  }
+
+  /**
+   * Comprime il body in gzip quando il browser supporta {@link CompressionStream} (Chrome/Edge
+   * 80+, Firefox 113+, Safari 16.4+): riduce sensibilmente il tempo di upload delle config più
+   * grandi (es. temi con SVG/base64 embedded). Fallback silenzioso al JSON non compresso altrimenti.
+   */
+  private static async compressJsonBody(payload: unknown): Promise<{ body: Blob; gzip: boolean }> {
+    const json = JSON.stringify(payload);
+    if (typeof CompressionStream === 'undefined') {
+      return { body: new Blob([json], { type: 'application/json' }), gzip: false };
+    }
+    const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buffer = await new Response(stream).arrayBuffer();
+    return { body: new Blob([buffer], { type: 'application/json' }), gzip: true };
   }
 
   getHistory(tenantId: string, channelId: string, entity = 'base'): Observable<AppConfigVersion[]> {
