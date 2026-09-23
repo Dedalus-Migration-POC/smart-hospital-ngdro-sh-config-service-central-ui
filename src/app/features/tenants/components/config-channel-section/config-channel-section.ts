@@ -543,6 +543,43 @@ export class ConfigChannelSection {
   }
 
   /**
+   * Esegue la PUT di push verso l'on-prem comprimendo il body in gzip quando il browser lo
+   * supporta ({@link CompressionStream}). Un on-prem non ancora aggiornato (senza il filtro di
+   * decompressione lato server) risponde con un errore HTTP se riceve un body gzip che non sa
+   * decomprimere: in quel caso riproviamo automaticamente una volta senza compressione, per
+   * compatibilità con installazioni non ancora allineate. Stesso pattern usato da
+   * `OnPremClient.pushPut` lato central per il push server-side.
+   */
+  private async fetchPushWithGzipFallback(
+    url: string,
+    apiKey: string,
+    body: { payload: string },
+  ): Promise<Response> {
+    const json = JSON.stringify(body);
+    if (typeof CompressionStream !== 'undefined') {
+      try {
+        const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'));
+        const gzipBuffer = await new Response(stream).arrayBuffer();
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Content-Encoding': 'gzip', 'X-API-Key': apiKey },
+          body: gzipBuffer,
+          signal: AbortSignal.timeout(15000),
+        });
+        if (res.ok) return res;
+      } catch {
+        // fallback sotto: prova senza gzip
+      }
+    }
+    return fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+      body: json,
+      signal: AbortSignal.timeout(15000),
+    });
+  }
+
+  /**
    * Flusso browser-assisted push: il server centrale non ha raggiunto l'on-prem
    * (tipicamente behind VPN), ma il browser dell'admin potrebbe riuscirci.
    * 1. Health check diretto browser → on-prem
@@ -624,12 +661,7 @@ export class ConfigChannelSection {
     let pushOk = false;
 
     try {
-      const res = await fetch(pkg.targetUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': pkg.apiKey },
-        body: JSON.stringify({ payload: pkg.encryptedPayload }),
-        signal: AbortSignal.timeout(15000),
-      });
+      const res = await this.fetchPushWithGzipFallback(pkg.targetUrl, pkg.apiKey, { payload: pkg.encryptedPayload });
       if (res.ok) {
         const data = await res.json() as { version?: number };
         remoteVersion = data.version ?? null;
