@@ -1632,6 +1632,7 @@
       "addSuccessActionButton": "Add button",
       "bodyMappingTip": "\"$.field\" reads from state — \"@.\" is not supported here (use &#123;patientId&#125;/&#123;userId&#125; in the endpoint).",
       "bodyMappingTitle": "bodyMapping",
+      "formatModifiersTip": "Format modifiers (optional): append \"|format\" to the expression — hhmmToMinutes, minutesToHhmm, date:yyyy-MM-dd. E.g. \"$.startTime|hhmmToMinutes\". They also work in &#123;field|format&#125; endpoint placeholders. If the value cannot be converted it is sent unchanged.",
       "completeLoginHint": "Login flow only (§17.5): extracts the tokens from the response as described by the customAuth block of the base entity and opens the session. Without it the call succeeds but the user stays logged out.",
       "completeLoginLabel": "Complete the login (customAuth)",
       "hasOnSubmitLabel": "This function saves data",

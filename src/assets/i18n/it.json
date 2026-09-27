@@ -1625,6 +1625,7 @@
       "addSuccessActionButton": "Aggiungi bottone",
       "bodyMappingTip": "\"$.campo\" legge dallo stato — \"@.\" non è supportato qui (usa &#123;patientId&#125;/&#123;userId&#125; nell'endpoint).",
       "bodyMappingTitle": "bodyMapping",
+      "formatModifiersTip": "Modificatori di formato (opzionali): aggiungi \"|formato\" in coda all'espressione — hhmmToMinutes, minutesToHhmm, date:yyyy-MM-dd. Es. \"$.oraInizio|hhmmToMinutes\". Valgono anche nei placeholder &#123;campo|formato&#125; dell'endpoint. Se il valore non è convertibile viene inviato invariato.",
       "completeLoginHint": "Solo per il flow di login (§17.5): estrae i token dalla risposta secondo il blocco customAuth dell'entity base e crea la sessione. Senza questa opzione la chiamata riesce ma l'utente resta sloggato.",
       "completeLoginLabel": "Completa il login (customAuth)",
       "hasOnSubmitLabel": "Questa funzione salva dati",

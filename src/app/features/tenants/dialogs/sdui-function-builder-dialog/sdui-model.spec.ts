@@ -33,6 +33,25 @@ describe('serializzazione delle chiavi dei nodi ricostruiti da zero', () => {
     return (onSubmit['onSuccess'] ?? {}) as Record<string, unknown>;
   }
 
+  it('conserva i modificatori di formato inline nei valori di bodyMapping ed endpoint', () => {
+    const d = flowWithOnSubmit();
+    d.steps[0].onSubmit!.endpoint = '/turni?inizio={ora|hhmmToMinutes}';
+    d.steps[0].onSubmit!.bodyMapping = {
+      inizio: '$.oraInizio|hhmmToMinutes',
+      data: '$.dataInizio|date:yyyy-MM-dd',
+      utente: '@.userId',
+    };
+
+    const steps = descriptorToJson(d)['steps'] as Record<string, unknown>[];
+    const onSubmit = steps[0]['onSubmit'] as Record<string, unknown>;
+    expect(onSubmit['endpoint']).toBe('/turni?inizio={ora|hhmmToMinutes}');
+    expect(onSubmit['bodyMapping']).toEqual({
+      inizio: '$.oraInizio|hhmmToMinutes',
+      data: '$.dataInizio|date:yyyy-MM-dd',
+      utente: '@.userId',
+    });
+  });
+
   it('scrive onSuccess.completeLogin quando attivo', () => {
     const d = flowWithOnSubmit();
     d.steps[0].onSubmit!.onSuccess.completeLogin = true;

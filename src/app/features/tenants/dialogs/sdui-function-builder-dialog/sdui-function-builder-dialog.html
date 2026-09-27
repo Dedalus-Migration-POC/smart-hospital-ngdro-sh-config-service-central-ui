@@ -119,6 +119,7 @@
             @if (descriptor().dataSource.method !== 'GET') {
               <h4>{{ 'sduiWizard.submit.bodyMappingTitle' | translate }}</h4>
               <p class="sdui-wizard__tip">{{ 'sduiWizard.submit.bodyMappingTip' | translate }}</p>
+              <p class="sdui-wizard__tip">{{ 'sduiWizard.submit.formatModifiersTip' | translate }}</p>
               @for (key of dataSourceBodyMappingKeys(); track key) {
                 <div class="sdui-wizard__row">
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
@@ -946,6 +947,7 @@
 
               <h4>{{ 'sduiWizard.submit.bodyMappingTitle' | translate }}</h4>
               <p class="sdui-wizard__tip">{{ 'sduiWizard.submit.bodyMappingTip' | translate }}</p>
+              <p class="sdui-wizard__tip">{{ 'sduiWizard.submit.formatModifiersTip' | translate }}</p>
               @for (key of bodyMappingKeys(); track key) {
                 <div class="sdui-wizard__row">
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
@@ -2012,6 +2014,7 @@
       </mat-form-field>
 
       <p class="sdui-wizard__tip">{{ 'sduiWizard.sequence.bodyMappingTip' | translate }}</p>
+      <p class="sdui-wizard__tip">{{ 'sduiWizard.submit.formatModifiersTip' | translate }}</p>
       @for (key of sequenceBodyMappingKeys(stepIndex, which, ci); track key) {
         <div class="sdui-wizard__row">
           <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
@@ -2654,6 +2657,7 @@
                     </mat-form-field>
                   </div>
                   <p class="sdui-wizard__tip">{{ 'sduiWizard.sequence.bodyMappingTip' | translate }}</p>
+                  <p class="sdui-wizard__tip">{{ 'sduiWizard.submit.formatModifiersTip' | translate }}</p>
                   @for (key of actionCallBodyMappingKeys(ref, 'call'); track key) {
                     <div class="sdui-wizard__row">
                       <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
