@@ -57,6 +57,17 @@ export interface SduiWrapAsSingleGroup {
   staticItemFields: Record<string, string>;
 }
 
+/** Raggruppa un array piatto in PIÙ gruppi in base al valore di un campo dell'item
+ * (a differenza di `wrapAsSingleGroup`, che produce sempre un solo gruppo — §4.1.2 manuale). */
+export interface SduiGroupByField {
+  type: 'groupByField';
+  itemsPath: string;
+  targetPath: string;
+  groupField: string;
+  groupLabelField?: string;
+  sortGroupsDescending?: boolean;
+}
+
 /** Transform di risposta custom con logica hardcoded nell'engine Dart (es.
  * "buildProfilesList"), non generica/editabile dal wizard: preservata as-is
  * su un giro JSON -> wizard -> JSON invece di essere ricostruita. */
@@ -65,7 +76,7 @@ export interface SduiCustomTransform {
   [key: string]: unknown;
 }
 
-export type SduiResponseTransform = SduiFlattenNested | SduiWrapAsSingleGroup;
+export type SduiResponseTransform = SduiFlattenNested | SduiWrapAsSingleGroup | SduiGroupByField;
 
 export interface SduiDataSource {
   method: string;
@@ -88,9 +99,9 @@ export function dataSourceFromJson(ds: Record<string, unknown>): SduiDataSource 
   };
 }
 
-/** Legge un `responseTransform` grezzo, riconoscendo i due tipi generici editabili dal
- * wizard (`flattenNested`/`wrapAsSingleGroup`, §4 manuale); qualunque altro tipo (transform
- * custom hardcoded nell'engine) viene preservato as-is. */
+/** Legge un `responseTransform` grezzo, riconoscendo i tre tipi generici editabili dal
+ * wizard (`flattenNested`/`wrapAsSingleGroup`/`groupByField`, §4 manuale); qualunque altro tipo
+ * (transform custom hardcoded nell'engine) viene preservato as-is. */
 export function parseResponseTransform(rt: Record<string, unknown> | undefined): SduiResponseTransform | undefined {
   if (!rt) return undefined;
   if (rt['type'] === 'flattenNested') {
@@ -109,6 +120,16 @@ export function parseResponseTransform(rt: Record<string, unknown> | undefined):
       targetPath: (rt['targetPath'] as string) ?? 'groupedItems',
       groupLabelKey: rt['groupLabelKey'] as string | undefined,
       staticItemFields: (rt['staticItemFields'] as Record<string, string>) ?? {},
+    };
+  }
+  if (rt['type'] === 'groupByField') {
+    return {
+      type: 'groupByField',
+      itemsPath: (rt['itemsPath'] as string) ?? 'items',
+      targetPath: (rt['targetPath'] as string) ?? 'groupedItems',
+      groupField: (rt['groupField'] as string) ?? '',
+      groupLabelField: rt['groupLabelField'] as string | undefined,
+      sortGroupsDescending: rt['sortGroupsDescending'] as boolean | undefined,
     };
   }
   // Transform custom con logica hardcoded nell'engine (es. "buildProfilesList"): il wizard
@@ -133,6 +154,10 @@ export function createEmptyFlattenNested(): SduiFlattenNested {
 
 export function createEmptyWrapAsSingleGroup(): SduiWrapAsSingleGroup {
   return { type: 'wrapAsSingleGroup', itemsPath: 'items', targetPath: 'groupedItems', staticItemFields: {} };
+}
+
+export function createEmptyGroupByField(): SduiGroupByField {
+  return { type: 'groupByField', itemsPath: 'items', targetPath: 'groupedItems', groupField: '', sortGroupsDescending: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -243,6 +268,28 @@ export interface SduiFlatField {
   field: string;
 }
 
+/** Normalizzazione del testo mentre si digita (§8). Qualunque altro valore e'
+ * ignorato dall'engine (CaseTextInputFormatter.fromJson ritorna null), quindi
+ * il wizard offre solo i due riconosciuti piu' l'assenza dell'opzione. */
+export type SduiTextCase = 'upper' | 'lower';
+
+/** Tastiera mostrata su mobile (§8). `text` e' il default dell'engine
+ * (resolveSduiKeyboardType ricade li' per ogni valore non riconosciuto). */
+export type SduiKeyboardType = 'text' | 'number' | 'email' | 'phone';
+
+export const SDUI_TEXT_CASES: { value: SduiTextCase | ''; label: string }[] = [
+  { value: '', label: 'sduiWizard.textCase.none' },
+  { value: 'upper', label: 'sduiWizard.textCase.upper' },
+  { value: 'lower', label: 'sduiWizard.textCase.lower' },
+];
+
+export const SDUI_KEYBOARD_TYPES: { value: SduiKeyboardType; label: string }[] = [
+  { value: 'text', label: 'sduiWizard.keyboardType.text' },
+  { value: 'number', label: 'sduiWizard.keyboardType.number' },
+  { value: 'email', label: 'sduiWizard.keyboardType.email' },
+  { value: 'phone', label: 'sduiWizard.keyboardType.phone' },
+];
+
 export interface SduiDetailAction {
   linkKey: string;
   subtitleField?: string;
@@ -261,9 +308,15 @@ export interface SduiField {
   paddingBottom?: number;
   validation?: SduiValidation;
   options?: SduiOptions;
-  // textInput
+  // textInput (§8 manuale)
   multiline?: boolean;
   maxLines?: number;
+  hintKey?: string;
+  textCase?: SduiTextCase;
+  keyboardType?: SduiKeyboardType;
+  obscureText?: boolean;
+  maxLength?: number;
+  trim?: boolean;
   // datePicker
   minDate?: string;
   maxDate?: string;
@@ -867,6 +920,10 @@ export interface SduiOnSubmit {
     messageKey?: string;
     valuePath?: string;
     showSuccessScreen?: SduiSuccessScreen | null;
+    /** Solo flow di login (§17.5): estrae i token dalla risposta secondo il blocco
+     * `customAuth` di `base` e crea la sessione. Senza questo flag il login riesce
+     * lato backend ma l'utente resta sloggato. */
+    completeLogin?: boolean;
     /** Solo flow, ultimo step: schermata di recap post-conferma (§7.1). */
     conclusion?: SduiConclusion | null;
   };
@@ -935,6 +992,9 @@ export interface SduiDescriptor {
   primaryAction: SduiAction | null;
   onSubmit: SduiOnSubmit | null;
   steps: SduiFlowStep[];
+  /** Solo flow (§7.2): mostra il dettaglio tecnico quando il caricamento di uno step
+   * fallisce. Diagnostico, da tenere spento in produzione. */
+  showTechnicalError?: boolean;
 }
 
 export function createEmptyDescriptor(kind: SduiKind, entityName: string): SduiDescriptor {
@@ -991,6 +1051,7 @@ export function descriptorToJson(d: SduiDescriptor): Record<string, unknown> {
     if (d.onSubmit) out['onSubmit'] = cleanOnSubmit(d.onSubmit);
   } else {
     if (d.onExit?.confirmKey) out['onExit'] = { confirmKey: d.onExit.confirmKey };
+    if (d.showTechnicalError) out['showTechnicalError'] = true;
     out['steps'] = d.steps.map(cleanFlowStep);
   }
   return out;
@@ -1060,12 +1121,13 @@ function cleanFlattenNested(f: SduiFlattenNested): Record<string, unknown> {
   return out;
 }
 
-/** Serializza un `responseTransform`: i due tipi generici editabili dal wizard vengono
+/** Serializza un `responseTransform`: i tre tipi generici editabili dal wizard vengono
  * ricostruiti campo per campo, qualunque altro tipo (custom, hardcoded nell'engine) viene
  * riemesso as-is — vedi `parseResponseTransform`. */
 export function cleanResponseTransform(rt: SduiResponseTransform): Record<string, unknown> {
   if (rt.type === 'wrapAsSingleGroup') return cleanWrapAsSingleGroup(rt);
   if (rt.type === 'flattenNested') return cleanFlattenNested(rt);
+  if (rt.type === 'groupByField') return cleanGroupByField(rt);
   return rt as Record<string, unknown>;
 }
 
@@ -1077,6 +1139,20 @@ function cleanWrapAsSingleGroup(f: SduiWrapAsSingleGroup): Record<string, unknow
   };
   if (f.groupLabelKey) out['groupLabelKey'] = f.groupLabelKey;
   if (Object.keys(f.staticItemFields ?? {}).length > 0) out['staticItemFields'] = f.staticItemFields;
+  return out;
+}
+
+function cleanGroupByField(f: SduiGroupByField): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    type: 'groupByField',
+    itemsPath: f.itemsPath || 'items',
+    targetPath: f.targetPath || 'groupedItems',
+    groupField: f.groupField || '',
+  };
+  if (f.groupLabelField) out['groupLabelField'] = f.groupLabelField;
+  // sortGroupsDescending di default true lato engine (§4.1.2 manuale): scritto in JSON solo
+  // quando esplicitamente impostato a false, per non appesantire l'output nel caso comune.
+  if (f.sortGroupsDescending === false) out['sortGroupsDescending'] = false;
   return out;
 }
 
@@ -1126,7 +1202,8 @@ function cleanValidation(v: SduiValidation): Record<string, unknown> {
 // esplicitamente perché non coincidono coi nomi delle proprietà del model.
 const SDUI_FIELD_KNOWN_KEYS = [
   'id', 'component', 'labelKey', 'visibleIf', 'paddingBottom', 'validation', 'options',
-  'multiline', 'maxLines', 'minDate', 'maxDate', 'allowedExtensions', 'placeholderKey',
+  'multiline', 'maxLines', 'hintKey', 'textCase', 'keyboardType', 'obscureText', 'maxLength', 'trim',
+  'minDate', 'maxDate', 'allowedExtensions', 'placeholderKey',
   'valueField', 'siteKey', 'baseUrl', 'theme', 'variant', 'linkKey',
   'infoDialogTitleKey', 'infoDialogBodyKey', 'infoDialog', 'buttonKey',
   'primaryActionSequence', 'primaryAction', 'actionMessageKey',
@@ -1135,7 +1212,7 @@ const SDUI_FIELD_KNOWN_KEYS = [
   'titleValueField', 'subtitleField', 'flatFields', 'officesField', 'officeTitleKey', 'officeFields',
 ] as const;
 
-function cleanField(f: SduiField): Record<string, unknown> {
+export function cleanField(f: SduiField): Record<string, unknown> {
   const out: Record<string, unknown> = { id: f.id, component: f.component, labelKey: f.labelKey };
   if (f.visibleIf) out['visibleIf'] = f.visibleIf;
   if (f.paddingBottom != null) out['paddingBottom'] = f.paddingBottom;
@@ -1145,6 +1222,13 @@ function cleanField(f: SduiField): Record<string, unknown> {
   if (f.options) out['options'] = cleanOptions(f.options);
   if (f.component === 'textInput') {
     if (f.multiline) { out['multiline'] = true; if (f.maxLines) out['maxLines'] = f.maxLines; }
+    if (f.hintKey) out['hintKey'] = f.hintKey;
+    if (f.textCase) out['textCase'] = f.textCase;
+    // 'text' e' gia' il default dell'engine: non lo scriviamo per non gonfiare il JSON.
+    if (f.keyboardType && f.keyboardType !== 'text') out['keyboardType'] = f.keyboardType;
+    if (f.obscureText) out['obscureText'] = true;
+    if (f.maxLength) out['maxLength'] = f.maxLength;
+    if (f.trim) out['trim'] = true;
   }
   if (f.component === 'datePicker') {
     if (f.minDate) out['minDate'] = f.minDate;
@@ -1567,6 +1651,9 @@ function cleanOnSubmit(o: SduiOnSubmit): Record<string, unknown> {
     if (o.onSuccess?.valuePath) onSuccess['valuePath'] = o.onSuccess.valuePath;
   }
   if (o.onSuccess?.conclusion?.titleKey) onSuccess['conclusion'] = cleanConclusion(o.onSuccess.conclusion);
+  // Fuori dal ramo showSuccessScreen: l'engine lo legge comunque (flow_renderer.dart,
+  // `onSubmit['onSuccess']?['completeLogin'] == true`), indipendentemente dal resto.
+  if (o.onSuccess?.completeLogin) onSuccess['completeLogin'] = true;
   if (Object.keys(onSuccess).length > 0) out['onSuccess'] = onSuccess;
   if (o.onError?.messageKey || o.onError?.action) {
     const onError: Record<string, unknown> = {};

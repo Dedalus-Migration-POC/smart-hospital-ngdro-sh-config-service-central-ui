@@ -77,6 +77,12 @@
                 <input matInput [ngModel]="descriptor().onExit?.confirmKey ?? ''" (ngModelChange)="setOnExitConfirmKey($event)" />
                 <mat-hint>{{ 'sduiWizard.base.onExitConfirmHint' | translate }}</mat-hint>
               </mat-form-field>
+
+              <mat-checkbox
+                [checked]="!!descriptor().showTechnicalError"
+                (change)="toggleShowTechnicalError($event.checked)"
+              >{{ 'sduiWizard.base.showTechnicalErrorLabel' | translate }}</mat-checkbox>
+              <p class="sdui-wizard__tip">{{ 'sduiWizard.base.showTechnicalErrorHint' | translate }}</p>
             }
 
             <mat-form-field appearance="outline" class="sdui-wizard__field">
@@ -173,12 +179,13 @@
 
               @if (descriptor().dataSource.responseTransform; as rt) {
                 <div class="sdui-wizard__panel">
-                  @if (rt.type === 'flattenNested' || rt.type === 'wrapAsSingleGroup') {
+                  @if (rt.type === 'flattenNested' || rt.type === 'wrapAsSingleGroup' || rt.type === 'groupByField') {
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.responseTransformType' | translate }}</mat-label>
                     <mat-select [value]="rt.type" (selectionChange)="setResponseTransformType($event.value)">
                       <mat-option value="flattenNested">{{ 'sduiWizard.dataSource.flattenNestedOption' | translate }}</mat-option>
                       <mat-option value="wrapAsSingleGroup">{{ 'sduiWizard.dataSource.wrapAsSingleGroupOption' | translate }}</mat-option>
+                      <mat-option value="groupByField">{{ 'sduiWizard.dataSource.groupByFieldOption' | translate }}</mat-option>
                     </mat-select>
                   </mat-form-field>
 
@@ -340,6 +347,38 @@
                     <button mat-stroked-button type="button" (click)="addWrapStaticField()">
                       <mat-icon>add</mat-icon> {{ 'sduiWizard.dataSource.addFieldButton' | translate }}
                     </button>
+                  }
+
+                  @if (rt.type === 'groupByField') {
+                    <p class="sdui-wizard__tip" [innerHTML]="'sduiWizard.dataSource.groupByFieldTip' | translate"></p>
+                    <div class="sdui-wizard__row">
+                      <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                        <mat-label>{{ 'sduiWizard.labels.itemsPath' | translate }}</mat-label>
+                        <input matInput [ngModel]="rt.itemsPath" (ngModelChange)="setGroupByFieldItemsPath($event)" placeholder="items" />
+                      </mat-form-field>
+                      <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                        <mat-label>{{ 'sduiWizard.labels.targetPath' | translate }}</mat-label>
+                        <input matInput [ngModel]="rt.targetPath" (ngModelChange)="setGroupByFieldTargetPath($event)" placeholder="groupedItems" />
+                      </mat-form-field>
+                    </div>
+                    @if (pathPreview(rt.itemsPath); as pv) {
+                      <p class="sdui-wizard__path-preview" [class.sdui-wizard__path-preview--warn]="!pv.found">{{ pv.display }}</p>
+                    }
+                    <div class="sdui-wizard__row">
+                      <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                        <mat-label>{{ 'sduiWizard.labels.groupField' | translate }}</mat-label>
+                        <input matInput [ngModel]="rt.groupField" (ngModelChange)="setGroupByFieldGroupField($event)" placeholder="anno" />
+                      </mat-form-field>
+                      <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                        <mat-label>{{ 'sduiWizard.labels.groupLabelField' | translate }}</mat-label>
+                        <input matInput [ngModel]="rt.groupLabelField ?? ''" (ngModelChange)="setGroupByFieldGroupLabelField($event)" placeholder="annoDescrizione" />
+                        <mat-hint>{{ 'sduiWizard.dataSource.groupLabelFieldHint' | translate }}</mat-hint>
+                      </mat-form-field>
+                    </div>
+                    <mat-checkbox
+                      [checked]="rt.sortGroupsDescending ?? true"
+                      (change)="setGroupByFieldSortDescending($event.checked)"
+                    >{{ 'sduiWizard.dataSource.sortGroupsDescendingLabel' | translate }}</mat-checkbox>
                   }
                   } @else {
                     <p class="sdui-wizard__tip">{{ 'sduiWizard.submit.requestTransformCustomTip' | translate: { type: transformTypeOf(rt) } }}</p>
@@ -1063,6 +1102,10 @@
                   <input matInput [ngModel]="os.onError.messageKey ?? ''" (ngModelChange)="setOnErrorMessageKey($event)" />
                 </mat-form-field>
               </div>
+              @if (descriptor().kind === 'flow') {
+                <mat-checkbox [checked]="!!os.onSuccess.completeLogin" (change)="toggleCompleteLogin($event.checked)">{{ 'sduiWizard.submit.completeLoginLabel' | translate }}</mat-checkbox>
+                <p class="sdui-wizard__tip">{{ 'sduiWizard.submit.completeLoginHint' | translate }}</p>
+              }
             }
           }
 
@@ -1455,6 +1498,35 @@
     </div>
 
     @if (field.component === 'textInput') {
+      <div class="sdui-wizard__row">
+        <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+          <mat-label>{{ 'sduiWizard.labels.hintKeyOptional' | translate }}</mat-label>
+          <input matInput [ngModel]="field.hintKey ?? ''" (ngModelChange)="setProp('hintKey', $event)" />
+          <mat-hint>{{ 'sduiWizard.field.hintKeyHint' | translate }}</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
+          <mat-label>{{ 'sduiWizard.labels.textCase' | translate }}</mat-label>
+          <mat-select [value]="field.textCase ?? ''" (selectionChange)="setProp('textCase', $event.value || undefined)">
+            @for (tc of textCases; track tc.value) {
+              <mat-option [value]="tc.value">{{ tc.label | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
+          <mat-label>{{ 'sduiWizard.labels.keyboardType' | translate }}</mat-label>
+          <mat-select [value]="field.keyboardType ?? 'text'" (selectionChange)="setProp('keyboardType', $event.value)">
+            @for (kt of keyboardTypes; track kt.value) {
+              <mat-option [value]="kt.value">{{ kt.label | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
+          <mat-label>{{ 'sduiWizard.labels.maxLength' | translate }}</mat-label>
+          <input matInput type="number" [ngModel]="field.maxLength ?? null" (ngModelChange)="setProp('maxLength', $event ? +$event : undefined)" />
+        </mat-form-field>
+      </div>
+      <mat-checkbox [checked]="!!field.trim" (change)="setProp('trim', $event.checked || undefined)">{{ 'sduiWizard.labels.trim' | translate }}</mat-checkbox>
+      <mat-checkbox [checked]="!!field.obscureText" (change)="setProp('obscureText', $event.checked || undefined)" [disabled]="!!field.multiline">{{ 'sduiWizard.labels.obscureText' | translate }}</mat-checkbox>
       <mat-checkbox [checked]="!!field.multiline" (change)="setProp('multiline', $event.checked)">{{ 'sduiWizard.labels.multiline' | translate }}</mat-checkbox>
       @if (field.multiline) {
         <mat-form-field appearance="outline" class="sdui-wizard__field--sm">

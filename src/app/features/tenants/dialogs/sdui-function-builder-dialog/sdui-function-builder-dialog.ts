@@ -19,6 +19,8 @@ import { catchError, of } from 'rxjs';
 import { TenantService } from '../../services/tenants';
 import {
   SDUI_ACTION_TYPES,
+  SDUI_TEXT_CASES,
+  SDUI_KEYBOARD_TYPES,
   SDUI_BADGE_COLORS,
   SDUI_FIELD_COMPONENTS,
   SDUI_KINDS,
@@ -61,6 +63,7 @@ import {
   createEmptyField,
   createEmptyFlattenNested,
   createEmptyWrapAsSingleGroup,
+  createEmptyGroupByField,
   createEmptyFlowStep,
   createEmptyOnSubmit,
   createEmptyOptions,
@@ -146,6 +149,8 @@ export class SduiFunctionBuilderDialog {
   readonly kinds = SDUI_KINDS;
   readonly sectionTypes = SDUI_SECTION_TYPES;
   readonly fieldComponents = SDUI_FIELD_COMPONENTS;
+  readonly textCases = SDUI_TEXT_CASES;
+  readonly keyboardTypes = SDUI_KEYBOARD_TYPES;
   readonly actionTypes = SDUI_ACTION_TYPES;
   readonly menuIcons = SDUI_MENU_ICONS;
   readonly badgeColors = SDUI_BADGE_COLORS;
@@ -289,6 +294,7 @@ export class SduiFunctionBuilderDialog {
   }
   setInitialStateJson(v: string): void { this.update(d => { d.initialStateJson = v; }); }
   toggleConfirmLeaveIfDirty(v: boolean): void { this.update(d => { d.confirmLeaveIfDirty = v; }); }
+  toggleShowTechnicalError(v: boolean): void { this.update(d => { d.showTechnicalError = v || undefined; }); }
   setOnExitConfirmKey(v: string): void { this.update(d => { d.onExit = { confirmKey: v }; }); }
 
   // ------------------------------------------------------------------
@@ -351,9 +357,12 @@ export class SduiFunctionBuilderDialog {
   toggleFlattenNested(enabled: boolean): void {
     this.update(d => { d.dataSource.responseTransform = enabled ? createEmptyFlattenNested() : null; });
   }
-  setResponseTransformType(type: 'flattenNested' | 'wrapAsSingleGroup'): void {
+  setResponseTransformType(type: 'flattenNested' | 'wrapAsSingleGroup' | 'groupByField'): void {
     this.update(d => {
-      d.dataSource.responseTransform = type === 'wrapAsSingleGroup' ? createEmptyWrapAsSingleGroup() : createEmptyFlattenNested();
+      d.dataSource.responseTransform =
+        type === 'wrapAsSingleGroup' ? createEmptyWrapAsSingleGroup() :
+        type === 'groupByField' ? createEmptyGroupByField() :
+        createEmptyFlattenNested();
     });
   }
   setFlattenArrayPath(v: string): void { this.update(d => { if (d.dataSource.responseTransform?.type === 'flattenNested') d.dataSource.responseTransform.arrayPath = v; }); }
@@ -388,6 +397,12 @@ export class SduiFunctionBuilderDialog {
     const rt = this.descriptor().dataSource.responseTransform;
     return rt?.type === 'wrapAsSingleGroup' ? Object.keys(rt.staticItemFields) : [];
   }
+
+  setGroupByFieldItemsPath(v: string): void { this.update(d => { if (d.dataSource.responseTransform?.type === 'groupByField') d.dataSource.responseTransform.itemsPath = v; }); }
+  setGroupByFieldTargetPath(v: string): void { this.update(d => { if (d.dataSource.responseTransform?.type === 'groupByField') d.dataSource.responseTransform.targetPath = v; }); }
+  setGroupByFieldGroupField(v: string): void { this.update(d => { if (d.dataSource.responseTransform?.type === 'groupByField') d.dataSource.responseTransform.groupField = v; }); }
+  setGroupByFieldGroupLabelField(v: string): void { this.update(d => { if (d.dataSource.responseTransform?.type === 'groupByField') d.dataSource.responseTransform.groupLabelField = v || undefined; }); }
+  setGroupByFieldSortDescending(v: boolean): void { this.update(d => { if (d.dataSource.responseTransform?.type === 'groupByField') d.dataSource.responseTransform.sortGroupsDescending = v; }); }
 
   addFlattenField(): void {
     this.update(d => {
@@ -1122,6 +1137,11 @@ export class SduiFunctionBuilderDialog {
   setOnSuccessMessageKey(v: string): void { this.update(d => { if (d.onSubmit) d.onSubmit.onSuccess.messageKey = v; }); }
   setOnErrorMessageKey(v: string): void { this.update(d => { if (d.onSubmit) d.onSubmit.onError.messageKey = v; }); }
 
+  /** §17.5 — vedi SduiOnSubmit.onSuccess.completeLogin. */
+  toggleCompleteLogin(v: boolean): void {
+    this.update(d => { if (d.onSubmit) d.onSubmit.onSuccess.completeLogin = v || undefined; });
+  }
+
   // showSuccessScreen (§5.3 manuale) — alternativa a messageKey/navigateBack, ha priorità sugli altri due se presente.
   toggleShowSuccessScreen(has: boolean): void {
     this.update(d => {
@@ -1796,6 +1816,7 @@ function jsonToDescriptor(json: Record<string, unknown>, fallbackEntityName: str
   d.subtitleKey = json['subtitleKey'] as string | undefined;
   d.initialStateJson = json['initialState'] ? JSON.stringify(json['initialState'], null, 2) : '{}';
   d.confirmLeaveIfDirty = Boolean(json['confirmLeaveIfDirty']);
+  d.showTechnicalError = Boolean(json['showTechnicalError']);
   const onExit = json['onExit'] as { confirmKey?: string } | undefined;
   if (onExit) d.onExit = onExit;
 
