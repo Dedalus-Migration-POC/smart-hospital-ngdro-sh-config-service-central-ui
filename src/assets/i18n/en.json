@@ -1156,7 +1156,8 @@
       "removeFromLabel": "removeFrom — removes the item from a state group after success",
       "showSuccessScreenRowTip": "Takes priority over messageKey if both are present. No summary card: the engine only shows title/subtitle + buttons, which always close the page on press (no sensible resetForm for a row action).",
       "title": "primaryAction (FloatingActionButton, optional)",
-      "updateInGroupsLabel": "updateInGroups — also updates the item inside grouped lists in state"
+      "updateInGroupsLabel": "updateInGroups — also updates the item inside grouped lists in state",
+      "mimeTypeFieldHint": "Field on the selected row to read the file's MIME type from."
     },
     "base": {
       "authTip": "Authentication note: \"bearer\" auth (default) requires login. If this function will be opened from a menu entry with <code>sduiWithoutAuth: true</code> (public entry point, no login), set \"auth\": \"public\" on <strong>every</strong> dataSource/onSubmit/options.endpoint below, otherwise the call will always throw an exception.",
@@ -1208,7 +1209,11 @@
       "groupByFieldOption": "groupByField — group a flat array by any field (for cardList/groupedTable)",
       "groupByFieldTip": "Unlike <b>wrapAsSingleGroup</b> (a single group), <b>groupByField</b> groups items into MULTIPLE groups based on the value of a field on each item (e.g. \"year\" for payslips/CU, \"category\" for a list of resources).",
       "groupLabelFieldHint": "If left empty: the group label is the key itself (e.g. \"2020\"). If set: the label is the value of this field read from the first item of the group.",
-      "sortGroupsDescendingLabel": "Sort groups descending (e.g. most recent years first)"
+      "sortGroupsDescendingLabel": "Sort groups descending (e.g. most recent years first)",
+      "captureToProfileTitle": "Save to profile (captureToProfile)",
+      "captureToProfileTip": "Attributes read from the response and persisted to the user's profile.",
+      "captureToStateTitle": "Save to local state (captureToState)",
+      "captureToStateTip": "Attributes read from the response and saved in the screen's local state."
     },
     "field": {
       "hintKeyHint": "Translation key shown while the field is empty."
@@ -1450,7 +1455,13 @@
       "visibleIfOptional": "visibleIf (optional)",
       "visibleWhenFieldFalse": "Hidden if field true (visibleWhenFieldFalse)",
       "visibleWhenFieldTrue": "Visible only if field true (visibleWhenFieldTrue)",
-      "width": "Width"
+      "width": "Width",
+      "emptyValueKey": "emptyValueKey (labelKey shown when the value is empty)",
+      "labelVariant": "Label variant",
+      "fromLabelKey": "fromLabelKey (optional)",
+      "toLabelKey": "toLabelKey (optional)",
+      "mimeTypeField": "mimeTypeField (field holding the file's MIME type)",
+      "equalsValue": "Expected value (equals)"
     },
     "nav": {
       "back": "Back",
@@ -1479,7 +1490,8 @@
       "labelTemplateHint": "If left empty, uses the same value as valueTemplate.",
       "pageSize": "pageSize",
       "fieldsMapTip": "Declarative map computedField → path/formatter, resolved on the raw item before templates. Takes priority over the engine's legacy enrichments when keys collide.",
-      "legacyEnrichmentTip": "Note: some items with a \"doctor\" shape get implicit legacy enrichments (labelIt, dateLabel/timeLabel, code/specialization/phone) — always prefer fields above for new descriptors, more explicit and predictable."
+      "legacyEnrichmentTip": "Note: some items with a \"doctor\" shape get implicit legacy enrichments (labelIt, dateLabel/timeLabel, code/specialization/phone) — always prefer fields above for new descriptors, more explicit and predictable.",
+      "emptyFallbackToggle": "Show a fallback option when the remote list is empty"
     },
     "rowDetail": {
       "toggleLabel": "Row detail (rowDetail) — opens a dedicated screen on row tap",
@@ -1503,7 +1515,11 @@
       "actionsSheetTip": "List of actions shown in a bottom sheet from the row detail.",
       "dynamicLabelToggle": "Dynamic label based on a field (field + labelKeyWhenTrue/False)",
       "actionLabel": "Action (manual §6)",
-      "addActionButton": "Add action"
+      "addActionButton": "Add action",
+      "sectionKindDocumentDownload": "Document download",
+      "titleFieldLabel": "Title field",
+      "subtitleFieldLabel": "Subtitle field",
+      "documentDownloadTip": "Section showing the document's title/subtitle plus a download action (downloadFile)."
     },
     "sectionTypes": {
       "cardList": {
@@ -1583,7 +1599,11 @@
       "verticalDividerTip": "Vertical separator between a dateBadge/icon and the content next to it in a row. Height adapts automatically to the tallest sibling in the row: no fixed value to configure.",
       "calendarItemsPathTip": "itemsPath must point to a flat (non-grouped) array in state. dateField reads a date in dd/MM/yyyy[ HH:mm] format: items with an invalid date are excluded from the calendar (no crash).",
       "calendarCardLabel": "Card for each event in the list below the calendar",
-      "calendarTip": "Suggested: row with dateBadge + verticalDivider + column (title/time), same pattern as the \"Scheduled events\" list. Required translations (no default): common.monthsFull.1..12 and common.weekdaysShort.1..7."
+      "calendarTip": "Suggested: row with dateBadge + verticalDivider + column (title/time), same pattern as the \"Scheduled events\" list. Required translations (no default): common.monthsFull.1..12 and common.weekdaysShort.1..7.",
+      "emptyValueKeyHint": "If the field is empty/null, show this labelKey instead of the value.",
+      "dateLabelKeyTip": "Single date field (fromField = toField): use dateLabelKey instead of from/toLabelKey.",
+      "customFilterOptionToggle": "Custom option (free value, not predefined)",
+      "formCardToggle": "Wrap the section in a Card (Material Card wrap)"
     },
     "sequence": {
       "addCallButton": "Add call to sequence",
@@ -1646,7 +1666,9 @@
       "showSuccessScreenTip": "Alternative to messageKey/navigateBack: takes priority if present. The \"summary\" field is available only here (not in flow last steps).",
       "successActionsLabel": "Buttons (max 2, always full-width stacked)",
       "summaryLabel": "Show a summary",
-      "title": "Saving (onSubmit)"
+      "title": "Saving (onSubmit)",
+      "failureCheckToggle": "Failure check (failureCheck)",
+      "failureCheckTip": "Even with an HTTP 200 response, if the given field equals the value, the submit is treated as failed."
     },
     "textCase": {
       "lower": "lowercase",

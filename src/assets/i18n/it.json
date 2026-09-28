@@ -1149,7 +1149,8 @@
       "removeFromLabel": "removeFrom — rimuove l'item da un gruppo nello stato dopo il successo",
       "showSuccessScreenRowTip": "Ha priorità su messageKey se entrambe sono presenti. Niente card di riepilogo (summary): il motore apre solo titolo/sottotitolo + bottoni, che chiudono sempre la pagina alla pressione (nessun resetForm sensato per un'azione di riga).",
       "title": "primaryAction (FloatingActionButton, opzionale)",
-      "updateInGroupsLabel": "updateInGroups — aggiorna l'item anche dentro liste raggruppate nello stato"
+      "updateInGroupsLabel": "updateInGroups — aggiorna l'item anche dentro liste raggruppate nello stato",
+      "mimeTypeFieldHint": "Campo della riga selezionata da cui leggere il MIME type del file da scaricare."
     },
     "base": {
       "authTip": "Nota autenticazione: l'auth \"bearer\" (default) richiede login. Se questa funzione verrà aperta da una voce di menu con <code>sduiWithoutAuth: true</code> (entry point pubblico, senza login), imposta \"auth\": \"public\" su <strong>ogni</strong> dataSource/onSubmit/options.endpoint qui sotto, altrimenti la chiamata lancerà sempre un'eccezione.",
@@ -1201,7 +1202,11 @@
       "groupByFieldOption": "groupByField — raggruppa un array piatto per un campo qualunque (per cardList/groupedTable)",
       "groupByFieldTip": "A differenza di <b>wrapAsSingleGroup</b> (un solo gruppo), <b>groupByField</b> raggruppa in più gruppi in base al valore di un campo di ciascun item (es. \"anno\" per cedolini/CU, \"categoria\" per una lista di risorse).",
       "groupLabelFieldHint": "Se lasciato vuoto: l'etichetta del gruppo è la chiave stessa (es. \"2020\"). Se valorizzato: l'etichetta è il valore di questo campo letto dal primo item del gruppo.",
-      "sortGroupsDescendingLabel": "Ordina i gruppi in modo decrescente (es. anni più recenti prima)"
+      "sortGroupsDescendingLabel": "Ordina i gruppi in modo decrescente (es. anni più recenti prima)",
+      "captureToProfileTitle": "Salva nel profilo (captureToProfile)",
+      "captureToProfileTip": "Attributi letti dalla risposta e persistiti nel profilo utente.",
+      "captureToStateTitle": "Salva nello stato locale (captureToState)",
+      "captureToStateTip": "Attributi letti dalla risposta e salvati nello stato locale dello screen."
     },
     "field": {
       "hintKeyHint": "Chiave di traduzione mostrata a campo vuoto."
@@ -1443,7 +1448,13 @@
       "visibleIfOptional": "visibleIf (opzionale)",
       "visibleWhenFieldFalse": "Nascosto se campo true (visibleWhenFieldFalse)",
       "visibleWhenFieldTrue": "Visibile solo se campo true (visibleWhenFieldTrue)",
-      "width": "Larghezza (width)"
+      "width": "Larghezza (width)",
+      "emptyValueKey": "emptyValueKey (labelKey mostrata se il valore è vuoto)",
+      "labelVariant": "Variante etichetta",
+      "fromLabelKey": "fromLabelKey (opzionale)",
+      "toLabelKey": "toLabelKey (opzionale)",
+      "mimeTypeField": "mimeTypeField (campo con il MIME type del file)",
+      "equalsValue": "Valore atteso (equals)"
     },
     "nav": {
       "back": "Indietro",
@@ -1472,7 +1483,8 @@
       "labelTemplateHint": "Se lasciato vuoto, usa lo stesso valore di valueTemplate.",
       "pageSize": "pageSize",
       "fieldsMapTip": "Mappa dichiarativa campoOutput → percorso/formattatore, risolta sull'item grezzo prima dei template. Ha priorità sugli arricchimenti legacy dell'engine se le chiavi coincidono.",
-      "legacyEnrichmentTip": "Nota: alcuni item con shape \"medico\" ricevono arricchimenti impliciti legacy (labelIt, dateLabel/timeLabel, code/specialization/phone) — preferisci sempre fields sopra per nuovi descrittori, più esplicito e prevedibile."
+      "legacyEnrichmentTip": "Nota: alcuni item con shape \"medico\" ricevono arricchimenti impliciti legacy (labelIt, dateLabel/timeLabel, code/specialization/phone) — preferisci sempre fields sopra per nuovi descrittori, più esplicito e prevedibile.",
+      "emptyFallbackToggle": "Mostra un'opzione di fallback quando la lista remota è vuota"
     },
     "rowDetail": {
       "toggleLabel": "Dettaglio riga (rowDetail) — apre una scheda dedicata al tap sulla riga",
@@ -1496,7 +1508,11 @@
       "actionsSheetTip": "Elenco di azioni mostrate in un bottom sheet dal dettaglio riga.",
       "dynamicLabelToggle": "Etichetta dinamica in base a un campo (field + labelKeyWhenTrue/False)",
       "actionLabel": "Azione (§6 manuale)",
-      "addActionButton": "Aggiungi azione"
+      "addActionButton": "Aggiungi azione",
+      "sectionKindDocumentDownload": "Download documento",
+      "titleFieldLabel": "Campo titolo",
+      "subtitleFieldLabel": "Campo sottotitolo",
+      "documentDownloadTip": "Sezione che mostra titolo/sottotitolo del documento e un'azione di download (downloadFile)."
     },
     "sectionTypes": {
       "cardList": {
@@ -1576,7 +1592,11 @@
       "verticalDividerTip": "Separatore verticale tra un dateBadge/icona e il contenuto accanto in una row. L'altezza si adatta automaticamente al figlio più alto della riga: nessun valore fisso da configurare.",
       "calendarItemsPathTip": "itemsPath deve puntare a un array piatto (non raggruppato) nello stato. dateField legge una data in formato dd/MM/yyyy[ HH:mm]: gli item con data non valida vengono esclusi dal calendario (nessun crash).",
       "calendarCardLabel": "Card di ogni evento nella lista sotto il calendario",
-      "calendarTip": "Suggerito: row con dateBadge + verticalDivider + column (titolo/orario), stesso pattern della lista \"Eventi programmati\". Traduzioni richieste (nessun default): common.monthsFull.1..12 e common.weekdaysShort.1..7."
+      "calendarTip": "Suggerito: row con dateBadge + verticalDivider + column (titolo/orario), stesso pattern della lista \"Eventi programmati\". Traduzioni richieste (nessun default): common.monthsFull.1..12 e common.weekdaysShort.1..7.",
+      "emptyValueKeyHint": "Se il campo è vuoto/null, mostra questa labelKey al posto del valore.",
+      "dateLabelKeyTip": "Un solo campo data (fromField = toField): usa dateLabelKey invece di from/toLabelKey.",
+      "customFilterOptionToggle": "Opzione custom (valore libero, non predefinito)",
+      "formCardToggle": "Racchiudi la sezione in una Card (wrap Material Card)"
     },
     "sequence": {
       "addCallButton": "Aggiungi chiamata alla sequenza",
@@ -1639,7 +1659,9 @@
       "showSuccessScreenTip": "Alternativa a messageKey/navigateBack: ha la priorità se presente. Il campo \"summary\" è disponibile solo qui (non negli ultimi step dei flow).",
       "successActionsLabel": "Bottoni (massimo 2, sempre a tutta larghezza impilati)",
       "summaryLabel": "Mostra un riepilogo (summary)",
-      "title": "Salvataggio (onSubmit)"
+      "title": "Salvataggio (onSubmit)",
+      "failureCheckToggle": "Verifica esito (failureCheck)",
+      "failureCheckTip": "Anche con risposta HTTP 200, se il campo indicato eguaglia il valore, il submit è trattato come fallito."
     },
     "textCase": {
       "lower": "minuscolo",

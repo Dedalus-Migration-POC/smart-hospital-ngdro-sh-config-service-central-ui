@@ -86,7 +86,8 @@ import { formatPathPreviewValue, PathPreviewResult, resolveSampleFieldKey, resol
 export type SduiActionRef =
   | { kind: 'primary' }
   | { kind: 'menuItem'; si: number; mi: number }
-  | { kind: 'actionsSheet'; si: number; ai: number; rsi?: number };
+  | { kind: 'actionsSheet'; si: number; ai: number; rsi?: number }
+  | { kind: 'documentDownload'; si: number; rsi: number };
 
 export interface SduiFunctionBuilderDialogData {
   /** JSON esistente (se si sta editando una funzione già pubblicata) o null per una nuova. */
@@ -329,6 +330,34 @@ export class SduiFunctionBuilderDialog {
     this.update(d => { delete d.dataSource.bodyMapping[key]; });
   }
   dataSourceBodyMappingKeys(): string[] { return Object.keys(this.descriptor().dataSource.bodyMapping ?? {}); }
+
+  // dataSource.captureToProfile / captureToState (§4 manuale) — persistono attributi letti
+  // dalla risposta rispettivamente nel profilo utente o nello stato locale dello screen.
+  addDataSourceCaptureEntry(which: 'captureToProfile' | 'captureToState'): void {
+    this.update(d => {
+      const map = (d.dataSource[which] ??= {});
+      const n = Object.keys(map).length;
+      map[`attributo${n + 1}`] = '$.';
+    });
+  }
+  renameDataSourceCaptureKey(which: 'captureToProfile' | 'captureToState', oldKey: string, newKey: string): void {
+    this.update(d => {
+      const map = d.dataSource[which];
+      if (!map || !newKey || oldKey === newKey) return;
+      map[newKey] = map[oldKey];
+      delete map[oldKey];
+    });
+  }
+  setDataSourceCaptureValue(which: 'captureToProfile' | 'captureToState', key: string, value: string): void {
+    this.update(d => { const map = d.dataSource[which]; if (map) map[key] = value; });
+  }
+  removeDataSourceCaptureEntry(which: 'captureToProfile' | 'captureToState', key: string): void {
+    this.update(d => { delete d.dataSource[which]?.[key]; });
+  }
+  dataSourceCaptureKeys(which: 'captureToProfile' | 'captureToState'): string[] {
+    return Object.keys(this.descriptor().dataSource[which] ?? {});
+  }
+  readonly dataSourceCaptureKinds = ['captureToProfile', 'captureToState'] as const;
 
   // dataSource.defaultDateRange (§4 manuale) — pre-popola fromField/toField nello stato al primo load
   toggleDataSourceDefaultDateRange(enabled: boolean): void {
@@ -583,10 +612,12 @@ export class SduiFunctionBuilderDialog {
       if (g) g.dateRangeField = enabled ? { fromField: '', toField: '' } : undefined;
     });
   }
-  setFilterGroupDateRangeProp(sectionIndex: number, groupIndex: number, key: 'fromField' | 'toField', value: string): void {
+  setFilterGroupDateRangeProp(sectionIndex: number, groupIndex: number, key: 'fromField' | 'toField' | 'fromLabelKey' | 'toLabelKey' | 'dateLabelKey', value: string): void {
     this.update(d => {
       const g = d.sections[sectionIndex].filterButton?.groups[groupIndex];
-      if (g?.dateRangeField) g.dateRangeField[key] = value;
+      if (!g?.dateRangeField) return;
+      if (key === 'fromField' || key === 'toField') g.dateRangeField[key] = value;
+      else g.dateRangeField[key] = value || undefined;
     });
   }
   addFilterOption(sectionIndex: number, groupIndex: number): void {
@@ -614,6 +645,12 @@ export class SduiFunctionBuilderDialog {
       else o[key] = value;
     });
   }
+  setFilterOptionCustom(sectionIndex: number, groupIndex: number, optionIndex: number, checked: boolean): void {
+    this.update(d => {
+      const o = d.sections[sectionIndex].filterButton?.groups[groupIndex]?.options[optionIndex];
+      if (o) o.custom = checked || undefined;
+    });
+  }
 
   // --- rowDetail (§3.10 manuale) — dettaglio riga per table/groupedTable/cardList ---
   toggleRowDetail(i: number, enabled: boolean): void {
@@ -632,6 +669,18 @@ export class SduiFunctionBuilderDialog {
     this.update(d => {
       const s = d.sections[i].rowDetail?.sections[si];
       if (s) (s as unknown as Record<string, unknown>)[key] = value;
+    });
+  }
+  /** Cambia il "kind" di una rowDetail section (fields/attachedDocuments/preview/documentDownload,
+   * §3.10 manuale) — a differenza degli altri kind, documentDownload richiede anche un'azione di
+   * default (downloadFile), qui inizializzata esplicitamente. */
+  setRowDetailSectionKind(i: number, si: number, kind: 'fields' | 'attachedDocuments' | 'preview' | 'documentDownload'): void {
+    this.update(d => {
+      const s = d.sections[i].rowDetail?.sections[si];
+      if (!s) return;
+      s.type = kind === 'attachedDocuments' || kind === 'documentDownload' ? kind : undefined;
+      s.preview = kind === 'preview';
+      if (kind === 'documentDownload' && !s.action) s.action = createEmptyAction('downloadFile');
     });
   }
   addRowDetailSectionField(i: number, si: number): void {
@@ -1188,12 +1237,14 @@ export class SduiFunctionBuilderDialog {
   readonly primaryActionRef: SduiActionRef = { kind: 'primary' };
   menuItemActionRef(si: number, mi: number): SduiActionRef { return { kind: 'menuItem', si, mi }; }
   actionSheetItemActionRef(si: number, ai: number, rsi?: number): SduiActionRef { return { kind: 'actionsSheet', si, ai, rsi }; }
+  documentDownloadActionRef(si: number, rsi: number): SduiActionRef { return { kind: 'documentDownload', si, rsi }; }
 
   private actionAt(d: SduiDescriptor, ref: SduiActionRef): SduiAction | null | undefined {
     switch (ref.kind) {
       case 'primary': return d.primaryAction;
       case 'menuItem': return d.sections[ref.si]?.items?.[ref.mi]?.action;
       case 'actionsSheet': return this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet?.[ref.ai];
+      case 'documentDownload': return d.sections[ref.si]?.rowDetail?.sections[ref.rsi]?.action;
     }
   }
   private setActionAt(d: SduiDescriptor, ref: SduiActionRef, action: SduiAction): void {
@@ -1207,6 +1258,11 @@ export class SduiFunctionBuilderDialog {
         const arr = this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet;
         const old = arr?.[ref.ai];
         if (arr && old) arr[ref.ai] = { ...action, style: old.style, visibleWhenFieldTrue: old.visibleWhenFieldTrue, visibleWhenFieldFalse: old.visibleWhenFieldFalse };
+        return;
+      }
+      case 'documentDownload': {
+        const rs = d.sections[ref.si]?.rowDetail?.sections[ref.rsi];
+        if (rs) rs.action = action;
         return;
       }
     }
@@ -1415,6 +1471,17 @@ export class SduiFunctionBuilderDialog {
   }
   setFlowStepOnSubmitProp(stepIndex: number, key: 'method' | 'endpoint' | 'auth' | 'submitLabelKey', value: string): void {
     this.update(d => { const os = d.steps[stepIndex].onSubmit; if (os) os[key] = value; });
+  }
+  /** onSubmit.failureCheck (§5.2.1 manuale) — solo per flow step: la risposta HTTP 200 viene
+   * comunque trattata come fallimento se il campo indicato eguaglia il valore atteso. */
+  toggleFlowStepOnSubmitFailureCheck(stepIndex: number, enabled: boolean): void {
+    this.update(d => {
+      const os = d.steps[stepIndex].onSubmit;
+      if (os) os.failureCheck = enabled ? { field: '', equals: '' } : null;
+    });
+  }
+  setFlowStepOnSubmitFailureCheckProp(stepIndex: number, key: 'field' | 'equals', value: string): void {
+    this.update(d => { const fc = d.steps[stepIndex].onSubmit?.failureCheck; if (fc) fc[key] = value; });
   }
 
   // ------------------------------------------------------------------
@@ -1859,6 +1926,12 @@ function sectionFromJson(s: Record<string, unknown>): SduiSection {
     section.groupItemsFieldSummary = s['groupItemsField'] as string | undefined;
     section.summaryLabelKey = s['labelKey'] as string | undefined;
   }
+  // form: la chiave JSON `card` è booleana (wrap Material Card), non l'oggetto SduiCard usato da
+  // cardList/calendar — Object.assign l'avrebbe assegnata (errata) a section.card, va rimappata.
+  if (s['type'] === 'form') {
+    section.formCard = Boolean(s['card']) || undefined;
+    section.card = undefined;
+  }
   if (Array.isArray(s['fields'])) section.fields = (s['fields'] as Record<string, unknown>[]).map(fieldFromJson);
   if (Array.isArray(s['items'])) {
     section.items = (s['items'] as Record<string, unknown>[]).map(i => ({
@@ -1891,12 +1964,15 @@ function actionSheetItemFromJson(a: Record<string, unknown>): SduiActionSheetIte
 function rowDetailSectionFromJson(s: Record<string, unknown>): SduiRowDetailSection {
   return {
     titleKey: s['titleKey'] as string | undefined,
-    type: s['type'] === 'attachedDocuments' ? 'attachedDocuments' : undefined,
+    type: s['type'] === 'attachedDocuments' || s['type'] === 'documentDownload' ? s['type'] as 'attachedDocuments' | 'documentDownload' : undefined,
     field: s['field'] as string | undefined,
     preview: Boolean(s['preview']),
     previewEndpoint: s['previewEndpoint'] as string | undefined,
     fields: (s['fields'] as { key: string; labelKey: string }[]) ?? [],
     actionsSheet: Array.isArray(s['actionsSheet']) ? (s['actionsSheet'] as Record<string, unknown>[]).map(actionSheetItemFromJson) : undefined,
+    titleField: s['titleField'] as string | undefined,
+    subtitleField: s['subtitleField'] as string | undefined,
+    action: s['action'] ? actionFromJson(s['action'] as Record<string, unknown>) : undefined,
   };
 }
 

@@ -164,6 +164,27 @@
               <p class="sdui-wizard__tip">{{ 'sduiWizard.dataSource.defaultDateRangeTip' | translate }}</p>
             }
 
+            @for (which of dataSourceCaptureKinds; track which) {
+              <h4>{{ ('sduiWizard.dataSource.' + which + 'Title') | translate }}</h4>
+              <p class="sdui-wizard__tip">{{ ('sduiWizard.dataSource.' + which + 'Tip') | translate }}</p>
+              @for (key of dataSourceCaptureKeys(which); track key) {
+                <div class="sdui-wizard__row">
+                  <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                    <mat-label>{{ 'sduiWizard.labels.campo' | translate }}</mat-label>
+                    <input matInput [ngModel]="key" (ngModelChange)="renameDataSourceCaptureKey(which, key, $event)" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                    <mat-label>{{ 'sduiWizard.labels.percorso' | translate }}</mat-label>
+                    <input matInput [ngModel]="descriptor().dataSource[which]![key]" (ngModelChange)="setDataSourceCaptureValue(which, key, $event)" placeholder="$.campo" />
+                  </mat-form-field>
+                  <button mat-icon-button type="button" (click)="removeDataSourceCaptureEntry(which, key)"><mat-icon>delete</mat-icon></button>
+                </div>
+              }
+              <button mat-stroked-button type="button" (click)="addDataSourceCaptureEntry(which)">
+                <mat-icon>add</mat-icon> {{ 'sduiWizard.dataSource.addFieldButton' | translate }}
+              </button>
+            }
+
             @if (descriptor().dataSource.endpoint) {
               <p class="sdui-wizard__tip" [innerHTML]="'sduiWizard.dataSource.bareArrayTip' | translate"></p>
 
@@ -257,14 +278,18 @@
                             <mat-option value="localizedLabel">localizedLabel</mat-option>
                             <mat-option value="dateLabel">dateLabel</mat-option>
                             <mat-option value="timeLabel">timeLabel</mat-option>
+                            <mat-option value="monthName">monthName</mat-option>
+                            <mat-option value="fileSize">fileSize</mat-option>
                           </mat-select>
                         </mat-form-field>
-                        @if (rt.fields[key].format === 'localizedLabel' || rt.fields[key].format === 'dateLabel') {
+                        @if (rt.fields[key].format === 'localizedLabel' || rt.fields[key].format === 'dateLabel' || rt.fields[key].format === 'monthName') {
                           <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                             <mat-label>{{ 'sduiWizard.labels.locale' | translate }}</mat-label>
                             <mat-select [value]="rt.fields[key].locale ?? 'it'" (selectionChange)="setFlattenFieldLocale(key, $event.value)">
                               <mat-option value="it">it</mat-option>
                               <mat-option value="en">en</mat-option>
+                              <mat-option value="de">de</mat-option>
+                              <mat-option value="es">es</mat-option>
                             </mat-select>
                           </mat-form-field>
                         }
@@ -423,6 +448,9 @@
 
                   <!-- FORM -->
                   @if (section.type === 'form') {
+                    <mat-checkbox [checked]="!!section.formCard" (change)="setSectionProp(i, 'formCard', $event.checked)">
+                      {{ 'sduiWizard.sections.formCardToggle' | translate }}
+                    </mat-checkbox>
                     <div class="sdui-wizard__chips">
                       @for (c of fieldComponents; track c.value) {
                         <button mat-stroked-button type="button" (click)="addFieldToSection(i, c.value)">+ {{ c.label | translate }}</button>
@@ -774,6 +802,26 @@
                                 <input matInput [ngModel]="drf.toField" (ngModelChange)="setFilterGroupDateRangeProp(i, gi, 'toField', $event)" />
                               </mat-form-field>
                             </div>
+                            @if (drf.fromField === drf.toField) {
+                              <div class="sdui-wizard__row">
+                                <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                                  <mat-label>{{ 'sduiWizard.labels.dateLabelKey' | translate }}</mat-label>
+                                  <input matInput [ngModel]="drf.dateLabelKey ?? ''" (ngModelChange)="setFilterGroupDateRangeProp(i, gi, 'dateLabelKey', $event)" />
+                                </mat-form-field>
+                              </div>
+                              <p class="sdui-wizard__tip">{{ 'sduiWizard.sections.dateLabelKeyTip' | translate }}</p>
+                            } @else {
+                              <div class="sdui-wizard__row">
+                                <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                                  <mat-label>{{ 'sduiWizard.labels.fromLabelKey' | translate }}</mat-label>
+                                  <input matInput [ngModel]="drf.fromLabelKey ?? ''" (ngModelChange)="setFilterGroupDateRangeProp(i, gi, 'fromLabelKey', $event)" />
+                                </mat-form-field>
+                                <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                                  <mat-label>{{ 'sduiWizard.labels.toLabelKey' | translate }}</mat-label>
+                                  <input matInput [ngModel]="drf.toLabelKey ?? ''" (ngModelChange)="setFilterGroupDateRangeProp(i, gi, 'toLabelKey', $event)" />
+                                </mat-form-field>
+                              </div>
+                            }
                           }
 
                           <p>{{ 'sduiWizard.sections.filterOptionsLabel' | translate }}</p>
@@ -802,6 +850,9 @@
                                   @for (c of badgeColors; track c) { <mat-option [value]="c">{{ c }}</mat-option> }
                                 </mat-select>
                               </mat-form-field>
+                              <mat-checkbox [checked]="!!o.custom" (change)="setFilterOptionCustom(i, gi, oi, $event.checked)">
+                                {{ 'sduiWizard.sections.customFilterOptionToggle' | translate }}
+                              </mat-checkbox>
                               <button mat-icon-button type="button" (click)="removeFilterOption(i, gi, oi)"><mat-icon>delete</mat-icon></button>
                             </div>
                           }
@@ -1237,6 +1288,23 @@
                         </div>
                       } @else {
                         <ng-container *ngTemplateOutlet="sequenceEditor; context: { stepIndex: si, which: 'submit' }"></ng-container>
+                      }
+
+                      <mat-checkbox [checked]="!!os.failureCheck" (change)="toggleFlowStepOnSubmitFailureCheck(si, $event.checked)">
+                        {{ 'sduiWizard.submit.failureCheckToggle' | translate }}
+                      </mat-checkbox>
+                      @if (os.failureCheck; as fc) {
+                        <div class="sdui-wizard__row">
+                          <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                            <mat-label>{{ 'sduiWizard.labels.field' | translate }}</mat-label>
+                            <input matInput [ngModel]="fc.field" (ngModelChange)="setFlowStepOnSubmitFailureCheckProp(si, 'field', $event)" placeholder="$.esito" />
+                          </mat-form-field>
+                          <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                            <mat-label>{{ 'sduiWizard.labels.equalsValue' | translate }}</mat-label>
+                            <input matInput [ngModel]="fc.equals" (ngModelChange)="setFlowStepOnSubmitFailureCheckProp(si, 'equals', $event)" />
+                          </mat-form-field>
+                        </div>
+                        <p class="sdui-wizard__tip">{{ 'sduiWizard.submit.failureCheckTip' | translate }}</p>
                       }
 
                       <mat-checkbox [checked]="!!os.onSuccess.conclusion" (change)="toggleConclusion(si, $event.checked)">
@@ -1920,6 +1988,22 @@
             </mat-form-field>
           </div>
 
+          <mat-checkbox [ngModel]="!!field.options?.emptyFallback?.labelKey" (ngModelChange)="setOptionsProp('emptyFallback', $event ? { value: field.options?.emptyFallback?.value ?? '', labelKey: field.options?.emptyFallback?.labelKey ?? '' } : null)">
+            {{ 'sduiWizard.remoteOptions.emptyFallbackToggle' | translate }}
+          </mat-checkbox>
+          @if (field.options?.emptyFallback?.labelKey !== undefined && field.options?.emptyFallback !== null) {
+            <div class="sdui-wizard__row">
+              <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                <mat-label>{{ 'sduiWizard.labels.value' | translate }}</mat-label>
+                <input matInput [ngModel]="field.options?.emptyFallback?.value ?? ''" (ngModelChange)="setOptionsProp('emptyFallback', { value: $event, labelKey: field.options?.emptyFallback?.labelKey ?? '' })" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
+                <input matInput [ngModel]="field.options?.emptyFallback?.labelKey ?? ''" (ngModelChange)="setOptionsProp('emptyFallback', { value: field.options?.emptyFallback?.value ?? '', labelKey: $event })" />
+              </mat-form-field>
+            </div>
+          }
+
           <h4>{{ 'sduiWizard.dataSource.fieldsMapTitle' | translate }}</h4>
           <p class="sdui-wizard__tip">{{ 'sduiWizard.remoteOptions.fieldsMapTip' | translate }}</p>
           @for (key of optionsFieldKeys(field.options?.fields); track key) {
@@ -1951,14 +2035,18 @@
                     <mat-option value="localizedLabel">localizedLabel</mat-option>
                     <mat-option value="dateLabel">dateLabel</mat-option>
                     <mat-option value="timeLabel">timeLabel</mat-option>
+                    <mat-option value="monthName">monthName</mat-option>
+                    <mat-option value="fileSize">fileSize</mat-option>
                   </mat-select>
                 </mat-form-field>
-                @if (field.options?.fields?.[key]?.format === 'localizedLabel' || field.options?.fields?.[key]?.format === 'dateLabel') {
+                @if (field.options?.fields?.[key]?.format === 'localizedLabel' || field.options?.fields?.[key]?.format === 'dateLabel' || field.options?.fields?.[key]?.format === 'monthName') {
                   <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                     <mat-label>{{ 'sduiWizard.labels.locale' | translate }}</mat-label>
                     <mat-select [value]="field.options?.fields?.[key]?.locale ?? 'it'" (selectionChange)="setOptionsProp('fields', setOptionsFieldLocale(field.options?.fields, key, $event.value))">
                       <mat-option value="it">it</mat-option>
                       <mat-option value="en">en</mat-option>
+                      <mat-option value="de">de</mat-option>
+                      <mat-option value="es">es</mat-option>
                     </mat-select>
                   </mat-form-field>
                 }
@@ -2166,6 +2254,21 @@
               <input matInput [ngModel]="el.align ?? 'spaceBetween'" (ngModelChange)="setCardElementProp(sectionIndex, path, 'align', $event)" />
             </mat-form-field>
           }
+        </div>
+        <div class="sdui-wizard__row">
+          <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+            <mat-label>{{ 'sduiWizard.labels.emptyValueKey' | translate }}</mat-label>
+            <input matInput [ngModel]="el.emptyValueKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'emptyValueKey', $event || undefined)" />
+            <mat-hint>{{ 'sduiWizard.sections.emptyValueKeyHint' | translate }}</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
+            <mat-label>{{ 'sduiWizard.labels.labelVariant' | translate }}</mat-label>
+            <mat-select [value]="el.labelVariant ?? 'standard'" (selectionChange)="setCardElementProp(sectionIndex, path, 'labelVariant', $event.value)">
+              <mat-option value="standard">standard</mat-option>
+              <mat-option value="compact">compact</mat-option>
+              <mat-option value="large">large</mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
       }
 
@@ -2458,10 +2561,11 @@
               </mat-form-field>
               <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                 <mat-label>{{ 'sduiWizard.rowDetail.sectionKindLabel' | translate }}</mat-label>
-                <mat-select [value]="rs.type ?? (rs.preview ? 'preview' : 'fields')" (selectionChange)="setRowDetailSectionProp(sectionIndex, si, 'type', $event.value === 'attachedDocuments' ? 'attachedDocuments' : undefined); setRowDetailSectionProp(sectionIndex, si, 'preview', $event.value === 'preview')">
+                <mat-select [value]="rs.type ?? (rs.preview ? 'preview' : 'fields')" (selectionChange)="setRowDetailSectionKind(sectionIndex, si, $event.value)">
                   <mat-option value="fields">{{ 'sduiWizard.rowDetail.sectionKindFields' | translate }}</mat-option>
                   <mat-option value="attachedDocuments">{{ 'sduiWizard.rowDetail.sectionKindAttachedDocuments' | translate }}</mat-option>
                   <mat-option value="preview">{{ 'sduiWizard.rowDetail.sectionKindPreview' | translate }}</mat-option>
+                  <mat-option value="documentDownload">{{ 'sduiWizard.rowDetail.sectionKindDocumentDownload' | translate }}</mat-option>
                 </mat-select>
               </mat-form-field>
             </div>
@@ -2472,6 +2576,21 @@
                 <input matInput [ngModel]="rs.field ?? 'documents'" (ngModelChange)="setRowDetailSectionProp(sectionIndex, si, 'field', $event)" />
               </mat-form-field>
               <p class="sdui-wizard__tip">{{ 'sduiWizard.rowDetail.attachedDocumentsTip' | translate }}</p>
+            } @else if (rs.type === 'documentDownload') {
+              <div class="sdui-wizard__row">
+                <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                  <mat-label>{{ 'sduiWizard.rowDetail.titleFieldLabel' | translate }}</mat-label>
+                  <input matInput [ngModel]="rs.titleField ?? ''" (ngModelChange)="setRowDetailSectionProp(sectionIndex, si, 'titleField', $event)" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                  <mat-label>{{ 'sduiWizard.rowDetail.subtitleFieldLabel' | translate }}</mat-label>
+                  <input matInput [ngModel]="rs.subtitleField ?? ''" (ngModelChange)="setRowDetailSectionProp(sectionIndex, si, 'subtitleField', $event)" />
+                </mat-form-field>
+              </div>
+              <p class="sdui-wizard__tip">{{ 'sduiWizard.rowDetail.documentDownloadTip' | translate }}</p>
+              @if (rs.action; as pa) {
+                <ng-container *ngTemplateOutlet="actionEditor; context: { pa: pa, ref: documentDownloadActionRef(sectionIndex, si) }"></ng-container>
+              }
             } @else if (rs.preview) {
               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                 <mat-label>{{ 'sduiWizard.rowDetail.previewEndpointLabel' | translate }}</mat-label>
@@ -2612,6 +2731,11 @@
                     <mat-select [value]="pa.auth ?? 'bearer'" (selectionChange)="setActionProp(ref, 'auth', $event.value)">
                       @for (a of authModes; track a) { <mat-option [value]="a">{{ a }}</mat-option> }
                     </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+                    <mat-label>{{ 'sduiWizard.labels.mimeTypeField' | translate }}</mat-label>
+                    <input matInput [ngModel]="pa.mimeTypeField ?? ''" (ngModelChange)="setActionProp(ref, 'mimeTypeField', $event || undefined)" placeholder="mimeType" />
+                    <mat-hint>{{ 'sduiWizard.actions.mimeTypeFieldHint' | translate }}</mat-hint>
                   </mat-form-field>
                 </div>
                 <div class="sdui-wizard__row">

@@ -30,7 +30,7 @@ export interface SduiOnExit {
 
 export interface SduiFlattenField {
   path: string;
-  format?: 'boolFromString' | 'stringFromBool' | 'localizedLabel' | 'dateLabel' | 'timeLabel' | '';
+  format?: 'boolFromString' | 'stringFromBool' | 'localizedLabel' | 'dateLabel' | 'timeLabel' | 'monthName' | 'fileSize' | '';
   trueValue?: string;
   falseValue?: string;
   locale?: string;
@@ -85,6 +85,18 @@ export interface SduiDataSource {
   bodyMapping: Record<string, string>;
   responseTransform: SduiResponseTransform | null;
   defaultDateRange?: { fromField: string; toField: string; daysAgo?: number; daysForward?: number };
+  /** Mappa `{chiaveAttributo: "$.dot.path"}` (§4 manuale): persiste attributi di profilo
+   * ("ProfileResponse", eventualmente in additionalAttributes) leggibili da qualunque
+   * screen/flow successivo tramite lo stesso placeholder `{campo}` dello stato. Chiavi
+   * riservate (firstName/lastName/fiscalCode/email/phone/dateOfBirth/placeOfBirth/gender/
+   * postalAddress) finiscono nel campo dedicato di ProfileResponse invece che in
+   * additionalAttributes. Solo a livello screen (il dataSource di uno step flow è un
+   * ping "usa e getta", la risposta viene scartata). */
+  captureToProfile?: Record<string, string>;
+  /** Come captureToProfile ma scrive nello stato locale dello screen invece che nel profilo
+   * persistito (§4 manuale) — utile per pre-selezionare un valore noto solo dopo il fetch
+   * (es. dropdown "azienda attiva"). Il valore catturato è sempre convertito a stringa. */
+  captureToState?: Record<string, string>;
 }
 
 /** Legge un `dataSource` grezzo (screen o flow-step: stessa forma) da JSON. */
@@ -96,6 +108,8 @@ export function dataSourceFromJson(ds: Record<string, unknown>): SduiDataSource 
     bodyMapping: (ds['bodyMapping'] as Record<string, string>) ?? {},
     responseTransform: parseResponseTransform(ds['responseTransform'] as Record<string, unknown> | undefined) ?? null,
     defaultDateRange: ds['defaultDateRange'] as SduiDataSource['defaultDateRange'] | undefined,
+    captureToProfile: (ds['captureToProfile'] as Record<string, string>) ?? undefined,
+    captureToState: (ds['captureToState'] as Record<string, string>) ?? undefined,
   };
 }
 
@@ -216,6 +230,10 @@ export interface SduiOptions {
   sublabelTemplate: string;
   metaFields: string[];
   pageSize: number;
+  /** Opzione fittizia mostrata (dropdown/radioCardList `remote`) quando la lista risolta è
+   * vuota, invece di un componente vuoto/inutilizzabile (§10 manuale). `value: ""` è la
+   * convenzione tipica per non inviare alcun valore reale se selezionata. */
+  emptyFallback?: { value: string; labelKey: string } | null;
 }
 
 export function createEmptyOptions(): SduiOptions {
@@ -231,6 +249,7 @@ export function createEmptyOptions(): SduiOptions {
     sublabelTemplate: '',
     metaFields: [],
     pageSize: 5,
+    emptyFallback: null,
   };
 }
 
@@ -430,6 +449,10 @@ export interface SduiAction {
   auth?: string;
   successMessageKey?: string;
   errorMessageKey?: string;
+  /** downloadFile (§6 manuale): campo dell'item col MIME type reale del documento, passato
+   * esplicitamente a OpenFilex.open invece di lasciare che lo deduca dall'estensione — utile
+   * quando fileName non può includere un'estensione affidabile. */
+  mimeTypeField?: string;
   // confirmAndCall
   confirmTitleKey?: string;
   confirmMessageKey?: string;
@@ -519,6 +542,9 @@ export interface SduiFilterOption {
   color?: string;
   daysAgo?: number;
   daysForward?: number;
+  /** Se `true`, selezionando questa opzione il bottom sheet mostra un date picker manuale
+   * per `fromField`/`toField` invece di calcolarli da `daysAgo`/`daysForward` (§3.5 manuale). */
+  custom?: boolean;
 }
 
 export interface SduiFilterGroup {
@@ -529,7 +555,15 @@ export interface SduiFilterGroup {
   colorField?: string;
   multiSelect?: boolean;
   options: SduiFilterOption[];
-  dateRangeField?: { fromField: string; toField: string };
+  dateRangeField?: {
+    fromField: string;
+    toField: string;
+    fromLabelKey?: string;
+    toLabelKey?: string;
+    /** Usata solo quando fromField === toField (caso "un giorno solo", §3.5 manuale): etichetta
+     * della singola riga data mostrata al posto delle due righe "Da"/"A". */
+    dateLabelKey?: string;
+  };
 }
 
 export interface SduiFilterButton {
@@ -557,11 +591,16 @@ export interface SduiActionSheetItem extends SduiAction {
 
 export interface SduiRowDetailSection {
   titleKey?: string;
-  type?: 'attachedDocuments';
+  type?: 'attachedDocuments' | 'documentDownload';
   field?: string;
   preview?: boolean;
   previewEndpoint?: string;
   fields?: { key: string; labelKey: string }[];
+  // documentDownload (§3.10 manuale): UNA sola card sempre visibile con download diretto,
+  // senza pulsante "⋮" — alternativa più scopribile ad actionsSheet per un solo documento.
+  titleField?: string;
+  subtitleField?: string;
+  action?: SduiAction;
   actionsSheet?: SduiActionSheetItem[];
 }
 
@@ -648,6 +687,12 @@ export interface SduiCardElement {
   align?: string;
   // keyValue
   orientation?: 'vertical' | 'horizontal';
+  /** keyValue (§3.9.1 manuale): chiave di traduzione mostrata al posto del valore quando
+   * item[field] è null/vuoto, invece di una riga vuota o di nascondere l'intero elemento. */
+  emptyValueKey?: string;
+  /** keyValue: stile dell'etichetta, default `standard` come `variant` (stessa dimensione
+   * del valore, mai più piccola). Valori ammessi: compact/standard/large. */
+  labelVariant?: 'compact' | 'standard' | 'large';
   // badge
   badgeMap?: Record<string, SduiBadgeEntry>;
   // icon (statica se field assente, mappata da valore se field+iconMap presenti)
@@ -749,10 +794,13 @@ export interface SduiSection {
   summaryFromField?: string;
   summaryToField?: string;
 
-  // cardList
   searchPlaceholderKey?: string;
   tabs?: SduiTabs;
   card?: SduiCard;
+  /** form (§3.1 manuale): stessa chiave JSON `card`, ma lì è un booleano — avvolge l'intera
+   * section in una Card del tema — invece dell'oggetto SduiCard di cardList/calendar. Tenuta
+   * come proprietà distinta nel model per non rompere il tipo di `card` altrove nel wizard. */
+  formCard?: boolean;
   /** Ordinamento client-side dentro ciascun gruppo (§3.9 manuale). */
   sortableFields?: { key: string; labelKey: string }[];
 
@@ -902,6 +950,10 @@ export interface SduiOnSubmit {
   bodyMapping: Record<string, string>;
   /** Solo per l'onSubmit dell'ultimo step di un flow: sequenza di chiamate al posto di un singolo endpoint. */
   sequence?: SduiSequenceCall[] | null;
+  /** Solo flow (§5.2.1 manuale): riconosce un rifiuto di business logic incapsulato in un body
+   * HTTP 200 (backend legacy come WHR). Se `body[field].toString() === equals`, la richiesta
+   * viene trattata come errore (stesso ramo onError, incluso humanizeFlowBackendError). */
+  failureCheck?: { field: string; equals: string } | null;
   requestTransform: ({
     type: 'unflattenNested';
     itemsPath: string;
@@ -940,6 +992,7 @@ export function createEmptyOnSubmit(): SduiOnSubmit {
     auth: 'bearer',
     bodyMapping: {},
     sequence: null,
+    failureCheck: null,
     requestTransform: null,
     onSuccess: { action: 'toast', messageKey: '', conclusion: null },
     onError: { messageKey: 'errors.generic' },
@@ -1044,6 +1097,8 @@ export function descriptorToJson(d: SduiDescriptor): Record<string, unknown> {
       if (Object.keys(d.dataSource.bodyMapping ?? {}).length > 0) ds['bodyMapping'] = d.dataSource.bodyMapping;
       if (d.dataSource.responseTransform) ds['responseTransform'] = cleanResponseTransform(d.dataSource.responseTransform);
       if (d.dataSource.defaultDateRange) ds['defaultDateRange'] = d.dataSource.defaultDateRange;
+      if (Object.keys(d.dataSource.captureToProfile ?? {}).length > 0) ds['captureToProfile'] = d.dataSource.captureToProfile;
+      if (Object.keys(d.dataSource.captureToState ?? {}).length > 0) ds['captureToState'] = d.dataSource.captureToState;
       out['dataSource'] = ds;
     }
     out['sections'] = d.sections.map(cleanSection);
@@ -1156,7 +1211,7 @@ function cleanGroupByField(f: SduiGroupByField): Record<string, unknown> {
   return out;
 }
 
-const SDUI_OPTIONS_KNOWN_KEYS = ['source', 'values', 'path', 'endpoint', 'auth', 'itemsField', 'fields', 'valueTemplate', 'labelTemplate', 'sublabelTemplate', 'metaFields', 'pageSize'] as const;
+const SDUI_OPTIONS_KNOWN_KEYS = ['source', 'values', 'path', 'endpoint', 'auth', 'itemsField', 'fields', 'valueTemplate', 'labelTemplate', 'sublabelTemplate', 'metaFields', 'pageSize', 'emptyFallback'] as const;
 
 function cleanOptions(o: SduiOptions): Record<string, unknown> {
   const out: Record<string, unknown> = { source: o.source };
@@ -1177,6 +1232,7 @@ function cleanOptions(o: SduiOptions): Record<string, unknown> {
     // 5 e' il default SOLO del wizard (createEmptyOptions), non un valore da omettere: se
     // l'entity originale lo aveva esplicito, va riemesso identico per non falsare il diff.
     if (o.pageSize) out['pageSize'] = o.pageSize;
+    if (o.emptyFallback?.labelKey) out['emptyFallback'] = { value: o.emptyFallback.value ?? '', labelKey: o.emptyFallback.labelKey };
   }
   return withRaw(o, SDUI_OPTIONS_KNOWN_KEYS, out);
 }
@@ -1297,7 +1353,7 @@ function cleanDetailAction(d: SduiDetailAction): Record<string, unknown> {
 
 const SDUI_ACTION_KNOWN_KEYS = [
   'type', 'icon', 'labelKey', 'entity', 'assetPath', 'initialStateFromItem',
-  'endpoint', 'fileName', 'auth', 'successMessageKey', 'errorMessageKey',
+  'endpoint', 'fileName', 'auth', 'successMessageKey', 'errorMessageKey', 'mimeTypeField',
   'confirmTitleKey', 'confirmMessageKey', 'call', 'onSuccess', 'field', 'updateInGroups',
   'labelKeyWhenTrue', 'labelKeyWhenFalse',
   'confirmTitleKeyWhenTrue', 'confirmMessageKeyWhenTrue', 'confirmTitleKeyWhenFalse', 'confirmMessageKeyWhenFalse',
@@ -1316,6 +1372,7 @@ function cleanAction(a: SduiAction): Record<string, unknown> {
   if (a.auth) out['auth'] = a.auth;
   if (a.successMessageKey) out['successMessageKey'] = a.successMessageKey;
   if (a.errorMessageKey) out['errorMessageKey'] = a.errorMessageKey;
+  if (a.mimeTypeField) out['mimeTypeField'] = a.mimeTypeField;
   if (a.confirmTitleKey) out['confirmTitleKey'] = a.confirmTitleKey;
   if (a.confirmMessageKey) out['confirmMessageKey'] = a.confirmMessageKey;
   if (a.call) out['call'] = a.call;
@@ -1335,7 +1392,7 @@ function cleanAction(a: SduiAction): Record<string, unknown> {
 }
 
 const SDUI_CARD_ELEMENT_KNOWN_KEYS = [
-  'type', 'field', 'labelKey', 'variant', 'align', 'orientation', 'badgeMap',
+  'type', 'field', 'labelKey', 'variant', 'align', 'orientation', 'emptyValueKey', 'labelVariant', 'badgeMap',
   'icon', 'color', 'size', 'iconMap', 'circleBackground', 'circleColor', 'circleSize',
   'bordered', 'backgroundColor', 'borderColor', 'borderRadius', 'dayColor', 'monthColor', 'monthKeyPrefix',
   'thickness', 'indent', 'endIndent', 'height', 'width', 'visibleWhenFieldTrue', 'visibleWhenFieldFalse',
@@ -1348,7 +1405,11 @@ function cleanCardElement(el: SduiCardElement): Record<string, unknown> {
   if (el.labelKey) out['labelKey'] = el.labelKey;
   if (el.variant && el.variant !== 'standard') out['variant'] = el.variant;
   if (el.align) out['align'] = el.align;
-  if (el.type === 'keyValue' && el.orientation && el.orientation !== 'vertical') out['orientation'] = el.orientation;
+  if (el.type === 'keyValue') {
+    if (el.orientation && el.orientation !== 'vertical') out['orientation'] = el.orientation;
+    if (el.emptyValueKey) out['emptyValueKey'] = el.emptyValueKey;
+    if (el.labelVariant && el.labelVariant !== 'standard') out['labelVariant'] = el.labelVariant;
+  }
   if (el.badgeMap) out['badgeMap'] = el.badgeMap;
   if (el.type === 'icon') {
     if (el.icon) out['icon'] = el.icon;
@@ -1426,7 +1487,7 @@ const SDUI_SECTION_KNOWN_KEYS = [
   'leftBorder', 'leftBorderField', 'leftBorderColorMap',
   'groupsPath', 'groupLabelField', 'groupItemsField', 'badgeField', 'badgeMap', 'badgeLabelKeys',
   'secondaryBadgeField', 'secondaryBadgeMap', 'secondaryBadgeLabelKeys', 'summaryLabelKey', 'summaryFromField', 'summaryToField',
-  'searchPlaceholderKey', 'tabs', 'card', 'sortableFields',
+  'searchPlaceholderKey', 'tabs', 'card', 'formCard', 'sortableFields',
   'searchField', 'dateFilter',
   'groupsPathSummary', 'groupItemsFieldSummary', 'labelKey', 'fromField', 'toField',
   'dateField', 'eventsTitleKey', 'eventsTitleVariant',
@@ -1439,7 +1500,13 @@ function cleanSection(s: SduiSection): Record<string, unknown> {
   if (s.titleVariant && s.titleVariant !== 'standard') out['titleVariant'] = s.titleVariant;
   if (s.descriptionVariant && s.descriptionVariant !== 'standard') out['descriptionVariant'] = s.descriptionVariant;
 
-  if (s.type === 'form') out['fields'] = (s.fields ?? []).map(cleanField);
+  if (s.type === 'form') {
+    out['fields'] = (s.fields ?? []).map(cleanField);
+    // form.card è un booleano (§3.1 manuale, diverso dall'oggetto SduiCard di cardList/calendar):
+    // avvolge l'intera section in una Card del tema. Tenuto come formCard nel model (vedi commento
+    // su SduiSection.formCard) per non collidere col tipo oggetto di card altrove.
+    if (s.formCard) out['card'] = true;
+  }
 
   if (s.type === 'list') {
     out['itemsPath'] = s.itemsPath;
@@ -1536,6 +1603,11 @@ function cleanRowDetailSection(s: SduiRowDetailSection): Record<string, unknown>
   if (s.type === 'attachedDocuments') {
     out['type'] = 'attachedDocuments';
     if (s.field && s.field !== 'documents') out['field'] = s.field;
+  } else if (s.type === 'documentDownload') {
+    out['type'] = 'documentDownload';
+    if (s.titleField) out['titleField'] = s.titleField;
+    if (s.subtitleField) out['subtitleField'] = s.subtitleField;
+    if (s.action) out['action'] = cleanAction(s.action);
   } else if (s.preview) {
     out['preview'] = true;
     if (s.previewEndpoint) out['previewEndpoint'] = s.previewEndpoint;
@@ -1634,6 +1706,7 @@ function cleanOnSubmit(o: SduiOnSubmit): Record<string, unknown> {
     out['auth'] = o.auth || 'bearer';
   }
   if (o.submitLabelKey) out['submitLabelKey'] = o.submitLabelKey;
+  if (o.failureCheck?.field) out['failureCheck'] = { field: o.failureCheck.field, equals: o.failureCheck.equals ?? '' };
   if (Object.keys(o.bodyMapping ?? {}).length > 0) out['bodyMapping'] = o.bodyMapping;
   if (o.requestTransform?.type) out['requestTransform'] = o.requestTransform;
   if (o.multipart) {
