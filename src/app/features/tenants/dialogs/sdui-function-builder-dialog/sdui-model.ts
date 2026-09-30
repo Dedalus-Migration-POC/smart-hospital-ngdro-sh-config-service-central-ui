@@ -576,17 +576,26 @@ export interface SduiBadgeEntry {
   color: string;
 }
 
-/** Voce di `rowDetail.actionsSheet` (§6 manuale). A differenza di `menu.items[].action`
- * (correttamente annidato), il runtime Dart (`card_detail_page.dart` -> `runAction()`) legge
- * i campi dell'azione DIRETTAMENTE dalla root dell'item, senza un wrapper `action:` — per
- * questo `SduiActionSheetItem` estende `SduiAction` invece di contenerla, e riusa lo stesso
- * editor grafico generico (#actionEditor) passando l'item stesso come `pa`. `style` e le due
- * `visibleWhenField*` sono le uniche proprietà genuinamente item-level (lette da
- * `card_detail_page.dart` stesso, non passate a `runAction`). */
-export interface SduiActionSheetItem extends SduiAction {
+/** Voce di `rowDetail.actionsSheet` (§3.10/§6 manuale): l'azione è annidata sotto la
+ * chiave `action:` — schema corretto e attuale, sia da manuale che dal motore Dart
+ * (`card_detail_page.dart` -> `_openActionsSheet`, che legge `a['action']` con fallback
+ * sull'item stesso solo per compatibilità con entity storiche pre-fix del commit sh-core
+ * `2e7f130`, quando l'engine leggeva erroneamente i campi flat dalla root). `labelKey`/
+ * `field`/`labelKeyWhenTrue`/`labelKeyWhenFalse`/`visibleIf`/`style`/`visibleWhenField*`
+ * sono proprietà genuinamente item-level, lette da `card_detail_page.dart` stesso (mai
+ * passate a `runAction`) — da non confondere con eventuali omonime dentro `action` (es. il
+ * `field` di un'azione `toggleField`, concetto diverso: il campo da alternare, non
+ * l'etichetta dinamica della voce del bottom sheet). */
+export interface SduiActionSheetItem {
+  labelKey?: string;
+  field?: string;
+  labelKeyWhenTrue?: string;
+  labelKeyWhenFalse?: string;
+  visibleIf?: string;
   style?: 'filled' | 'outline';
   visibleWhenFieldTrue?: string;
   visibleWhenFieldFalse?: string;
+  action: SduiAction;
 }
 
 export interface SduiRowDetailSection {
@@ -627,7 +636,7 @@ export function createEmptyRowDetailSection(): SduiRowDetailSection {
 }
 
 export function createEmptyActionSheetItem(): SduiActionSheetItem {
-  return { ...createEmptyAction() };
+  return { action: createEmptyAction() };
 }
 
 export interface SduiMenuItem {
@@ -1126,9 +1135,9 @@ export function descriptorToJson(d: SduiDescriptor): Record<string, unknown> {
  * conflitto imprevisto.
  *
  * Limite noto: copre solo i nodi il cui modello wizard è una copia diretta (o quasi) del
- * JSON originale (section, field, action, card, cardElement, rowDetail, options,
- * validation...). Nodi ricostruiti da zero a partire da singoli campi selezionati
- * (onSubmit, sequenceCall, conclusion, flowStep, voci di menu/actionsSheet, dataSource,
+ * JSON originale (section, field, action, card, cardElement, rowDetail, actionsSheet item,
+ * options, validation...). Nodi ricostruiti da zero a partire da singoli campi selezionati
+ * (onSubmit, sequenceCall, conclusion, flowStep, voci di menu, dataSource,
  * flattenNested/wrapAsSingleGroup) non sono coperti: per questi resta valida la vista
  * JSON grezza come escape hatch per proprietà esotiche.
  */
@@ -1583,14 +1592,29 @@ function cleanSection(s: SduiSection): Record<string, unknown> {
   return withRaw(s, SDUI_SECTION_KNOWN_KEYS, out);
 }
 
-/** Serializza una voce di actionsSheet (§3.10 manuale): `action` è editata con lo stesso
- * editor grafico generico di primaryAction/menu (vedi #actionEditor nel template). */
+/** Chiavi item-level note di `SduiActionSheetItem` — usata sia da `cleanActionSheetItem`
+ * (withRaw) sia dal parsing in sdui-function-builder-dialog.ts per capire quali chiavi
+ * del JSON grezzo sono "note" e quali vanno preservate come extra ignote al wizard. */
+export const SDUI_ACTION_SHEET_ITEM_KNOWN_KEYS = [
+  'labelKey', 'field', 'labelKeyWhenTrue', 'labelKeyWhenFalse', 'visibleIf',
+  'style', 'visibleWhenFieldTrue', 'visibleWhenFieldFalse', 'action',
+] as const;
+
+/** Serializza una voce di actionsSheet (§3.10 manuale): `action` è annidata sotto la
+ * chiave `action:` (schema corretto/attuale — vedi commento su `SduiActionSheetItem`),
+ * editata con lo stesso editor grafico generico di primaryAction/menu (#actionEditor). */
 function cleanActionSheetItem(item: SduiActionSheetItem): Record<string, unknown> {
-  const out = cleanAction(item);
+  const out: Record<string, unknown> = {};
+  if (item.labelKey) out['labelKey'] = item.labelKey;
+  if (item.field) out['field'] = item.field;
+  if (item.labelKeyWhenTrue) out['labelKeyWhenTrue'] = item.labelKeyWhenTrue;
+  if (item.labelKeyWhenFalse) out['labelKeyWhenFalse'] = item.labelKeyWhenFalse;
+  if (item.visibleIf) out['visibleIf'] = item.visibleIf;
   if (item.style) out['style'] = item.style;
   if (item.visibleWhenFieldTrue) out['visibleWhenFieldTrue'] = item.visibleWhenFieldTrue;
   if (item.visibleWhenFieldFalse) out['visibleWhenFieldFalse'] = item.visibleWhenFieldFalse;
-  return out;
+  out['action'] = cleanAction(item.action);
+  return withRaw(item, SDUI_ACTION_SHEET_ITEM_KNOWN_KEYS, out);
 }
 
 function cleanActionsSheet(items: SduiActionSheetItem[] | undefined): Record<string, unknown>[] {

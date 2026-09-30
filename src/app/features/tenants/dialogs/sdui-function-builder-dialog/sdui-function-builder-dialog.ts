@@ -54,6 +54,7 @@ import {
   SduiCardElementType,
   SDUI_CARD_ELEMENT_TYPES,
   SDUI_CARD_ELEMENT_FIELD_BASED,
+  SDUI_ACTION_SHEET_ITEM_KNOWN_KEYS,
   createEmptyAction,
   createEmptyCaptureOptions,
   createEmptyCardElement,
@@ -1243,7 +1244,7 @@ export class SduiFunctionBuilderDialog {
     switch (ref.kind) {
       case 'primary': return d.primaryAction;
       case 'menuItem': return d.sections[ref.si]?.items?.[ref.mi]?.action;
-      case 'actionsSheet': return this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet?.[ref.ai];
+      case 'actionsSheet': return this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet?.[ref.ai]?.action;
       case 'documentDownload': return d.sections[ref.si]?.rowDetail?.sections[ref.rsi]?.action;
     }
   }
@@ -1252,12 +1253,11 @@ export class SduiFunctionBuilderDialog {
       case 'primary': d.primaryAction = action; return;
       case 'menuItem': { const item = d.sections[ref.si]?.items?.[ref.mi]; if (item) item.action = action; return; }
       case 'actionsSheet': {
-        // A differenza di menuItem, qui l'item stesso E' l'azione (schema flat, non annidato
-        // sotto `action:` — vedi commento su SduiActionSheetItem): cambiare tipo azione deve
-        // preservare gli attributi item-level (style/visibleWhenField*), non sostituirli.
-        const arr = this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet;
-        const old = arr?.[ref.ai];
-        if (arr && old) arr[ref.ai] = { ...action, style: old.style, visibleWhenFieldTrue: old.visibleWhenFieldTrue, visibleWhenFieldFalse: old.visibleWhenFieldFalse };
+        // `action` è annidata (schema corretto/attuale — vedi commento su
+        // SduiActionSheetItem): le proprietà item-level (labelKey/field/style/
+        // visibleWhenField*/visibleIf) restano invariate, si sostituisce solo `action`.
+        const item = this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet?.[ref.ai];
+        if (item) item.action = action;
         return;
       }
       case 'documentDownload': {
@@ -1869,10 +1869,11 @@ function findLeafFieldsAtPath(node: unknown, dottedPath: string): string[] {
 }
 
 /** Converte un JSON già pubblicato (screen/flow) nel modello editabile dal wizard. Le proprietà
- * sconosciute al wizard su section/field/action/card/cardElement/rowDetail/options/validation
- * sopravvivono a un giro wizard -> JSON (vedi withRaw() in sdui-model.ts); per i nodi ricostruiti
- * da zero (onSubmit, sequenceCall, conclusion, flowStep, voci di menu/actionsSheet, dataSource,
- * flattenNested/wrapAsSingleGroup) resta valida solo la vista JSON grezza come escape hatch. */
+ * sconosciute al wizard su section/field/action/card/cardElement/rowDetail/actionsSheet item/
+ * options/validation sopravvivono a un giro wizard -> JSON (vedi withRaw() in sdui-model.ts); per
+ * i nodi ricostruiti da zero (onSubmit, sequenceCall, conclusion, flowStep, voci di menu,
+ * dataSource, flattenNested/wrapAsSingleGroup) resta valida solo la vista JSON grezza come escape
+ * hatch. */
 function jsonToDescriptor(json: Record<string, unknown>, fallbackEntityName: string): SduiDescriptor {
   const kind = (json['kind'] as SduiKind) ?? 'screen';
   const d = createEmptyDescriptor(kind, fallbackEntityName);
@@ -1952,13 +1953,35 @@ function sectionFromJson(s: Record<string, unknown>): SduiSection {
   return section;
 }
 
+/** Voce di `rowDetail.actionsSheet` (§3.10 manuale): l'azione è annidata sotto `action:`
+ * (schema corretto/attuale). Fallback su `a` stesso come azione se `action` è assente,
+ * per compatibilità con entity storiche salvate prima del fix engine sh-core `2e7f130`
+ * (quando il motore leggeva erroneamente i campi flat dalla root dell'item). */
 function actionSheetItemFromJson(a: Record<string, unknown>): SduiActionSheetItem {
-  return {
-    ...actionFromJson(a),
+  const nested = a['action'] as Record<string, unknown> | undefined;
+  const item: SduiActionSheetItem = {
+    labelKey: a['labelKey'] as string | undefined,
+    field: a['field'] as string | undefined,
+    labelKeyWhenTrue: a['labelKeyWhenTrue'] as string | undefined,
+    labelKeyWhenFalse: a['labelKeyWhenFalse'] as string | undefined,
+    visibleIf: a['visibleIf'] as string | undefined,
     style: a['style'] as 'filled' | 'outline' | undefined,
     visibleWhenFieldTrue: a['visibleWhenFieldTrue'] as string | undefined,
     visibleWhenFieldFalse: a['visibleWhenFieldFalse'] as string | undefined,
+    action: actionFromJson(nested ?? a),
   };
+  // Preserva eventuali chiavi item-level ignote al wizard, ma solo se la sorgente usa già
+  // il formato nested corrente: nel fallback legacy flat i campi extra sono già stati
+  // recuperati dentro `action` da actionFromJson, e duplicarli qui come chiavi item-level
+  // stray romperebbe il round-trip (due copie divergenti degli stessi dati).
+  if (nested) {
+    for (const k of Object.keys(a)) {
+      if (!(SDUI_ACTION_SHEET_ITEM_KNOWN_KEYS as readonly string[]).includes(k)) {
+        (item as unknown as Record<string, unknown>)[k] = a[k];
+      }
+    }
+  }
+  return item;
 }
 
 function rowDetailSectionFromJson(s: Record<string, unknown>): SduiRowDetailSection {

@@ -2646,12 +2646,31 @@
         <button mat-icon-button type="button" (click)="removeActionSheetItem(sectionIndex, ai, rowDetailSectionIndex)"><mat-icon>delete</mat-icon></button>
       </div>
       <div class="sdui-wizard__row">
+        <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+          <mat-label>{{ 'sduiWizard.labels.labelKeyRequired' | translate }}</mat-label>
+          <input matInput [ngModel]="item.labelKey ?? ''" (ngModelChange)="setActionSheetItemProp(sectionIndex, ai, 'labelKey', $event, rowDetailSectionIndex)" />
+        </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
           <mat-label>{{ 'sduiWizard.labels.style' | translate }}</mat-label>
           <mat-select [value]="item.style ?? 'outline'" (selectionChange)="setActionSheetItemProp(sectionIndex, ai, 'style', $event.value, rowDetailSectionIndex)">
             <mat-option value="filled">filled</mat-option>
             <mat-option value="outline">outline</mat-option>
           </mat-select>
+        </mat-form-field>
+      </div>
+      <p class="sdui-wizard__tip">{{ 'sduiWizard.actions.actionSheetDynamicLabelTip' | translate }}</p>
+      <div class="sdui-wizard__row">
+        <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+          <mat-label>{{ 'sduiWizard.labels.field' | translate }}</mat-label>
+          <input matInput [ngModel]="item.field ?? ''" (ngModelChange)="setActionSheetItemProp(sectionIndex, ai, 'field', $event, rowDetailSectionIndex)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+          <mat-label>{{ 'sduiWizard.labels.labelKeyWhenTrue' | translate }}</mat-label>
+          <input matInput [ngModel]="item.labelKeyWhenTrue ?? ''" (ngModelChange)="setActionSheetItemProp(sectionIndex, ai, 'labelKeyWhenTrue', $event, rowDetailSectionIndex)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+          <mat-label>{{ 'sduiWizard.labels.labelKeyWhenFalse' | translate }}</mat-label>
+          <input matInput [ngModel]="item.labelKeyWhenFalse ?? ''" (ngModelChange)="setActionSheetItemProp(sectionIndex, ai, 'labelKeyWhenFalse', $event, rowDetailSectionIndex)" />
         </mat-form-field>
       </div>
       <div class="sdui-wizard__row">
@@ -2664,8 +2683,12 @@
           <input matInput [ngModel]="item.visibleWhenFieldFalse ?? ''" (ngModelChange)="setActionSheetItemProp(sectionIndex, ai, 'visibleWhenFieldFalse', $event, rowDetailSectionIndex)" />
         </mat-form-field>
       </div>
+      <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
+        <mat-label>{{ 'sduiWizard.labels.visibleIfOptional' | translate }}</mat-label>
+        <input matInput [ngModel]="item.visibleIf ?? ''" (ngModelChange)="setActionSheetItemProp(sectionIndex, ai, 'visibleIf', $event, rowDetailSectionIndex)" [placeholder]="'sduiWizard.ph.visibleIfExample' | translate" />
+      </mat-form-field>
       <p class="sdui-wizard__label-strong">{{ 'sduiWizard.rowDetail.actionLabel' | translate }}</p>
-      <ng-container *ngTemplateOutlet="actionEditor; context: { pa: item, ref: actionSheetItemActionRef(sectionIndex, ai, rowDetailSectionIndex) }"></ng-container>
+      <ng-container *ngTemplateOutlet="actionEditor; context: { pa: item.action, ref: actionSheetItemActionRef(sectionIndex, ai, rowDetailSectionIndex) }"></ng-container>
     </div>
   }
   <button mat-stroked-button type="button" (click)="addActionSheetItem(sectionIndex, rowDetailSectionIndex)">

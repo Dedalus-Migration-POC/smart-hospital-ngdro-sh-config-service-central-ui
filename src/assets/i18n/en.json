@@ -1142,6 +1142,7 @@
       }
     },
     "actions": {
+      "actionSheetDynamicLabelTip": "field + labelKeyWhenTrue/labelKeyWhenFalse (optional): dynamic label based on the boolean value of item[field], as an alternative to a fixed labelKey. Different from the underlying action's own field (e.g. toggleField), which is the field to toggle.",
       "addCallLabel": "addCall — call executed when adding to favorites",
       "bodyMappingSessionTip": "bodyMapping: \"$.field\" reads from the item, \"@.field\" (e.g. @.userId) reads from session state.",
       "callLabel": "call — HTTP call executed after confirmation",

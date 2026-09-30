@@ -1135,6 +1135,7 @@
       }
     },
     "actions": {
+      "actionSheetDynamicLabelTip": "field + labelKeyWhenTrue/labelKeyWhenFalse (opzionali): etichetta dinamica in base al valore booleano di item[field], alternativa a labelKey fisso. Diverso dall'eventuale field dell'azione sottostante (es. toggleField), che indica il campo da alternare.",
       "addCallLabel": "addCall — chiamata eseguita quando si aggiunge ai preferiti",
       "bodyMappingSessionTip": "bodyMapping: \"$.campo\" legge dall'item, \"@.campo\" (es. @.userId) legge dallo stato di sessione.",
       "callLabel": "call — chiamata HTTP eseguita dopo la conferma",
