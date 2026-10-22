@@ -54,6 +54,13 @@ export interface SduiWrapAsSingleGroup {
   itemsPath: string;
   targetPath: string;
   groupLabelKey?: string;
+  /** Mappa `{campoOutput: "percorso.puntato"}` che copia un valore annidato di ogni item
+   * in un campo piatto, usabile da titleField/subtitleField/rowDetail (§4.1.1 manuale). */
+  itemFields?: Record<string, string>;
+  /** Scrive in `targetField` di ogni item `pastValue`/`futureValue` in base al confronto
+   * tra `dateField` e oggi (§4.1.1 manuale) — utile per badge tipo "Scaduta" senza codice
+   * dedicato. */
+  dateFlags?: { dateField: string; targetField: string; pastValue: string; futureValue?: string }[];
   staticItemFields: Record<string, string>;
 }
 
@@ -76,7 +83,16 @@ export interface SduiCustomTransform {
   [key: string]: unknown;
 }
 
-export type SduiResponseTransform = SduiFlattenNested | SduiWrapAsSingleGroup | SduiGroupByField;
+/** Aggiunge alla radice della risposta i campi descritti da `fields` (stessa sintassi di
+ * flattenNested: percorso puntato con indici array, {path, format} o {paths} — §4.1 manuale);
+ * i campi originali restano. Pensato per risorse annidate (es. FHIR) lette da
+ * readOnlyInfo.valueField. */
+export interface SduiMapFields {
+  type: 'mapFields';
+  fields: Record<string, SduiFlattenField>;
+}
+
+export type SduiResponseTransform = SduiFlattenNested | SduiWrapAsSingleGroup | SduiGroupByField | SduiMapFields;
 
 export interface SduiDataSource {
   method: string;
@@ -97,6 +113,13 @@ export interface SduiDataSource {
    * persistito (§4 manuale) — utile per pre-selezionare un valore noto solo dopo il fetch
    * (es. dropdown "azienda attiva"). Il valore catturato è sempre convertito a stringa. */
   captureToState?: Record<string, string>;
+  /** Header HTTP statici aggiunti alla richiesta, sovrascrivono quelli di auth omonimi
+   * (§4 manuale). Valori fissi nel JSON: evitare per segreti condivisi (preferire un proxy
+   * lato server). */
+  headers?: Record<string, string>;
+  /** Genera `Authorization: Basic base64(username:password)` (§4 manuale) — da usare con
+   * `auth: "public"` per non sovrascrivere l'header. Valori in chiaro nel JSON. */
+  basicAuth?: { username: string; password: string };
 }
 
 /** Legge un `dataSource` grezzo (screen o flow-step: stessa forma) da JSON. */
@@ -110,6 +133,8 @@ export function dataSourceFromJson(ds: Record<string, unknown>): SduiDataSource 
     defaultDateRange: ds['defaultDateRange'] as SduiDataSource['defaultDateRange'] | undefined,
     captureToProfile: (ds['captureToProfile'] as Record<string, string>) ?? undefined,
     captureToState: (ds['captureToState'] as Record<string, string>) ?? undefined,
+    headers: (ds['headers'] as Record<string, string>) ?? undefined,
+    basicAuth: (ds['basicAuth'] as { username: string; password: string }) ?? undefined,
   };
 }
 
@@ -133,6 +158,8 @@ export function parseResponseTransform(rt: Record<string, unknown> | undefined):
       itemsPath: (rt['itemsPath'] as string) ?? 'items',
       targetPath: (rt['targetPath'] as string) ?? 'groupedItems',
       groupLabelKey: rt['groupLabelKey'] as string | undefined,
+      itemFields: (rt['itemFields'] as Record<string, string>) ?? undefined,
+      dateFlags: (rt['dateFlags'] as SduiWrapAsSingleGroup['dateFlags']) ?? undefined,
       staticItemFields: (rt['staticItemFields'] as Record<string, string>) ?? {},
     };
   }
@@ -144,6 +171,12 @@ export function parseResponseTransform(rt: Record<string, unknown> | undefined):
       groupField: (rt['groupField'] as string) ?? '',
       groupLabelField: rt['groupLabelField'] as string | undefined,
       sortGroupsDescending: rt['sortGroupsDescending'] as boolean | undefined,
+    };
+  }
+  if (rt['type'] === 'mapFields') {
+    return {
+      type: 'mapFields',
+      fields: parseFlattenFieldsMap(rt['fields'] as Record<string, unknown>),
     };
   }
   // Transform custom con logica hardcoded nell'engine (es. "buildProfilesList"): il wizard
@@ -172,6 +205,10 @@ export function createEmptyWrapAsSingleGroup(): SduiWrapAsSingleGroup {
 
 export function createEmptyGroupByField(): SduiGroupByField {
   return { type: 'groupByField', itemsPath: 'items', targetPath: 'groupedItems', groupField: '', sortGroupsDescending: true };
+}
+
+export function createEmptyMapFields(): SduiMapFields {
+  return { type: 'mapFields', fields: {} };
 }
 
 // ---------------------------------------------------------------------------
@@ -208,7 +245,7 @@ export function applyValidationKey(validation: SduiValidation, key: SduiValidati
 // Opzioni per dropdown/radioCard/radioCardList
 // ---------------------------------------------------------------------------
 
-export type SduiOptionsSource = 'static' | 'fromState' | 'remote';
+export type SduiOptionsSource = 'static' | 'fromState' | 'remote' | 'selected';
 
 export interface SduiOptionValue {
   value: string;
@@ -234,6 +271,11 @@ export interface SduiOptions {
    * vuota, invece di un componente vuoto/inutilizzabile (§10 manuale). `value: ""` è la
    * convenzione tipica per non inviare alcun valore reale se selezionata. */
   emptyFallback?: { value: string; labelKey: string } | null;
+  /** Con `source: "selected"`: id del field la cui opzione già scelta viene mostrata da sola
+   * (value/label/meta letti da `{of}`/`{of}Label`/`{of}Meta`), utile in un riepilogo. */
+  of?: string;
+  /** Con `source: "selected"`: la card non è toccabile. */
+  readOnly?: boolean;
 }
 
 export function createEmptyOptions(): SduiOptions {
@@ -250,8 +292,11 @@ export function createEmptyOptions(): SduiOptions {
     metaFields: [],
     pageSize: 5,
     emptyFallback: null,
+    of: '',
+    readOnly: false,
   };
 }
+
 
 // ---------------------------------------------------------------------------
 // Field (component di form)
@@ -260,7 +305,8 @@ export function createEmptyOptions(): SduiOptions {
 export type SduiFieldComponent =
   | 'textInput' | 'datePicker' | 'timePicker' | 'filePicker' | 'checkbox' | 'toggle'
   | 'dropdown' | 'radioCard' | 'radioCardList' | 'summaryCard' | 'captcha' | 'chip'
-  | 'staticText' | 'readOnlyInfo' | 'infoBanner' | 'row' | 'column';
+  | 'staticText' | 'readOnlyInfo' | 'infoBanner' | 'row' | 'column'
+  | 'actionButton' | 'qrScanner' | 'image' | 'animatedCheck';
 
 export const SDUI_FIELD_COMPONENTS: { value: SduiFieldComponent; label: string; needsOptions: boolean }[] = [
   { value: 'textInput', label: 'sduiWizard.fieldComponents.textInput', needsOptions: false },
@@ -280,6 +326,10 @@ export const SDUI_FIELD_COMPONENTS: { value: SduiFieldComponent; label: string; 
   { value: 'infoBanner', label: 'sduiWizard.fieldComponents.infoBanner', needsOptions: false },
   { value: 'row', label: 'sduiWizard.fieldComponents.row', needsOptions: false },
   { value: 'column', label: 'sduiWizard.fieldComponents.column', needsOptions: false },
+  { value: 'actionButton', label: 'sduiWizard.fieldComponents.actionButton', needsOptions: false },
+  { value: 'qrScanner', label: 'sduiWizard.fieldComponents.qrScanner', needsOptions: false },
+  { value: 'image', label: 'sduiWizard.fieldComponents.image', needsOptions: false },
+  { value: 'animatedCheck', label: 'sduiWizard.fieldComponents.animatedCheck', needsOptions: false },
 ];
 
 export interface SduiFlatField {
@@ -294,7 +344,7 @@ export type SduiTextCase = 'upper' | 'lower';
 
 /** Tastiera mostrata su mobile (§8). `text` e' il default dell'engine
  * (resolveSduiKeyboardType ricade li' per ogni valore non riconosciuto). */
-export type SduiKeyboardType = 'text' | 'number' | 'email' | 'phone';
+export type SduiKeyboardType = 'text' | 'number' | 'decimal' | 'email' | 'phone';
 
 export const SDUI_TEXT_CASES: { value: SduiTextCase | ''; label: string }[] = [
   { value: '', label: 'sduiWizard.textCase.none' },
@@ -305,6 +355,7 @@ export const SDUI_TEXT_CASES: { value: SduiTextCase | ''; label: string }[] = [
 export const SDUI_KEYBOARD_TYPES: { value: SduiKeyboardType; label: string }[] = [
   { value: 'text', label: 'sduiWizard.keyboardType.text' },
   { value: 'number', label: 'sduiWizard.keyboardType.number' },
+  { value: 'decimal', label: 'sduiWizard.keyboardType.decimal' },
   { value: 'email', label: 'sduiWizard.keyboardType.email' },
   { value: 'phone', label: 'sduiWizard.keyboardType.phone' },
 ];
@@ -317,6 +368,10 @@ export interface SduiDetailAction {
   officesField?: string;
   officeTitleKey?: string;
   officeFields?: SduiFlatField[];
+  /** Varianti font (AppTheme compact/medium/standard/large), default `standard`. */
+  titleVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  subtitleVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  officeTitleVariant?: 'compact' | 'medium' | 'standard' | 'large';
 }
 
 export interface SduiField {
@@ -333,6 +388,8 @@ export interface SduiField {
   hintKey?: string;
   textCase?: SduiTextCase;
   keyboardType?: SduiKeyboardType;
+  /** decimals (solo con keyboardType "decimal", default 2 lato engine). */
+  decimals?: number;
   obscureText?: boolean;
   maxLength?: number;
   trim?: boolean;
@@ -342,8 +399,22 @@ export interface SduiField {
   // filePicker
   allowedExtensions?: string[];
   placeholderKey?: string;
+  /** Scarta file più grandi di N MB (errore `maxSizeErrorKey`, placeholder `{max}`). */
+  maxSizeMb?: number;
+  maxSizeErrorKey?: string;
+  /** `"attachments"`: design "Aggiungi documento" — riquadro con titolo/help/bottone invece
+   * del campo con bordo (§"filePicker" manuale). */
+  filePickerStyle?: 'attachments';
+  emptyTitleKey?: string;
+  helpKey?: string;
+  buttonLabelKey?: string;
+  removeLabelKey?: string;
+  replaceLabelKey?: string;
   // readOnlyInfo
   valueField?: string;
+  /** "stacked": etichetta sopra e valore sotto, allineati a sinistra, senza icona né padding del
+   * ListTile. Default "default" (layout storico a riga singola). */
+  layout?: 'default' | 'stacked';
   // captcha
   siteKey?: string;
   baseUrl?: string;
@@ -363,6 +434,10 @@ export interface SduiField {
   widthPercent?: number;
   flex?: number;
   shrinkWrap?: boolean;
+  /** Racchiude il container in una Card a tutta larghezza (§"Container row/column: card"). */
+  card?: boolean;
+  /** Padding (px) della Card, solo con card:true. Default 12. */
+  cardPadding?: number;
   // radioCardList (§10 manuale)
   badgeField?: string;
   delegateHeaderKey?: string;
@@ -370,6 +445,26 @@ export interface SduiField {
   filterBy?: string;
   ownBadgeKey?: string;
   detailAction?: SduiDetailAction;
+  /** Varianti font (nome card/descrizioni/intestazioni di gruppo). */
+  titleVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  descriptionVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  headerVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  /** Chiave in `meta` (dd/MM/yyyy o ISO) per il riquadro data a sinistra del testo. */
+  dateBadgeField?: string;
+  /** Chip arrotondate sotto il titolo, lette da `meta` (es. `{template: "{timeLabel}", icon: "schedule"}`). */
+  chips?: SduiRadioCardTemplateItem[];
+  /** Righe con icona sotto le chip (stessa forma di chips[]); righe vuote omesse. */
+  lines?: SduiRadioCardTemplateItem[];
+  /** Chip affiancate al titolo sulla stessa riga (stessa forma di chips[]). */
+  titleChips?: SduiRadioCardTemplateItem[];
+  /** Nasconde il cerchio del radio button. */
+  hideRadio?: boolean;
+  /** Spessore bordo card selezionata (default 2). */
+  selectedBorderWidth?: number;
+  /** `lines[]` a tutta larghezza sotto data e titolo invece che in colonna a destra. */
+  fullWidthLines?: boolean;
+  /** Testo mostrato se esiste la card propria (`meta.isMe`) ma nessuna opzione in delega. */
+  emptyDelegatesKey?: string;
   // summaryCard (condivide badgeField con radioCardList)
   titleValueField?: string;
   subtitleField?: string;
@@ -377,6 +472,29 @@ export interface SduiField {
   officesField?: string;
   officeTitleKey?: string;
   officeFields?: SduiFlatField[];
+  // actionButton (§8 manuale)
+  /** Stile del bottone a tutta larghezza (default `filled`). */
+  style?: 'filled' | 'outlined' | 'destructive';
+  action?: SduiAction;
+  // qrScanner (§8 manuale)
+  scanTitleKey?: string;
+  scanPattern?: string;
+  scanHintKey?: string;
+  scanInvalidKey?: string;
+  /** Nomi `BarcodeFormat` (default `["qrCode"]`), es. `code128`/`ean13` per i codici a barre. */
+  formats?: string[];
+  /** Riquadro guida al centro dello scanner. */
+  scanFrame?: { shape?: 'square' | 'rect' | 'none'; size?: number };
+  /** `{chiaveStato: regola}`, regola = modificatore inline (es. `part:/:1`) o `{regex, group}`. */
+  extract?: Record<string, string | { regex: string; group: number }>;
+  onScan?: SduiAction;
+  // image / animatedCheck (§8 manuale)
+  svg?: string;
+  width?: number;
+  height?: number;
+  align?: 'left' | 'center' | 'right';
+  tint?: boolean;
+  size?: number;
 }
 
 export function createEmptyField(component: SduiFieldComponent = 'textInput'): SduiField {
@@ -392,6 +510,17 @@ export function createEmptyField(component: SduiFieldComponent = 'textInput'): S
     field.children = [];
     field.gap = 8;
   }
+  if (component === 'actionButton') {
+    field.style = 'filled';
+    field.action = { type: 'reload' };
+  }
+  if (component === 'qrScanner') {
+    field.formats = ['qrCode'];
+    field.onScan = { type: 'reload' };
+  }
+  if (component === 'image' || component === 'animatedCheck') {
+    field.align = 'center';
+  }
   return field;
 }
 
@@ -401,7 +530,7 @@ export function createEmptyField(component: SduiFieldComponent = 'textInput'): S
 
 export type SduiActionType =
   | 'navigateSdui' | 'reload' | 'openExternal' | 'call' | 'downloadFile'
-  | 'confirmAndCall' | 'toggleField' | 'toggleFavorite';
+  | 'confirmAndCall' | 'toggleField' | 'toggleFavorite' | 'addToCalendar' | 'logout';
 
 export const SDUI_ACTION_TYPES: { value: SduiActionType; label: string; warning?: string }[] = [
   { value: 'navigateSdui', label: 'sduiWizard.actionTypes.navigateSdui.label' },
@@ -412,6 +541,8 @@ export const SDUI_ACTION_TYPES: { value: SduiActionType; label: string; warning?
   { value: 'confirmAndCall', label: 'sduiWizard.actionTypes.confirmAndCall.label' },
   { value: 'toggleField', label: 'sduiWizard.actionTypes.toggleField.label' },
   { value: 'toggleFavorite', label: 'sduiWizard.actionTypes.toggleFavorite.label' },
+  { value: 'addToCalendar', label: 'sduiWizard.actionTypes.addToCalendar.label' },
+  { value: 'logout', label: 'sduiWizard.actionTypes.logout.label' },
 ];
 
 export interface SduiCallSpec {
@@ -434,6 +565,32 @@ export function createEmptyRowActionSuccessScreen(): SduiRowActionSuccessScreen 
   return { titleKey: '', actions: [{ labelKey: '', style: 'filled' }] };
 }
 
+/** toggleField.successSheet (§6 manuale): pannello di esito mostrato dopo il successo del
+ * toggle quando confirmStyle è "sheet". Varianti WhenTrue/WhenFalse opzionali, altrimenti
+ * si usano i campi base. */
+export interface SduiToggleFieldSuccessSheet {
+  titleKey?: string;
+  titleKeyWhenTrue?: string;
+  titleKeyWhenFalse?: string;
+  messageKey?: string;
+  messageKeyWhenTrue?: string;
+  messageKeyWhenFalse?: string;
+  primaryLabelKey: string;
+  secondaryLabelKey?: string;
+}
+
+export function createEmptyToggleFieldSuccessSheet(): SduiToggleFieldSuccessSheet {
+  return { primaryLabelKey: '' };
+}
+
+/** Statistiche d'uso opzionali su qualunque azione (§6 manuale, "Statistiche d'uso") — mai
+ * dati personali o clinici. */
+export interface SduiActionAnalytics {
+  category?: string;
+  event?: string;
+  name?: string;
+}
+
 export interface SduiAction {
   type: SduiActionType;
   // primaryAction (icona + label del FloatingActionButton — §6 manuale)
@@ -443,6 +600,9 @@ export interface SduiAction {
   entity?: string;
   assetPath?: string;
   initialStateFromItem?: Record<string, string>;
+  /** navigateSdui (§6 manuale): forza il contesto auth della pagina aperta — default eredita
+   * quello corrente; da un entry point pubblico verso una pagina autenticata va messo false. */
+  sduiWithoutAuth?: boolean;
   // downloadFile
   endpoint?: string;
   fileName?: string;
@@ -466,6 +626,10 @@ export interface SduiAction {
      * ignora `type` e chiude sempre la pagina alla pressione, quindi non esiste un vero
      * "resetForm" per un'azione di riga come un delete (§6 manuale). */
     showSuccessScreen?: SduiRowActionSuccessScreen | null;
+    /** confirmAndCall.onSuccess.popScreen (§7.1 manuale): chiude la screen dopo l'azione,
+     * ritornando true al chiamante. Se combinato con showSuccessScreen, la pagina di successo
+     * si apre per prima e la screen viene chiusa alla chiusura di quella pagina. */
+    popScreen?: boolean;
   };
   // toggleField
   field?: string;
@@ -477,10 +641,28 @@ export interface SduiAction {
   confirmMessageKeyWhenTrue?: string;
   confirmTitleKeyWhenFalse?: string;
   confirmMessageKeyWhenFalse?: string;
+  /** toggleField (§6 manuale): mostra la conferma come pannello dal basso invece del dialog
+   * standard. */
+  confirmStyle?: 'sheet';
+  /** toggleField (§6 manuale): pannello di esito mostrato dopo il successo quando confirmStyle
+   * è "sheet". */
+  successSheet?: SduiToggleFieldSuccessSheet | null;
   // toggleFavorite
   favoriteIdField?: string;
   addCall?: SduiCallSpec;
   removeCall?: SduiCallSpec;
+  // addToCalendar (§6 manuale)
+  start?: string;
+  time?: string;
+  end?: string;
+  durationMinutes?: number;
+  title?: string;
+  titleKey?: string;
+  location?: string | string[];
+  description?: (string | { labelKey: string; value: string })[];
+  reminderMinutes?: number;
+  /** Statistiche d'uso opzionali (§6 manuale) — personalizza l'evento inviato da runAction. */
+  analytics?: SduiActionAnalytics;
 }
 
 export function createEmptyAction(type: SduiActionType = 'navigateSdui'): SduiAction {
@@ -494,6 +676,10 @@ export function createEmptyAction(type: SduiActionType = 'navigateSdui'): SduiAc
     action.favoriteIdField = 'favoriteId';
     action.addCall = { endpoint: '', method: 'POST' };
     action.removeCall = { endpoint: '', method: 'DELETE' };
+  }
+  if (type === 'addToCalendar') {
+    action.start = '{startDate}';
+    action.durationMinutes = 30;
   }
   return action;
 }
@@ -545,16 +731,45 @@ export interface SduiFilterOption {
   /** Se `true`, selezionando questa opzione il bottom sheet mostra un date picker manuale
    * per `fromField`/`toField` invece di calcolarli da `daysAgo`/`daysForward` (§3.5 manuale). */
   custom?: boolean;
+  /** Opzione "ultimi N" (§3.5 manuale): campo di stato che riceve il numero inserito
+   * (azzera fromField/toField, usato come placeholder `{numberField}` nell'endpoint). */
+  numberField?: string;
+  /** Etichetta del campo numerico mostrato quando questa opzione è selezionata. */
+  numberLabelKey?: string;
+  /** Valore iniziale del campo numerico. */
+  numberDefault?: number;
+}
+
+export interface SduiFilterOptionsSource {
+  endpoint: string;
+  auth?: 'bearer' | 'public';
+  /** Nome (o lista di nomi) di array nella risposta da cui estrarre le opzioni. */
+  itemsField: string | string[];
+  /** Identificativo dell'opzione: template con placeholder `{campo}` (alternativa a valueField). */
+  valueTemplate?: string;
+  /** Identificativo dell'opzione: nome diretto di un campo (alternativa a valueTemplate). */
+  valueField?: string;
+  /** Path (anche con punti) della label; `{lang}` = lingua corrente con fallback it. */
+  labelField?: string;
 }
 
 export interface SduiFilterGroup {
   id: string;
-  labelKey?: string;
+  /** Titolo della sezione nel bottom sheet filtri — letto da filter_sheet.dart come
+   * `g['titleKey']` (NON `labelKey`, nonostante gli esempi del manuale: verificato sul
+   * motore reale, `openFilterSheet` in filter_sheet.dart righe 166/258). */
+  titleKey?: string;
   field?: string;
   labelField?: string;
   colorField?: string;
   multiSelect?: boolean;
-  options: SduiFilterOption[];
+  options?: SduiFilterOption[];
+  /** Opzioni scaricate da endpoint alla prima apertura del bottom sheet e tenute in stato
+   * `filterOptions.{id}` — alternativa a `options` statico/derivato da `field` (§3.5 manuale). */
+  optionsSource?: SduiFilterOptionsSource;
+  /** Con `optionsSource`: mappa nome parametro query → campo dell'opzione scelta, ripetuto
+   * per ogni valore selezionato e aggiunto alla dataSource GET. */
+  queryParams?: Record<string, string>;
   dateRangeField?: {
     fromField: string;
     toField: string;
@@ -570,6 +785,7 @@ export interface SduiFilterButton {
   labelKey: string;
   groups: SduiFilterGroup[];
 }
+
 
 export interface SduiBadgeEntry {
   labelKey: string;
@@ -592,7 +808,7 @@ export interface SduiActionSheetItem {
   labelKeyWhenTrue?: string;
   labelKeyWhenFalse?: string;
   visibleIf?: string;
-  style?: 'filled' | 'outline';
+  style?: 'filled' | 'outline' | 'destructive';
   visibleWhenFieldTrue?: string;
   visibleWhenFieldFalse?: string;
   action: SduiAction;
@@ -613,12 +829,37 @@ export interface SduiRowDetailSection {
   actionsSheet?: SduiActionSheetItem[];
 }
 
+export interface SduiRadioCardTemplateItem {
+  template: string;
+  icon?: 'schedule' | 'place' | 'apartment' | 'calendar';
+}
+
+export interface SduiRowDetailChip {
+  labelKey: string;
+  visibleIf?: string;
+}
+
+
 export interface SduiRowDetail {
   detailEndpoint?: string;
   detailTitleKey?: string;
   titleField?: string;
-  personalField?: string;
-  personalLabelKey?: string;
+  /** Azione eseguita al tap sulla card al posto della pagina di dettaglio (§3.10 manuale).
+   * Con tapAction valorizzato, `sections` non è necessario (pagina di dettaglio non si apre). */
+  tapAction?: SduiAction | null;
+  /** "bottom": le azioni di actionsSheet diventano bottoni a piena larghezza in fondo alla
+   * pagina di dettaglio invece del foglio dal pulsante "⋮" (utile con una sola azione). */
+  actionsLayout?: 'bottom';
+  /** Varianti font (tema AppTheme) opzionali per titolo grande/titoli sezione/etichette/valori. */
+  titleVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  sectionTitleVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  labelVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  valueVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  /** Chip generici sopra il titolo del dettaglio (§3.10 manuale, sh-core e42edb2):
+   * sostituisce `personalField`/`personalLabelKey` (rimossi dal motore, card_detail_page.dart
+   * legge solo `chips[]`). Non confondere con `card.personalField`/`personalLabelKey`
+   * (SduiCard, livello card-list, non toccato da questo cambio). */
+  chips?: SduiRowDetailChip[];
   badgeField?: string;
   badgeMap?: Record<string, SduiBadgeEntry>;
   secondaryBadgeField?: string;
@@ -644,6 +885,16 @@ export interface SduiMenuItem {
   labelKey: string;
   descriptionKey?: string;
   action: SduiAction;
+  /** SVG raw o base64 mostrato al posto di `icon` (§3.4 manuale); ripiega su `icon` se assente/non valido. */
+  svg_icon?: string;
+  /** Solo con `layout: "serviceCards"`: badge "Link" o "Accedi" (quest'ultimo solo senza sessione). */
+  badge?: 'link' | 'login';
+  /** Nasconde la voce se l'espressione (stessa sintassi dei field, §5) è falsa sullo stato. */
+  visibleIf?: string;
+  /** Sostituisce la freccia a destra (stessa whitelist chiusa di `icon`). */
+  trailingIcon?: string;
+  /** Override per-voce di `iconBackground` a livello sezione. */
+  iconBackground?: boolean;
 }
 
 export interface SduiListItemTemplate {
@@ -665,6 +916,15 @@ export interface SduiCard {
   hiddenField?: string;
   personalField?: string;
   personalLabelKey?: string;
+  /** Tile compatto: una riga titolo, sotto "organizationField · dateField", stella a destra —
+   * niente note/sottotitolo. Stili solo da tema (§3.9 manuale). Ideale per widget Home. */
+  compact?: boolean;
+  /** Espressione (sintassi visibleIf, valutata sull'item, card non compatta) che decide se
+   * mostrare l'icona/etichetta "Oscurato/Visibile" — es. "hidden == true" (§3.9 manuale). */
+  hiddenIconVisibleIf?: string;
+  /** Come sopra ma per organizationField — es. "personal != true" nasconde l'ente per i
+   * documenti inseriti dal cittadino (§3.9 manuale, card non compatta). */
+  organizationVisibleIf?: string;
   // Formato atomico generico (§3.9.1 manuale) — se `elements` è presente, ha
   // priorità e sostituisce del tutto i campi legacy sopra.
   gap?: number;
@@ -761,6 +1021,9 @@ export interface SduiSection {
   descriptionKey?: string;
   titleVariant?: 'compact' | 'standard' | 'large';
   descriptionVariant?: 'compact' | 'standard' | 'large';
+  /** Nasconde l'intera section se falsa (qualunque type — §11 manuale), stessa sintassi/stessi
+   * operatori del visibleIf di field/step ma valutata sullo stato dello screen. */
+  visibleIf?: string;
 
   // form
   fields?: SduiField[];
@@ -775,12 +1038,27 @@ export interface SduiSection {
 
   // menu
   items?: SduiMenuItem[];
+  /** `"cards"`: ogni voce in Card separata con spazio tra loro; `"serviceCards"`: come
+   * `cards` ma stile dashboard FSE (colori/font dal tema FSE, voci con `badge`). Default:
+   * una sola Card con divisori (§3.4 manuale). */
+  layout?: 'cards' | 'serviceCards';
+  /** `false` nasconde le icone a sinistra di tutte le voci del menu. */
+  showIcons?: boolean;
+  /** L'icona sta in un cerchio/riquadro come nella dashboard FSE (default false), override
+   * possibile per-voce con `SduiMenuItem.iconBackground`. */
+  iconBackground?: boolean;
 
   // table / groupedTable / cardList (condivisi)
   columns?: SduiColumn[];
   searchableFields?: string[];
   filterButton?: SduiFilterButton;
   rowDetail?: SduiRowDetail;
+  /** Campo di stato con l'id di un item: dopo il caricamento la section apre da sola il
+   * rowDetail di quell'item (una sola volta, poi azzerato). Tipicamente valorizzato da
+   * navigateSdui.initialStateFromItem — §3.9 manuale. Funziona anche su screen oltre ai flow. */
+  autoOpenItemField?: string;
+  /** Nome del campo id dell'item confrontato con autoOpenItemField (default "id"). */
+  autoOpenIdField?: string;
 
   // table — bordo colorato verticale a sinistra (§3.5 manuale)
   leftBorder?: boolean;
@@ -800,8 +1078,19 @@ export interface SduiSection {
   secondaryBadgeMap?: Record<string, SduiBadgeEntry>;
   secondaryBadgeLabelKeys?: Record<string, string>;
   summaryLabelKey?: string;
+  /** Chiave usata al posto di summaryLabelKey quando il totale è esattamente 1 — singolare
+   * (es. "È presente 1 documento...", §3.9 manuale, cardList). */
+  summaryLabelKeyOne?: string;
   summaryFromField?: string;
   summaryToField?: string;
+
+  /** groupedTable (§4 manuale "rowAccent"): barra colorata accanto/sopra la card, indica
+   * visivamente il tipo evento senza sostituire il chip testuale (WCAG 1.4.1). */
+  rowAccent?: { position?: 'start' | 'top'; colorFromBadge?: boolean };
+  /** groupedTable: le colonne 2 e 3 vanno su righe separate invece che unite da " · ". */
+  rowDescriptionSplit?: boolean;
+  /** groupedTable: icona cerchiata col numero di allegati a destra della card (nascosta se 0). */
+  rowAttachment?: { countField?: string; icon?: string; labelKey?: string };
 
   searchPlaceholderKey?: string;
   tabs?: SduiTabs;
@@ -810,6 +1099,9 @@ export interface SduiSection {
    * section in una Card del tema — invece dell'oggetto SduiCard di cardList/calendar. Tenuta
    * come proprietà distinta nel model per non rompere il tipo di `card` altrove nel wizard. */
   formCard?: boolean;
+  /** form (§3.1 manuale): con `formCard: true`, il titolo sezione sta sopra la card invece
+   * che dentro. Default false. */
+  titleOutsideCard?: boolean;
   /** Ordinamento client-side dentro ciascun gruppo (§3.9 manuale). */
   sortableFields?: { key: string; labelKey: string }[];
 
@@ -923,32 +1215,35 @@ export function createEmptyCaptureOptions(): SduiCaptureOptions {
   return { stateKey: '', valueTemplate: '', metaFields: [] };
 }
 
-/** Schermata di conclusione dedicata di un flow (§7.1 manuale). */
-export interface SduiConclusion {
-  titleKey: string;
-  subtitleKey?: string;
-  codeLabelKey?: string;
-  codeField?: string;
-  titleField?: string;
-  dateField?: string;
-  facilityField?: string;
-  addressField?: string;
-  cityField?: string;
-  payAction?: { url: string; labelKey?: string } | null;
-  downloadAction?: { endpoint: string; auth?: string; fileName: string; labelKey?: string } | null;
-  cancelAction?: {
-    endpoint: string;
-    method: string;
-    auth?: string;
-    bodyMapping: Record<string, string>;
-    confirmTitleKey: string;
-    confirmMessageKey: string;
-    labelKey?: string;
-  } | null;
+/** Schermata di conferma a fine flow, aperta come un'altra entità SDUI (§7.1 manuale,
+ * sh-core commit f18190e). Sostituisce la vecchia `onSuccess.conclusion` (schermata nativa
+ * dedicata), rimossa dal motore: nessun fallback, un'entity che usa ancora `conclusion` non
+ * mostra più nulla a fine submit. */
+export interface SduiOnSuccessNavigateSdui {
+  entity: string;
+  /** Ogni valore è "$.campo" (stato del flow), "@.patientId"/"@.userId" (sessione) o un
+   * letterale — stessa convenzione di bodyMapping. */
+  initialState: Record<string, string>;
 }
 
-export function createEmptyConclusion(): SduiConclusion {
-  return { titleKey: '', payAction: null, downloadAction: null, cancelAction: null };
+export function createEmptyOnSuccessNavigateSdui(): SduiOnSuccessNavigateSdui {
+  return { entity: '', initialState: {} };
+}
+
+/** Schermata di attesa "da -> a" (§5.3 bis manuale) — solo screen, solo con
+ * onSuccess.action: "setActivePatient". Si chiude da sola come navigateBack, a meno che
+ * nello stesso onSuccess sia presente anche showSuccessScreen (ha priorità). */
+export interface SduiShowTransitionScreen {
+  titleKey: string;
+  subtitleKey?: string;
+  captionKey?: string;
+  logoSvg?: string;
+  logoHeight?: number;
+  durationMs?: number;
+}
+
+export function createEmptyShowTransitionScreen(): SduiShowTransitionScreen {
+  return { titleKey: '' };
 }
 
 export interface SduiOnSubmit {
@@ -956,6 +1251,9 @@ export interface SduiOnSubmit {
   endpoint: string;
   auth: string;
   submitLabelKey?: string;
+  /** Mostra sotto il bottone di invio un bottone outlined "Annulla" che chiude la schermata
+   * (rispetta confirmLeaveIfDirty). Il bottone di invio resta sempre attivo (§8 manuale). */
+  cancelLabelKey?: string;
   bodyMapping: Record<string, string>;
   /** Solo per l'onSubmit dell'ultimo step di un flow: sequenza di chiamate al posto di un singolo endpoint. */
   sequence?: SduiSequenceCall[] | null;
@@ -968,12 +1266,25 @@ export interface SduiOnSubmit {
     itemsPath: string;
     targetPath: string;
     fields: Record<string, string>;
+  } | {
+    /** Converte in-place uno o più campi del body da "dd/MM/yyyy" a ISO-8601 prima dell'invio. */
+    type: 'convertDates';
+    fields: string[];
+  } | {
+    /** Converte in-place uno o più campi del body al tipo indicato (number/boolean) prima dell'invio. */
+    type: 'convertTypes';
+    fields: Record<string, 'number' | 'boolean'>;
+  } | {
+    /** Applica in sequenza più requestTransform (ognuno riceve l'output del precedente);
+     * i singoli step non sono editabili dal wizard, solo preservati come JSON grezzo. */
+    type: 'chain';
+    steps: Record<string, unknown>[];
   }) | null;
   multipart?: boolean;
   fileField?: string;
   fileFieldName?: string;
   onSuccess: {
-    action?: 'toast' | 'setActivePatient' | 'navigateBack';
+    action?: 'toast' | 'setActivePatient' | 'clearActivePatient' | 'navigateBack';
     /** Convenzione alternativa/legacy a `action: 'navigateBack'` (screen_renderer.dart:
      * `onSuccess['navigateBack'] == true`) — l'engine controlla entrambe in OR, il wizard
      * preserva qualunque delle due forme fosse presente nel JSON originale. */
@@ -985,8 +1296,17 @@ export interface SduiOnSubmit {
      * `customAuth` di `base` e crea la sessione. Senza questo flag il login riesce
      * lato backend ma l'utente resta sloggato. */
     completeLogin?: boolean;
-    /** Solo flow, ultimo step: schermata di recap post-conferma (§7.1). */
-    conclusion?: SduiConclusion | null;
+    /** Solo flow, ultimo step (§7.1, sh-core f18190e): pushReplacement verso un'altra entity
+     * SDUI, sostituisce la vecchia `conclusion` (schermata nativa, rimossa dal motore). */
+    navigateSdui?: SduiOnSuccessNavigateSdui | null;
+    /** Solo screen, solo con `action: 'setActivePatient'` (§5.3 bis): schermata di attesa
+     * "da -> a" alternativa a `showSuccessScreen` (quest'ultima ha priorità se entrambe presenti). */
+    showTransitionScreen?: SduiShowTransitionScreen | null;
+    /** Barra delega (§1, §6): nome di route (es. "HomeRoute") da cui ricreare lo stack di
+     * navigazione dopo il successo, mostrando prima `messageKey` se presente. */
+    resetToRoute?: string;
+    /** Chiude lo screen corrente tornando indietro di uno step senza altre azioni. */
+    popScreen?: boolean;
   };
   /** `action` qui non è letto da nessun handler engine (verificato su `flow_renderer.dart`/
    * `screen_renderer.dart`, che leggono solo `messageKey`): dato legacy/extra presente in
@@ -1003,7 +1323,7 @@ export function createEmptyOnSubmit(): SduiOnSubmit {
     sequence: null,
     failureCheck: null,
     requestTransform: null,
-    onSuccess: { action: 'toast', messageKey: '', conclusion: null },
+    onSuccess: { action: 'toast', messageKey: '', navigateSdui: null, showTransitionScreen: null },
     onError: { messageKey: 'errors.generic' },
   };
 }
@@ -1057,6 +1377,9 @@ export interface SduiDescriptor {
   /** Solo flow (§7.2): mostra il dettaglio tecnico quando il caricamento di uno step
    * fallisce. Diagnostico, da tenere spento in produzione. */
   showTechnicalError?: boolean;
+  /** Esclude le azioni globali dell'app bar (sdui_app_bar_actions) solo per questa pagina;
+   * valido su screen e flow, non sui widget incorporati (§2 manuale). */
+  hideGlobalAppBarActions?: boolean;
 }
 
 export function createEmptyDescriptor(kind: SduiKind, entityName: string): SduiDescriptor {
@@ -1088,6 +1411,7 @@ export function descriptorToJson(d: SduiDescriptor): Record<string, unknown> {
   }
   out['titleKey'] = d.titleKey;
   if (d.subtitleKey) out['subtitleKey'] = d.subtitleKey;
+  if (d.hideGlobalAppBarActions) out['hideGlobalAppBarActions'] = true;
 
   let initialState: unknown;
   try { initialState = d.initialStateJson?.trim() ? JSON.parse(d.initialStateJson) : undefined; } catch { initialState = undefined; }
@@ -1108,6 +1432,8 @@ export function descriptorToJson(d: SduiDescriptor): Record<string, unknown> {
       if (d.dataSource.defaultDateRange) ds['defaultDateRange'] = d.dataSource.defaultDateRange;
       if (Object.keys(d.dataSource.captureToProfile ?? {}).length > 0) ds['captureToProfile'] = d.dataSource.captureToProfile;
       if (Object.keys(d.dataSource.captureToState ?? {}).length > 0) ds['captureToState'] = d.dataSource.captureToState;
+      if (Object.keys(d.dataSource.headers ?? {}).length > 0) ds['headers'] = d.dataSource.headers;
+      if (d.dataSource.basicAuth?.username || d.dataSource.basicAuth?.password) ds['basicAuth'] = d.dataSource.basicAuth;
       out['dataSource'] = ds;
     }
     out['sections'] = d.sections.map(cleanSection);
@@ -1192,7 +1518,15 @@ export function cleanResponseTransform(rt: SduiResponseTransform): Record<string
   if (rt.type === 'wrapAsSingleGroup') return cleanWrapAsSingleGroup(rt);
   if (rt.type === 'flattenNested') return cleanFlattenNested(rt);
   if (rt.type === 'groupByField') return cleanGroupByField(rt);
+  if (rt.type === 'mapFields') return cleanMapFields(rt);
   return rt as Record<string, unknown>;
+}
+
+function cleanMapFields(f: SduiMapFields): Record<string, unknown> {
+  const fields = cleanFlattenFieldsMap(f.fields);
+  const out: Record<string, unknown> = { type: 'mapFields' };
+  if (Object.keys(fields).length > 0) out['fields'] = fields;
+  return out;
 }
 
 function cleanWrapAsSingleGroup(f: SduiWrapAsSingleGroup): Record<string, unknown> {
@@ -1202,6 +1536,8 @@ function cleanWrapAsSingleGroup(f: SduiWrapAsSingleGroup): Record<string, unknow
     targetPath: f.targetPath || 'groupedItems',
   };
   if (f.groupLabelKey) out['groupLabelKey'] = f.groupLabelKey;
+  if (Object.keys(f.itemFields ?? {}).length > 0) out['itemFields'] = f.itemFields;
+  if (f.dateFlags?.length) out['dateFlags'] = f.dateFlags;
   if (Object.keys(f.staticItemFields ?? {}).length > 0) out['staticItemFields'] = f.staticItemFields;
   return out;
 }
@@ -1220,12 +1556,16 @@ function cleanGroupByField(f: SduiGroupByField): Record<string, unknown> {
   return out;
 }
 
-const SDUI_OPTIONS_KNOWN_KEYS = ['source', 'values', 'path', 'endpoint', 'auth', 'itemsField', 'fields', 'valueTemplate', 'labelTemplate', 'sublabelTemplate', 'metaFields', 'pageSize', 'emptyFallback'] as const;
+const SDUI_OPTIONS_KNOWN_KEYS = ['source', 'values', 'path', 'endpoint', 'auth', 'itemsField', 'fields', 'valueTemplate', 'labelTemplate', 'sublabelTemplate', 'metaFields', 'pageSize', 'emptyFallback', 'of', 'readOnly'] as const;
 
 function cleanOptions(o: SduiOptions): Record<string, unknown> {
   const out: Record<string, unknown> = { source: o.source };
   if (o.source === 'static') out['values'] = o.values;
   if (o.source === 'fromState') out['path'] = o.path;
+  if (o.source === 'selected') {
+    if (o.of) out['of'] = o.of;
+    if (o.readOnly) out['readOnly'] = true;
+  }
   if (o.source === 'remote') {
     out['endpoint'] = o.endpoint;
     out['auth'] = o.auth || 'bearer';
@@ -1267,14 +1607,19 @@ function cleanValidation(v: SduiValidation): Record<string, unknown> {
 // esplicitamente perché non coincidono coi nomi delle proprietà del model.
 const SDUI_FIELD_KNOWN_KEYS = [
   'id', 'component', 'labelKey', 'visibleIf', 'paddingBottom', 'validation', 'options',
-  'multiline', 'maxLines', 'hintKey', 'textCase', 'keyboardType', 'obscureText', 'maxLength', 'trim',
+  'multiline', 'maxLines', 'hintKey', 'textCase', 'keyboardType', 'decimals', 'obscureText', 'maxLength', 'trim',
   'minDate', 'maxDate', 'allowedExtensions', 'placeholderKey',
+  'maxSizeMb', 'maxSizeErrorKey', 'style', 'emptyTitleKey', 'helpKey', 'buttonLabelKey', 'removeLabelKey', 'replaceLabelKey',
   'valueField', 'siteKey', 'baseUrl', 'theme', 'variant', 'linkKey',
   'infoDialogTitleKey', 'infoDialogBodyKey', 'infoDialog', 'buttonKey',
   'primaryActionSequence', 'primaryAction', 'actionMessageKey',
   'children', 'gap', 'widthPercent', 'flex', 'shrinkWrap',
   'badgeField', 'delegateHeaderKey', 'loadMoreLabelKey', 'filterBy', 'ownBadgeKey', 'detailAction',
+  'titleVariant', 'descriptionVariant', 'headerVariant', 'dateBadgeField', 'chips', 'lines', 'titleChips',
+  'hideRadio', 'selectedBorderWidth', 'fullWidthLines', 'emptyDelegatesKey',
   'titleValueField', 'subtitleField', 'flatFields', 'officesField', 'officeTitleKey', 'officeFields',
+  'action', 'scanTitleKey', 'scanPattern', 'scanHintKey', 'scanInvalidKey', 'formats', 'scanFrame', 'extract', 'onScan',
+  'svg', 'width', 'height', 'align', 'tint', 'size', 'layout', 'card', 'cardPadding',
 ] as const;
 
 export function cleanField(f: SduiField): Record<string, unknown> {
@@ -1291,6 +1636,7 @@ export function cleanField(f: SduiField): Record<string, unknown> {
     if (f.textCase) out['textCase'] = f.textCase;
     // 'text' e' gia' il default dell'engine: non lo scriviamo per non gonfiare il JSON.
     if (f.keyboardType && f.keyboardType !== 'text') out['keyboardType'] = f.keyboardType;
+    if (f.keyboardType === 'decimal' && f.decimals != null && f.decimals !== 2) out['decimals'] = f.decimals;
     if (f.obscureText) out['obscureText'] = true;
     if (f.maxLength) out['maxLength'] = f.maxLength;
     if (f.trim) out['trim'] = true;
@@ -1302,8 +1648,23 @@ export function cleanField(f: SduiField): Record<string, unknown> {
   if (f.component === 'filePicker') {
     if (f.allowedExtensions?.length) out['allowedExtensions'] = f.allowedExtensions;
     if (f.placeholderKey) out['placeholderKey'] = f.placeholderKey;
+    if (f.maxSizeMb != null) out['maxSizeMb'] = f.maxSizeMb;
+    if (f.maxSizeErrorKey) out['maxSizeErrorKey'] = f.maxSizeErrorKey;
+    if (f.filePickerStyle === 'attachments') {
+      out['style'] = 'attachments';
+      if (f.emptyTitleKey) out['emptyTitleKey'] = f.emptyTitleKey;
+      if (f.helpKey) out['helpKey'] = f.helpKey;
+      if (f.buttonLabelKey) out['buttonLabelKey'] = f.buttonLabelKey;
+      if (f.removeLabelKey) out['removeLabelKey'] = f.removeLabelKey;
+      if (f.replaceLabelKey) out['replaceLabelKey'] = f.replaceLabelKey;
+    }
   }
-  if (f.component === 'readOnlyInfo' && f.valueField) out['valueField'] = f.valueField;
+  if (f.component === 'readOnlyInfo') {
+    if (f.valueField) out['valueField'] = f.valueField;
+    if (f.layout && f.layout !== 'default') out['layout'] = f.layout;
+    if (f.titleVariant && f.titleVariant !== 'compact') out['titleVariant'] = f.titleVariant;
+    if (f.descriptionVariant && f.descriptionVariant !== 'compact') out['descriptionVariant'] = f.descriptionVariant;
+  }
   if (f.component === 'captcha') {
     if (f.siteKey) out['siteKey'] = f.siteKey;
     if (f.baseUrl) out['baseUrl'] = f.baseUrl;
@@ -1325,6 +1686,10 @@ export function cleanField(f: SduiField): Record<string, unknown> {
     if (f.widthPercent != null) out['widthPercent'] = f.widthPercent;
     if (f.flex != null) out['flex'] = f.flex;
     if (f.shrinkWrap) out['shrinkWrap'] = true;
+    if (f.card) {
+      out['card'] = true;
+      if (f.cardPadding != null && f.cardPadding !== 12) out['cardPadding'] = f.cardPadding;
+    }
   }
   if (f.component === 'radioCardList') {
     if (f.badgeField) out['badgeField'] = f.badgeField;
@@ -1333,6 +1698,17 @@ export function cleanField(f: SduiField): Record<string, unknown> {
     if (f.filterBy) out['filterBy'] = f.filterBy;
     if (f.ownBadgeKey) out['ownBadgeKey'] = f.ownBadgeKey;
     if (f.detailAction?.linkKey) out['detailAction'] = cleanDetailAction(f.detailAction);
+    if (f.titleVariant && f.titleVariant !== 'standard') out['titleVariant'] = f.titleVariant;
+    if (f.descriptionVariant && f.descriptionVariant !== 'standard') out['descriptionVariant'] = f.descriptionVariant;
+    if (f.headerVariant && f.headerVariant !== 'standard') out['headerVariant'] = f.headerVariant;
+    if (f.dateBadgeField) out['dateBadgeField'] = f.dateBadgeField;
+    if (f.chips?.length) out['chips'] = f.chips;
+    if (f.lines?.length) out['lines'] = f.lines;
+    if (f.titleChips?.length) out['titleChips'] = f.titleChips;
+    if (f.hideRadio) out['hideRadio'] = true;
+    if (f.selectedBorderWidth != null) out['selectedBorderWidth'] = f.selectedBorderWidth;
+    if (f.fullWidthLines) out['fullWidthLines'] = true;
+    if (f.emptyDelegatesKey) out['emptyDelegatesKey'] = f.emptyDelegatesKey;
   }
   if (f.component === 'summaryCard') {
     if (f.valueField) out['valueField'] = f.valueField;
@@ -1344,10 +1720,36 @@ export function cleanField(f: SduiField): Record<string, unknown> {
     if (f.officeTitleKey) out['officeTitleKey'] = f.officeTitleKey;
     if (f.officeFields?.length) out['officeFields'] = f.officeFields;
   }
+  if (f.component === 'actionButton') {
+    if (f.style && f.style !== 'filled') out['style'] = f.style;
+    if (f.action) out['action'] = cleanAction(f.action);
+  }
+  if (f.component === 'qrScanner') {
+    if (f.hintKey) out['hintKey'] = f.hintKey;
+    if (f.scanTitleKey) out['scanTitleKey'] = f.scanTitleKey;
+    if (f.scanPattern) out['scanPattern'] = f.scanPattern;
+    if (f.scanHintKey) out['scanHintKey'] = f.scanHintKey;
+    if (f.scanInvalidKey) out['scanInvalidKey'] = f.scanInvalidKey;
+    if (f.formats?.length && !(f.formats.length === 1 && f.formats[0] === 'qrCode')) out['formats'] = f.formats;
+    if (f.scanFrame && (f.scanFrame.shape || f.scanFrame.size != null)) out['scanFrame'] = f.scanFrame;
+    if (f.extract && Object.keys(f.extract).length > 0) out['extract'] = f.extract;
+    if (f.onScan) out['onScan'] = cleanAction(f.onScan);
+  }
+  if (f.component === 'image') {
+    if (f.svg) out['svg'] = f.svg;
+    if (f.width != null) out['width'] = f.width;
+    if (f.height != null) out['height'] = f.height;
+    if (f.align && f.align !== 'center') out['align'] = f.align;
+    if (f.tint) out['tint'] = true;
+  }
+  if (f.component === 'animatedCheck') {
+    if (f.size != null) out['size'] = f.size;
+    if (f.align && f.align !== 'center') out['align'] = f.align;
+  }
   return withRaw(f, SDUI_FIELD_KNOWN_KEYS, out);
 }
 
-const SDUI_DETAIL_ACTION_KNOWN_KEYS = ['linkKey', 'subtitleField', 'badgeField', 'flatFields', 'officesField', 'officeTitleKey', 'officeFields'] as const;
+const SDUI_DETAIL_ACTION_KNOWN_KEYS = ['linkKey', 'subtitleField', 'badgeField', 'flatFields', 'officesField', 'officeTitleKey', 'officeFields', 'titleVariant', 'subtitleVariant', 'officeTitleVariant'] as const;
 
 function cleanDetailAction(d: SduiDetailAction): Record<string, unknown> {
   const out: Record<string, unknown> = { linkKey: d.linkKey };
@@ -1357,16 +1759,23 @@ function cleanDetailAction(d: SduiDetailAction): Record<string, unknown> {
   if (d.officesField) out['officesField'] = d.officesField;
   if (d.officeTitleKey) out['officeTitleKey'] = d.officeTitleKey;
   if (d.officeFields?.length) out['officeFields'] = d.officeFields;
+  if (d.titleVariant && d.titleVariant !== 'standard') out['titleVariant'] = d.titleVariant;
+  if (d.subtitleVariant && d.subtitleVariant !== 'standard') out['subtitleVariant'] = d.subtitleVariant;
+  if (d.officeTitleVariant && d.officeTitleVariant !== 'standard') out['officeTitleVariant'] = d.officeTitleVariant;
   return withRaw(d, SDUI_DETAIL_ACTION_KNOWN_KEYS, out);
 }
 
+
 const SDUI_ACTION_KNOWN_KEYS = [
-  'type', 'icon', 'labelKey', 'entity', 'assetPath', 'initialStateFromItem',
+  'type', 'icon', 'labelKey', 'entity', 'assetPath', 'initialStateFromItem', 'sduiWithoutAuth',
   'endpoint', 'fileName', 'auth', 'successMessageKey', 'errorMessageKey', 'mimeTypeField',
   'confirmTitleKey', 'confirmMessageKey', 'call', 'onSuccess', 'field', 'updateInGroups',
   'labelKeyWhenTrue', 'labelKeyWhenFalse',
   'confirmTitleKeyWhenTrue', 'confirmMessageKeyWhenTrue', 'confirmTitleKeyWhenFalse', 'confirmMessageKeyWhenFalse',
+  'confirmStyle', 'successSheet',
   'favoriteIdField', 'addCall', 'removeCall',
+  'start', 'time', 'end', 'durationMinutes', 'title', 'titleKey', 'location', 'description', 'reminderMinutes',
+  'analytics',
 ] as const;
 
 function cleanAction(a: SduiAction): Record<string, unknown> {
@@ -1376,6 +1785,7 @@ function cleanAction(a: SduiAction): Record<string, unknown> {
   if (a.entity) out['entity'] = a.entity;
   if (a.assetPath) out['assetPath'] = a.assetPath;
   if (a.initialStateFromItem) out['initialStateFromItem'] = a.initialStateFromItem;
+  if (a.sduiWithoutAuth !== undefined) out['sduiWithoutAuth'] = a.sduiWithoutAuth;
   if (a.endpoint) out['endpoint'] = a.endpoint;
   if (a.fileName) out['fileName'] = a.fileName;
   if (a.auth) out['auth'] = a.auth;
@@ -1394,9 +1804,21 @@ function cleanAction(a: SduiAction): Record<string, unknown> {
   if (a.confirmMessageKeyWhenTrue) out['confirmMessageKeyWhenTrue'] = a.confirmMessageKeyWhenTrue;
   if (a.confirmTitleKeyWhenFalse) out['confirmTitleKeyWhenFalse'] = a.confirmTitleKeyWhenFalse;
   if (a.confirmMessageKeyWhenFalse) out['confirmMessageKeyWhenFalse'] = a.confirmMessageKeyWhenFalse;
+  if (a.confirmStyle) out['confirmStyle'] = a.confirmStyle;
+  if (a.successSheet) out['successSheet'] = a.successSheet;
   if (a.favoriteIdField) out['favoriteIdField'] = a.favoriteIdField;
   if (a.addCall) out['addCall'] = a.addCall;
   if (a.removeCall) out['removeCall'] = a.removeCall;
+  if (a.start) out['start'] = a.start;
+  if (a.time) out['time'] = a.time;
+  if (a.end) out['end'] = a.end;
+  if (a.durationMinutes !== undefined) out['durationMinutes'] = a.durationMinutes;
+  if (a.title) out['title'] = a.title;
+  if (a.titleKey) out['titleKey'] = a.titleKey;
+  if (a.location) out['location'] = a.location;
+  if (a.description?.length) out['description'] = a.description;
+  if (a.reminderMinutes !== undefined) out['reminderMinutes'] = a.reminderMinutes;
+  if (a.analytics) out['analytics'] = a.analytics;
   return withRaw(a, SDUI_ACTION_KNOWN_KEYS, out);
 }
 
@@ -1464,6 +1886,7 @@ function cleanCardElement(el: SduiCardElement): Record<string, unknown> {
 const SDUI_CARD_KNOWN_KEYS = [
   'titleField', 'subtitleField', 'dateField', 'organizationField', 'badgeField', 'badgeMap',
   'favoriteField', 'hiddenField', 'personalField', 'personalLabelKey', 'gap', 'elements',
+  'compact', 'hiddenIconVisibleIf', 'organizationVisibleIf',
 ] as const;
 
 function cleanCard(card: SduiCard): Record<string, unknown> {
@@ -1482,6 +1905,9 @@ function cleanCard(card: SduiCard): Record<string, unknown> {
   if (card.hiddenField) out['hiddenField'] = card.hiddenField;
   if (card.personalField) out['personalField'] = card.personalField;
   if (card.personalLabelKey) out['personalLabelKey'] = card.personalLabelKey;
+  if (card.compact) out['compact'] = true;
+  if (card.hiddenIconVisibleIf) out['hiddenIconVisibleIf'] = card.hiddenIconVisibleIf;
+  if (card.organizationVisibleIf) out['organizationVisibleIf'] = card.organizationVisibleIf;
   return withRaw(card, SDUI_CARD_KNOWN_KEYS, out);
 }
 
@@ -1490,13 +1916,14 @@ function cleanCard(card: SduiCard): Record<string, unknown> {
 // model del wizard, vedi sectionFromJson) e va esclusa esplicitamente per lo stesso motivo
 // di 'infoDialog'/'primaryAction' in cleanField.
 const SDUI_SECTION_KNOWN_KEYS = [
-  'id', 'type', 'titleKey', 'descriptionKey', 'titleVariant', 'descriptionVariant',
-  'fields', 'itemsPath', 'itemTemplate', 'linkLabelKey', 'linkUrl', 'items',
-  'columns', 'searchableFields', 'filterButton', 'rowDetail',
+  'id', 'type', 'titleKey', 'descriptionKey', 'titleVariant', 'descriptionVariant', 'visibleIf',
+  'fields', 'itemsPath', 'itemTemplate', 'linkLabelKey', 'linkUrl', 'items', 'layout', 'showIcons', 'iconBackground',
+  'columns', 'searchableFields', 'filterButton', 'rowDetail', 'autoOpenItemField', 'autoOpenIdField',
   'leftBorder', 'leftBorderField', 'leftBorderColorMap',
   'groupsPath', 'groupLabelField', 'groupItemsField', 'badgeField', 'badgeMap', 'badgeLabelKeys',
-  'secondaryBadgeField', 'secondaryBadgeMap', 'secondaryBadgeLabelKeys', 'summaryLabelKey', 'summaryFromField', 'summaryToField',
-  'searchPlaceholderKey', 'tabs', 'card', 'formCard', 'sortableFields',
+  'secondaryBadgeField', 'secondaryBadgeMap', 'secondaryBadgeLabelKeys', 'summaryLabelKey', 'summaryLabelKeyOne', 'summaryFromField', 'summaryToField',
+  'rowAccent', 'rowDescriptionSplit', 'rowAttachment',
+  'searchPlaceholderKey', 'tabs', 'card', 'formCard', 'titleOutsideCard', 'sortableFields',
   'searchField', 'dateFilter',
   'groupsPathSummary', 'groupItemsFieldSummary', 'labelKey', 'fromField', 'toField',
   'dateField', 'eventsTitleKey', 'eventsTitleVariant',
@@ -1506,6 +1933,7 @@ function cleanSection(s: SduiSection): Record<string, unknown> {
   const out: Record<string, unknown> = { id: s.id, type: s.type };
   if (s.titleKey) out['titleKey'] = s.titleKey;
   if (s.descriptionKey) out['descriptionKey'] = s.descriptionKey;
+  if (s.visibleIf) out['visibleIf'] = s.visibleIf;
   if (s.titleVariant && s.titleVariant !== 'standard') out['titleVariant'] = s.titleVariant;
   if (s.descriptionVariant && s.descriptionVariant !== 'standard') out['descriptionVariant'] = s.descriptionVariant;
 
@@ -1515,6 +1943,7 @@ function cleanSection(s: SduiSection): Record<string, unknown> {
     // avvolge l'intera section in una Card del tema. Tenuto come formCard nel model (vedi commento
     // su SduiSection.formCard) per non collidere col tipo oggetto di card altrove.
     if (s.formCard) out['card'] = true;
+    if (s.titleOutsideCard) out['titleOutsideCard'] = true;
   }
 
   if (s.type === 'list') {
@@ -1529,6 +1958,9 @@ function cleanSection(s: SduiSection): Record<string, unknown> {
 
   if (s.type === 'menu') {
     out['items'] = (s.items ?? []).map(i => ({ ...i, action: cleanAction(i.action) }));
+    if (s.layout) out['layout'] = s.layout;
+    if (s.showIcons === false) out['showIcons'] = false;
+    if (s.iconBackground) out['iconBackground'] = true;
   }
 
   if (s.type === 'table' || s.type === 'groupedTable' || s.type === 'cardList') {
@@ -1536,6 +1968,8 @@ function cleanSection(s: SduiSection): Record<string, unknown> {
     if (s.searchableFields?.length) out['searchableFields'] = s.searchableFields;
     if (s.filterButton) out['filterButton'] = s.filterButton;
     if (s.rowDetail) out['rowDetail'] = cleanRowDetail(s.rowDetail);
+    if (s.autoOpenItemField) out['autoOpenItemField'] = s.autoOpenItemField;
+    if (s.autoOpenIdField && s.autoOpenIdField !== 'id') out['autoOpenIdField'] = s.autoOpenIdField;
   }
   if (s.type === 'table') {
     out['itemsPath'] = s.itemsPath;
@@ -1557,11 +1991,17 @@ function cleanSection(s: SduiSection): Record<string, unknown> {
     if (s.summaryFromField) out['summaryFromField'] = s.summaryFromField;
     if (s.summaryToField) out['summaryToField'] = s.summaryToField;
   }
+  if (s.type === 'groupedTable') {
+    if (s.rowAccent) out['rowAccent'] = s.rowAccent;
+    if (s.rowDescriptionSplit) out['rowDescriptionSplit'] = true;
+    if (s.rowAttachment) out['rowAttachment'] = s.rowAttachment;
+  }
   if (s.type === 'cardList') {
     if (s.searchPlaceholderKey) out['searchPlaceholderKey'] = s.searchPlaceholderKey;
     if (s.tabs) out['tabs'] = s.tabs;
     if (s.card) out['card'] = cleanCard(s.card);
     if (s.sortableFields?.length) out['sortableFields'] = s.sortableFields;
+    if (s.summaryLabelKeyOne) out['summaryLabelKeyOne'] = s.summaryLabelKeyOne;
   }
 
   if (s.type === 'filterBar') {
@@ -1644,8 +2084,9 @@ function cleanRowDetailSection(s: SduiRowDetailSection): Record<string, unknown>
 }
 
 const SDUI_ROW_DETAIL_KNOWN_KEYS = [
-  'sections', 'detailEndpoint', 'detailTitleKey', 'titleField', 'personalField', 'personalLabelKey',
+  'sections', 'detailEndpoint', 'detailTitleKey', 'titleField', 'chips',
   'badgeField', 'badgeMap', 'secondaryBadgeField', 'secondaryBadgeMap', 'actionsSheet',
+  'tapAction', 'actionsLayout', 'titleVariant', 'sectionTitleVariant', 'labelVariant', 'valueVariant',
 ] as const;
 
 function cleanRowDetail(r: SduiRowDetail): Record<string, unknown> {
@@ -1653,8 +2094,13 @@ function cleanRowDetail(r: SduiRowDetail): Record<string, unknown> {
   if (r.detailEndpoint) out['detailEndpoint'] = r.detailEndpoint;
   if (r.detailTitleKey) out['detailTitleKey'] = r.detailTitleKey;
   if (r.titleField) out['titleField'] = r.titleField;
-  if (r.personalField) out['personalField'] = r.personalField;
-  if (r.personalLabelKey) out['personalLabelKey'] = r.personalLabelKey;
+  if (r.tapAction) out['tapAction'] = cleanAction(r.tapAction);
+  if (r.actionsLayout) out['actionsLayout'] = r.actionsLayout;
+  if (r.titleVariant) out['titleVariant'] = r.titleVariant;
+  if (r.sectionTitleVariant) out['sectionTitleVariant'] = r.sectionTitleVariant;
+  if (r.labelVariant) out['labelVariant'] = r.labelVariant;
+  if (r.valueVariant) out['valueVariant'] = r.valueVariant;
+  if (r.chips?.length) out['chips'] = r.chips;
   if (r.badgeField) out['badgeField'] = r.badgeField;
   if (r.badgeMap) out['badgeMap'] = r.badgeMap;
   if (r.secondaryBadgeField) out['secondaryBadgeField'] = r.secondaryBadgeField;
@@ -1684,42 +2130,6 @@ function cleanSequenceCall(c: SduiSequenceCall): Record<string, unknown> {
   return out;
 }
 
-function cleanConclusion(c: SduiConclusion): Record<string, unknown> {
-  const out: Record<string, unknown> = { titleKey: c.titleKey };
-  if (c.subtitleKey) out['subtitleKey'] = c.subtitleKey;
-  if (c.codeLabelKey) out['codeLabelKey'] = c.codeLabelKey;
-  if (c.codeField) out['codeField'] = c.codeField;
-  if (c.titleField) out['titleField'] = c.titleField;
-  if (c.dateField) out['dateField'] = c.dateField;
-  if (c.facilityField) out['facilityField'] = c.facilityField;
-  if (c.addressField) out['addressField'] = c.addressField;
-  if (c.cityField) out['cityField'] = c.cityField;
-  if (c.payAction?.url) {
-    const p: Record<string, unknown> = { url: c.payAction.url };
-    if (c.payAction.labelKey) p['labelKey'] = c.payAction.labelKey;
-    out['payAction'] = p;
-  }
-  if (c.downloadAction?.endpoint) {
-    const d: Record<string, unknown> = { endpoint: c.downloadAction.endpoint, fileName: c.downloadAction.fileName };
-    if (c.downloadAction.auth && c.downloadAction.auth !== 'bearer') d['auth'] = c.downloadAction.auth;
-    if (c.downloadAction.labelKey) d['labelKey'] = c.downloadAction.labelKey;
-    out['downloadAction'] = d;
-  }
-  if (c.cancelAction?.endpoint) {
-    const ca: Record<string, unknown> = {
-      endpoint: c.cancelAction.endpoint,
-      method: c.cancelAction.method || 'PUT',
-      confirmTitleKey: c.cancelAction.confirmTitleKey,
-      confirmMessageKey: c.cancelAction.confirmMessageKey,
-    };
-    if (c.cancelAction.auth && c.cancelAction.auth !== 'bearer') ca['auth'] = c.cancelAction.auth;
-    if (Object.keys(c.cancelAction.bodyMapping ?? {}).length > 0) ca['bodyMapping'] = c.cancelAction.bodyMapping;
-    if (c.cancelAction.labelKey) ca['labelKey'] = c.cancelAction.labelKey;
-    out['cancelAction'] = ca;
-  }
-  return out;
-}
-
 function cleanOnSubmit(o: SduiOnSubmit): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (o.sequence && o.sequence.length > 0) {
@@ -1730,6 +2140,7 @@ function cleanOnSubmit(o: SduiOnSubmit): Record<string, unknown> {
     out['auth'] = o.auth || 'bearer';
   }
   if (o.submitLabelKey) out['submitLabelKey'] = o.submitLabelKey;
+  if (o.cancelLabelKey) out['cancelLabelKey'] = o.cancelLabelKey;
   if (o.failureCheck?.field) out['failureCheck'] = { field: o.failureCheck.field, equals: o.failureCheck.equals ?? '' };
   if (Object.keys(o.bodyMapping ?? {}).length > 0) out['bodyMapping'] = o.bodyMapping;
   if (o.requestTransform?.type) out['requestTransform'] = o.requestTransform;
@@ -1739,15 +2150,18 @@ function cleanOnSubmit(o: SduiOnSubmit): Record<string, unknown> {
     if (o.fileFieldName) out['fileFieldName'] = o.fileFieldName;
   }
   const onSuccess: Record<string, unknown> = {};
+  if (o.onSuccess?.action) onSuccess['action'] = o.onSuccess.action;
+  if (o.onSuccess?.navigateBack) onSuccess['navigateBack'] = true;
+  if (o.onSuccess?.messageKey) onSuccess['messageKey'] = o.onSuccess.messageKey;
+  if (o.onSuccess?.valuePath) onSuccess['valuePath'] = o.onSuccess.valuePath;
+  if (o.onSuccess?.resetToRoute) onSuccess['resetToRoute'] = o.onSuccess.resetToRoute;
+  if (o.onSuccess?.popScreen) onSuccess['popScreen'] = true;
   if (o.onSuccess?.showSuccessScreen) {
     onSuccess['showSuccessScreen'] = o.onSuccess.showSuccessScreen;
-  } else {
-    if (o.onSuccess?.action) onSuccess['action'] = o.onSuccess.action;
-    if (o.onSuccess?.navigateBack) onSuccess['navigateBack'] = true;
-    if (o.onSuccess?.messageKey) onSuccess['messageKey'] = o.onSuccess.messageKey;
-    if (o.onSuccess?.valuePath) onSuccess['valuePath'] = o.onSuccess.valuePath;
+  } else if (o.onSuccess?.showTransitionScreen?.titleKey) {
+    onSuccess['showTransitionScreen'] = o.onSuccess.showTransitionScreen;
   }
-  if (o.onSuccess?.conclusion?.titleKey) onSuccess['conclusion'] = cleanConclusion(o.onSuccess.conclusion);
+  if (o.onSuccess?.navigateSdui?.entity) onSuccess['navigateSdui'] = o.onSuccess.navigateSdui;
   // Fuori dal ramo showSuccessScreen: l'engine lo legge comunque (flow_renderer.dart,
   // `onSubmit['onSuccess']?['completeLogin'] == true`), indipendentemente dal resto.
   if (o.onSuccess?.completeLogin) onSuccess['completeLogin'] = true;

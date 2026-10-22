@@ -115,9 +115,19 @@ export interface SmhFseDashboardTheme {
   icon_radius?: number;
   badge_border_color?: string;
   badge_text_color?: string;
+  badge_background_color?: string;
+  badge_border_width?: number;
+  badge_radius?: number;
+  badge_font_size?: number;
   title_color?: string;
   subtitle_color?: string;
   cta_button_color?: string;
+  cta_button_text_color?: string;
+  cta_button_background_color?: string;
+  cta_button_border_color?: string;
+  cta_button_border_width?: number;
+  cta_button_shadow_visible?: boolean;
+  cta_button_radius?: number;
 }
 
 export interface SmhFseAppBarAction {
@@ -178,7 +188,11 @@ const FSE_THEME_KEYS = [
   'banner_border_color', 'banner_border_width', 'banner_shadow_color', 'banner_shadow_opacity',
   'banner_shadow_blur_radius', 'banner_shadow_spread_radius', 'banner_shadow_offset_y',
   'icon_background_color', 'icon_color', 'icon_radius',
-  'badge_border_color', 'badge_text_color', 'title_color', 'subtitle_color', 'cta_button_color',
+  'badge_border_color', 'badge_text_color', 'badge_background_color', 'badge_border_width',
+  'badge_radius', 'badge_font_size',
+  'title_color', 'subtitle_color',
+  'cta_button_color', 'cta_button_text_color', 'cta_button_background_color', 'cta_button_border_color',
+  'cta_button_border_width', 'cta_button_shadow_visible', 'cta_button_radius',
 ];
 const FSE_APP_BAR_KEYS = [
   'visible', 'background_color', 'height', 'title_text', 'title_text_color',
@@ -235,9 +249,13 @@ export class SmhThemeDataEditorDialog {
     { key: 'icon_color',                labelKey: 'smhThemeData.fseIconColor', hint: '#1F2A44' },
     { key: 'badge_border_color',        labelKey: 'smhThemeData.fseBadgeBorderColor', hint: 'colore primario' },
     { key: 'badge_text_color',          labelKey: 'smhThemeData.fseBadgeTextColor', hint: 'colore primario' },
+    { key: 'badge_background_color',    labelKey: 'smhThemeData.fseBadgeBackgroundColor', hint: 'bordo badge 10% opacità' },
     { key: 'title_color',               labelKey: 'smhThemeData.fseTitleColor', hint: '#111827' },
     { key: 'subtitle_color',            labelKey: 'smhThemeData.fseSubtitleColor', hint: '#6B7280' },
     { key: 'cta_button_color',          labelKey: 'smhThemeData.fseCtaButtonColor', hint: 'colore primario' },
+    { key: 'cta_button_text_color',       labelKey: 'smhThemeData.fseCtaButtonTextColor', hint: '#FFFFFF' },
+    { key: 'cta_button_background_color', labelKey: 'smhThemeData.fseCtaButtonBackgroundColor', hint: 'cta_button_color' },
+    { key: 'cta_button_border_color',     labelKey: 'smhThemeData.fseCtaButtonBorderColor', hint: 'cta_button_color' },
   ];
 
   // Campi sconosciuti (non gestiti dalla UI) preservati al salvataggio.
@@ -460,9 +478,19 @@ export class SmhThemeDataEditorDialog {
         icon_radius:                 [this.data.value?.fse_dashboard?.theme?.icon_radius                 ?? 999],
         badge_border_color:          [this.data.value?.fse_dashboard?.theme?.badge_border_color          ?? ''],
         badge_text_color:            [this.data.value?.fse_dashboard?.theme?.badge_text_color            ?? ''],
+        badge_background_color:      [this.data.value?.fse_dashboard?.theme?.badge_background_color      ?? ''],
+        badge_border_width:          [this.data.value?.fse_dashboard?.theme?.badge_border_width          ?? 1.0],
+        badge_radius:                [this.data.value?.fse_dashboard?.theme?.badge_radius                ?? 20],
+        badge_font_size:             [this.data.value?.fse_dashboard?.theme?.badge_font_size             ?? 10],
         title_color:                  [this.data.value?.fse_dashboard?.theme?.title_color                  ?? ''],
         subtitle_color:              [this.data.value?.fse_dashboard?.theme?.subtitle_color              ?? ''],
         cta_button_color:            [this.data.value?.fse_dashboard?.theme?.cta_button_color            ?? ''],
+        cta_button_text_color:       [this.data.value?.fse_dashboard?.theme?.cta_button_text_color       ?? ''],
+        cta_button_background_color: [this.data.value?.fse_dashboard?.theme?.cta_button_background_color ?? ''],
+        cta_button_border_color:     [this.data.value?.fse_dashboard?.theme?.cta_button_border_color     ?? ''],
+        cta_button_border_width:     [this.data.value?.fse_dashboard?.theme?.cta_button_border_width     ?? 0],
+        cta_button_shadow_visible:   [this.data.value?.fse_dashboard?.theme?.cta_button_shadow_visible    ?? true],
+        cta_button_radius:           [this.data.value?.fse_dashboard?.theme?.cta_button_radius            ?? 20],
       }),
       app_bar: this.fb.nonNullable.group({
         visible:                             [this.data.value?.fse_dashboard?.app_bar?.visible                             ?? true],

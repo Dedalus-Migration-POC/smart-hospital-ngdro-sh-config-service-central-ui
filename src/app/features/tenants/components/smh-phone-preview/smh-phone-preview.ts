@@ -8,7 +8,16 @@ type HomeSection =
   | { type: 'category'; name: string; items: ServiceItem[] }
   | { type: 'widgets'; items: WidgetItem[] };
 
-const RESERVED_HOME_KEYS = new Set(['app_bar', 'search_bar', 'header']);
+// `services_groups` ([{title, ids}]) è il meccanismo di raggruppamento usato SOLO
+// dalla schermata completa "Servizi"/"Altri servizi" della fse dashboard
+// (sh-core FseDashboardRenderUtils.servicesGroups) — la home (sia standard che fse)
+// legge esclusivamente le prime due chiavi di `home.body` (vedi sh-core FseHomeScreen.build:
+// sectionKeys[0]/[1]). Va quindi ignorato qui, altrimenti viene scambiato per una
+// categoria reale e genera card vuote (item = {title, ids}, senza id/svg_icon/subtitle).
+const RESERVED_HOME_KEYS = new Set(['app_bar', 'search_bar', 'header', 'services_groups']);
+
+/** Fattore di scala del mockup telefono rispetto a un device reale (~256px vs ~390dp). */
+const FSE_PREVIEW_FONT_SCALE = 0.6;
 
 /** Logo di default della fse app bar quando `fse_dashboard.app_bar.logos` non è configurato — vedi sh-core `kFseDefaultLogoSvg`. */
 const FSE_DEFAULT_LOGO_SVG = `<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
@@ -76,9 +85,24 @@ export class SmhPhonePreview {
       '--fse-icon-radius':          `${t.icon_radius              ?? 999}px`,
       '--fse-badge-border-color':   t.badge_border_color         ?? primary,
       '--fse-badge-text-color':     t.badge_text_color           ?? primary,
+      '--fse-badge-bg':             t.badge_background_color     ?? `color-mix(in srgb, ${t.badge_border_color ?? primary} 10%, transparent)`,
+      '--fse-badge-border-width':   `${t.badge_border_width      ?? 1}px`,
+      '--fse-badge-radius':         `${t.badge_radius            ?? 20}px`,
+      // Il mockup telefono è renderizzato a ~0.6x rispetto alle dimensioni reali di un device
+      // (il resto del preview usa font hardcoded tarati a questa scala, es. .fse-grid__title a 9.5px
+      // contro i ~16sp reali). Applichiamo lo stesso fattore al valore dp configurato nel tema
+      // (default sh-core 10 → 6px, invariato rispetto al preview pre-esistente) per restare
+      // proporzionato anche quando il tenant configura un badge_font_size più grande.
+      '--fse-badge-font-size':      `${(t.badge_font_size        ?? 10) * FSE_PREVIEW_FONT_SCALE}px`,
       '--fse-title-color':          t.title_color                ?? '#111827',
       '--fse-subtitle-color':       t.subtitle_color              ?? '#6B7280',
       '--fse-cta-button-color':     t.cta_button_color            ?? primary,
+      '--fse-cta-button-text-color':       t.cta_button_text_color       ?? '#FFFFFF',
+      '--fse-cta-button-bg':               t.cta_button_background_color ?? (t.cta_button_color ?? primary),
+      '--fse-cta-button-border-color':     t.cta_button_border_color     ?? (t.cta_button_color ?? primary),
+      '--fse-cta-button-border-width':     `${t.cta_button_border_width  ?? 0}px`,
+      '--fse-cta-button-shadow-opacity':   t.cta_button_shadow_visible   === false ? '0' : '0.3',
+      '--fse-cta-button-radius':           `${t.cta_button_radius        ?? 20}px`,
     };
   });
 

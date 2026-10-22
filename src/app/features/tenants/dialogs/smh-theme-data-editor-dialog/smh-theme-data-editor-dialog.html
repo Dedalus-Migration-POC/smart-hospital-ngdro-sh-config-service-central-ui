@@ -693,6 +693,37 @@
             <mat-label>{{ 'smhThemeData.fseIconRadius' | translate }}</mat-label>
             <input matInput type="number" formControlName="icon_radius" min="0" max="999" />
           </mat-form-field>
+
+          <p class="smh-editor__section-title" style="margin-top: 12px">{{ 'smhThemeData.fseBadgeStyle' | translate }}</p>
+          <div class="smh-editor__inline-row">
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseBadgeBorderWidth' | translate }}</mat-label>
+              <input matInput type="number" formControlName="badge_border_width" min="0" max="10" step="0.5" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseBadgeRadius' | translate }}</mat-label>
+              <input matInput type="number" formControlName="badge_radius" min="0" max="999" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseBadgeFontSize' | translate }}</mat-label>
+              <input matInput type="number" formControlName="badge_font_size" min="4" max="24" />
+            </mat-form-field>
+          </div>
+
+          <p class="smh-editor__section-title" style="margin-top: 12px">{{ 'smhThemeData.fseCtaButtonStyle' | translate }}</p>
+          <div class="smh-editor__inline-row">
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseCtaButtonBorderWidth' | translate }}</mat-label>
+              <input matInput type="number" formControlName="cta_button_border_width" min="0" max="10" step="0.5" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="smh-editor__text-field--sm">
+              <mat-label>{{ 'smhThemeData.fseCtaButtonRadius' | translate }}</mat-label>
+              <input matInput type="number" formControlName="cta_button_radius" min="0" max="999" />
+            </mat-form-field>
+          </div>
+          <mat-slide-toggle formControlName="cta_button_shadow_visible">
+            {{ 'smhThemeData.fseCtaButtonShadowVisible' | translate }}
+          </mat-slide-toggle>
         </div>
 
         <!-- App bar FSE -->

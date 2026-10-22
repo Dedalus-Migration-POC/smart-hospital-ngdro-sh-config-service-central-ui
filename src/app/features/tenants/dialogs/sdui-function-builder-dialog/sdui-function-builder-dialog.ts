@@ -30,13 +30,15 @@ import {
   SduiActionType,
   SduiCallSpec,
   SduiCaptureOptions,
-  SduiConclusion,
+  SduiShowTransitionScreen,
+  SduiOnSuccessNavigateSdui,
   SduiDescriptor,
   SduiField,
   SduiFieldComponent,
   SduiFlattenField,
   SduiFlowStep,
   SduiFilterGroup,
+  SduiFilterOptionsSource,
   SduiKind,
   SduiSection,
   SduiSectionType,
@@ -44,6 +46,7 @@ import {
   SduiSuccessScreenAction,
   SduiRowActionSuccessScreen,
   SduiFlatField,
+  SduiRadioCardTemplateItem,
   SduiDetailAction,
   SduiRowDetail,
   SduiRowDetailSection,
@@ -58,13 +61,15 @@ import {
   createEmptyAction,
   createEmptyCaptureOptions,
   createEmptyCardElement,
-  createEmptyConclusion,
+  createEmptyOnSuccessNavigateSdui,
+  createEmptyShowTransitionScreen,
   createEmptyDataSource,
   createEmptyDescriptor,
   createEmptyField,
   createEmptyFlattenNested,
   createEmptyWrapAsSingleGroup,
   createEmptyGroupByField,
+  createEmptyMapFields,
   createEmptyFlowStep,
   createEmptyOnSubmit,
   createEmptyOptions,
@@ -72,6 +77,7 @@ import {
   createEmptyRowDetailSection,
   createEmptyActionSheetItem,
   createEmptyRowActionSuccessScreen,
+  createEmptyToggleFieldSuccessSheet,
   createEmptySection,
   createEmptySequenceCall,
   descriptorToJson,
@@ -88,7 +94,10 @@ export type SduiActionRef =
   | { kind: 'primary' }
   | { kind: 'menuItem'; si: number; mi: number }
   | { kind: 'actionsSheet'; si: number; ai: number; rsi?: number }
-  | { kind: 'documentDownload'; si: number; rsi: number };
+  | { kind: 'documentDownload'; si: number; rsi: number }
+  | { kind: 'rowDetailTap'; si: number }
+  | { kind: 'field'; si: number; fi: number; prop: 'action' | 'onScan' }
+  | { kind: 'flowField'; si: number; fi: number; prop: 'action' | 'onScan' };
 
 export interface SduiFunctionBuilderDialogData {
   /** JSON esistente (se si sta editando una funzione già pubblicata) o null per una nuova. */
@@ -160,6 +169,14 @@ export class SduiFunctionBuilderDialog {
    * unico valore valido quando l'entry point ha sduiWithoutAuth: true (nessun login, vedi manuale §1). */
   readonly authModes = ['bearer', 'public'];
   readonly httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+  readonly textVariants = ['compact', 'medium', 'standard', 'large'] as const;
+  /** Icone supportate per radioCardList.chips[]/lines[]/titleChips[] (§10 manuale). */
+  readonly radioCardTemplateIcons = ['schedule', 'place', 'apartment', 'calendar'] as const;
+  readonly radioCardTemplateGroups: { key: 'chips' | 'lines' | 'titleChips'; labelKey: string }[] = [
+    { key: 'chips', labelKey: 'sduiWizard.fieldComponents.radioCardChipsLabel' },
+    { key: 'lines', labelKey: 'sduiWizard.fieldComponents.radioCardLinesLabel' },
+    { key: 'titleChips', labelKey: 'sduiWizard.fieldComponents.radioCardTitleChipsLabel' },
+  ];
 
   readonly descriptor = signal<SduiDescriptor>(this.buildInitialDescriptor());
   readonly stepIndex = signal(0);
@@ -297,6 +314,7 @@ export class SduiFunctionBuilderDialog {
   setInitialStateJson(v: string): void { this.update(d => { d.initialStateJson = v; }); }
   toggleConfirmLeaveIfDirty(v: boolean): void { this.update(d => { d.confirmLeaveIfDirty = v; }); }
   toggleShowTechnicalError(v: boolean): void { this.update(d => { d.showTechnicalError = v || undefined; }); }
+  toggleHideGlobalAppBarActions(v: boolean): void { this.update(d => { d.hideGlobalAppBarActions = v || undefined; }); }
   setOnExitConfirmKey(v: string): void { this.update(d => { d.onExit = { confirmKey: v }; }); }
 
   // ------------------------------------------------------------------
@@ -360,6 +378,38 @@ export class SduiFunctionBuilderDialog {
   }
   readonly dataSourceCaptureKinds = ['captureToProfile', 'captureToState'] as const;
 
+  // dataSource.headers (§4 manuale) — header HTTP statici, sovrascrivono quelli di auth omonimi
+  addDataSourceHeaderEntry(): void {
+    this.update(d => {
+      const map = (d.dataSource.headers ??= {});
+      const n = Object.keys(map).length;
+      map[`Header-${n + 1}`] = '';
+    });
+  }
+  renameDataSourceHeaderKey(oldKey: string, newKey: string): void {
+    this.update(d => {
+      const map = d.dataSource.headers;
+      if (!map || !newKey || oldKey === newKey) return;
+      map[newKey] = map[oldKey];
+      delete map[oldKey];
+    });
+  }
+  setDataSourceHeaderValue(key: string, value: string): void {
+    this.update(d => { const map = d.dataSource.headers; if (map) map[key] = value; });
+  }
+  removeDataSourceHeaderEntry(key: string): void {
+    this.update(d => { delete d.dataSource.headers?.[key]; });
+  }
+  dataSourceHeaderKeys(): string[] { return Object.keys(this.descriptor().dataSource.headers ?? {}); }
+
+  // dataSource.basicAuth (§4 manuale) — Authorization: Basic, da usare con auth: "public"
+  toggleDataSourceBasicAuth(has: boolean): void {
+    this.update(d => { d.dataSource.basicAuth = has ? { username: '', password: '' } : undefined; });
+  }
+  setDataSourceBasicAuthProp(key: 'username' | 'password', value: string): void {
+    this.update(d => { if (d.dataSource.basicAuth) d.dataSource.basicAuth[key] = value; });
+  }
+
   // dataSource.defaultDateRange (§4 manuale) — pre-popola fromField/toField nello stato al primo load
   toggleDataSourceDefaultDateRange(enabled: boolean): void {
     this.update(d => {
@@ -387,11 +437,12 @@ export class SduiFunctionBuilderDialog {
   toggleFlattenNested(enabled: boolean): void {
     this.update(d => { d.dataSource.responseTransform = enabled ? createEmptyFlattenNested() : null; });
   }
-  setResponseTransformType(type: 'flattenNested' | 'wrapAsSingleGroup' | 'groupByField'): void {
+  setResponseTransformType(type: 'flattenNested' | 'wrapAsSingleGroup' | 'groupByField' | 'mapFields'): void {
     this.update(d => {
       d.dataSource.responseTransform =
         type === 'wrapAsSingleGroup' ? createEmptyWrapAsSingleGroup() :
         type === 'groupByField' ? createEmptyGroupByField() :
+        type === 'mapFields' ? createEmptyMapFields() :
         createEmptyFlattenNested();
     });
   }
@@ -426,6 +477,61 @@ export class SduiFunctionBuilderDialog {
   wrapStaticFieldKeys(): string[] {
     const rt = this.descriptor().dataSource.responseTransform;
     return rt?.type === 'wrapAsSingleGroup' ? Object.keys(rt.staticItemFields) : [];
+  }
+
+  // wrapAsSingleGroup.itemFields (§4.1.1 manuale) — copia un valore annidato in un campo piatto
+  addWrapItemField(): void {
+    this.update(d => {
+      const rt = d.dataSource.responseTransform;
+      if (rt?.type !== 'wrapAsSingleGroup') return;
+      rt.itemFields ??= {};
+      const n = Object.keys(rt.itemFields).length;
+      rt.itemFields[`campo${n + 1}`] = '';
+    });
+  }
+  renameWrapItemField(oldKey: string, newKey: string): void {
+    this.update(d => {
+      const rt = d.dataSource.responseTransform;
+      if (rt?.type !== 'wrapAsSingleGroup' || !rt.itemFields || !newKey || oldKey === newKey) return;
+      rt.itemFields[newKey] = rt.itemFields[oldKey];
+      delete rt.itemFields[oldKey];
+    });
+  }
+  setWrapItemFieldPath(key: string, path: string): void {
+    this.update(d => { const rt = d.dataSource.responseTransform; if (rt?.type === 'wrapAsSingleGroup' && rt.itemFields) rt.itemFields[key] = path; });
+  }
+  removeWrapItemField(key: string): void {
+    this.update(d => { const rt = d.dataSource.responseTransform; if (rt?.type === 'wrapAsSingleGroup' && rt.itemFields) { delete rt.itemFields[key]; if (Object.keys(rt.itemFields).length === 0) rt.itemFields = undefined; } });
+  }
+  wrapItemFieldKeys(): string[] {
+    const rt = this.descriptor().dataSource.responseTransform;
+    return rt?.type === 'wrapAsSingleGroup' ? Object.keys(rt.itemFields ?? {}) : [];
+  }
+
+  // wrapAsSingleGroup.dateFlags (§4.1.1 manuale) — badge "Scaduta"/"Programmata" in base alla data
+  addWrapDateFlag(): void {
+    this.update(d => {
+      const rt = d.dataSource.responseTransform;
+      if (rt?.type !== 'wrapAsSingleGroup') return;
+      rt.dateFlags ??= [];
+      rt.dateFlags.push({ dateField: '', targetField: '', pastValue: '' });
+    });
+  }
+  setWrapDateFlagProp(index: number, prop: 'dateField' | 'targetField' | 'pastValue' | 'futureValue', value: string): void {
+    this.update(d => {
+      const rt = d.dataSource.responseTransform;
+      if (rt?.type !== 'wrapAsSingleGroup' || !rt.dateFlags?.[index]) return;
+      const flag = rt.dateFlags[index];
+      if (prop === 'futureValue') flag.futureValue = value || undefined;
+      else flag[prop] = value;
+    });
+  }
+  removeWrapDateFlag(index: number): void {
+    this.update(d => { const rt = d.dataSource.responseTransform; if (rt?.type === 'wrapAsSingleGroup') rt.dateFlags?.splice(index, 1); });
+  }
+  wrapDateFlags(): NonNullable<import('./sdui-model').SduiWrapAsSingleGroup['dateFlags']> {
+    const rt = this.descriptor().dataSource.responseTransform;
+    return rt?.type === 'wrapAsSingleGroup' ? (rt.dateFlags ?? []) : [];
   }
 
   setGroupByFieldItemsPath(v: string): void { this.update(d => { if (d.dataSource.responseTransform?.type === 'groupByField') d.dataSource.responseTransform.itemsPath = v; }); }
@@ -515,6 +621,61 @@ export class SduiFunctionBuilderDialog {
     return rt?.type === 'flattenNested' ? Object.keys(rt.fields) : [];
   }
 
+  // mapFields.fields (§4.1 manuale) — stessa sintassi/UI di flattenNested.fields, ma scrive i
+  // campi alla radice della risposta invece che sotto un targetPath annidato.
+  addMapField(): void {
+    this.update(d => {
+      const rt = d.dataSource.responseTransform;
+      if (rt?.type !== 'mapFields') return;
+      const n = Object.keys(rt.fields).length;
+      rt.fields[`campo${n + 1}`] = { path: '' };
+    });
+  }
+  renameMapField(oldKey: string, newKey: string): void {
+    this.update(d => {
+      const rt = d.dataSource.responseTransform;
+      if (rt?.type !== 'mapFields' || !newKey || oldKey === newKey) return;
+      rt.fields[newKey] = rt.fields[oldKey];
+      delete rt.fields[oldKey];
+    });
+  }
+  setMapFieldPath(key: string, path: string): void {
+    this.update(d => { const rt = d.dataSource.responseTransform; if (rt?.type === 'mapFields' && rt.fields[key]) rt.fields[key].path = path; });
+  }
+  setMapFieldFormat(key: string, format: string): void {
+    this.update(d => { const rt = d.dataSource.responseTransform; if (rt?.type === 'mapFields' && rt.fields[key]) rt.fields[key].format = format as never; });
+  }
+  setMapFieldLocale(key: string, locale: string): void {
+    this.update(d => { const rt = d.dataSource.responseTransform; if (rt?.type === 'mapFields' && rt.fields[key]) rt.fields[key].locale = locale; });
+  }
+  setMapFieldTrueValue(key: string, value: string): void {
+    this.update(d => { const rt = d.dataSource.responseTransform; if (rt?.type === 'mapFields' && rt.fields[key]) rt.fields[key].trueValue = value || undefined; });
+  }
+  setMapFieldFalseValue(key: string, value: string): void {
+    this.update(d => { const rt = d.dataSource.responseTransform; if (rt?.type === 'mapFields' && rt.fields[key]) rt.fields[key].falseValue = value || undefined; });
+  }
+  toggleMapFieldPathsMode(key: string, usePaths: boolean): void {
+    this.update(d => {
+      const rt = d.dataSource.responseTransform;
+      if (rt?.type !== 'mapFields' || !rt.fields[key]) return;
+      rt.fields[key].paths = usePaths ? [''] : undefined;
+    });
+  }
+  setMapFieldPaths(key: string, value: string): void {
+    this.update(d => {
+      const rt = d.dataSource.responseTransform;
+      if (rt?.type !== 'mapFields' || !rt.fields[key]) return;
+      rt.fields[key].paths = value.split(',').map(s => s.trim()).filter(Boolean);
+    });
+  }
+  removeMapField(key: string): void {
+    this.update(d => { const rt = d.dataSource.responseTransform; if (rt?.type === 'mapFields') delete rt.fields[key]; });
+  }
+  mapFieldKeys(): string[] {
+    const rt = this.descriptor().dataSource.responseTransform;
+    return rt?.type === 'mapFields' ? Object.keys(rt.fields) : [];
+  }
+
   /** Analizza un JSON di esempio incollato dall'utente e propone gli array annidati trovati. */
   analyzeSampleResponse(): void {
     this.sampleResponseError.set(null);
@@ -581,6 +742,24 @@ export class SduiFunctionBuilderDialog {
     });
   }
 
+  // --- groupedTable.rowAccent / rowAttachment (§4 manuale) ---
+  toggleRowAccent(sectionIndex: number, enabled: boolean): void {
+    this.update(d => {
+      d.sections[sectionIndex].rowAccent = enabled ? { position: 'start', colorFromBadge: false } : undefined;
+    });
+  }
+  setRowAccentProp<K extends keyof NonNullable<SduiSection['rowAccent']>>(sectionIndex: number, key: K, value: NonNullable<SduiSection['rowAccent']>[K]): void {
+    this.update(d => { const ra = d.sections[sectionIndex].rowAccent; if (ra) ra[key] = value; });
+  }
+  toggleRowAttachment(sectionIndex: number, enabled: boolean): void {
+    this.update(d => {
+      d.sections[sectionIndex].rowAttachment = enabled ? { countField: 'documentsCount', icon: 'attach_file' } : undefined;
+    });
+  }
+  setRowAttachmentProp<K extends keyof NonNullable<SduiSection['rowAttachment']>>(sectionIndex: number, key: K, value: NonNullable<SduiSection['rowAttachment']>[K]): void {
+    this.update(d => { const ra = d.sections[sectionIndex].rowAttachment; if (ra) ra[key] = value; });
+  }
+
   // --- filterButton (§3.5 manuale) — bottom sheet filtri per table/groupedTable/cardList ---
   toggleFilterButton(sectionIndex: number, enabled: boolean): void {
     this.update(d => {
@@ -625,22 +804,23 @@ export class SduiFunctionBuilderDialog {
     this.update(d => {
       const g = d.sections[sectionIndex].filterButton?.groups[groupIndex];
       if (!g) return;
+      g.options = g.options ?? [];
       const n = g.options.length;
       g.options.push({ value: `valore${n + 1}` });
     });
   }
   removeFilterOption(sectionIndex: number, groupIndex: number, optionIndex: number): void {
-    this.update(d => { d.sections[sectionIndex].filterButton?.groups[groupIndex]?.options.splice(optionIndex, 1); });
+    this.update(d => { d.sections[sectionIndex].filterButton?.groups[groupIndex]?.options?.splice(optionIndex, 1); });
   }
-  setFilterOptionProp(sectionIndex: number, groupIndex: number, optionIndex: number, key: 'value' | 'labelKey' | 'color', value: string | undefined): void {
+  setFilterOptionProp(sectionIndex: number, groupIndex: number, optionIndex: number, key: 'value' | 'labelKey' | 'color' | 'numberField' | 'numberLabelKey', value: string | undefined): void {
     this.update(d => {
-      const o = d.sections[sectionIndex].filterButton?.groups[groupIndex]?.options[optionIndex];
+      const o = d.sections[sectionIndex].filterButton?.groups[groupIndex]?.options?.[optionIndex];
       if (o) o[key] = value as never;
     });
   }
-  setFilterOptionNumberProp(sectionIndex: number, groupIndex: number, optionIndex: number, key: 'daysAgo' | 'daysForward', value: number | null): void {
+  setFilterOptionNumberProp(sectionIndex: number, groupIndex: number, optionIndex: number, key: 'daysAgo' | 'daysForward' | 'numberDefault', value: number | null): void {
     this.update(d => {
-      const o = d.sections[sectionIndex].filterButton?.groups[groupIndex]?.options[optionIndex];
+      const o = d.sections[sectionIndex].filterButton?.groups[groupIndex]?.options?.[optionIndex];
       if (!o) return;
       if (value === null || Number.isNaN(value)) delete o[key];
       else o[key] = value;
@@ -648,8 +828,65 @@ export class SduiFunctionBuilderDialog {
   }
   setFilterOptionCustom(sectionIndex: number, groupIndex: number, optionIndex: number, checked: boolean): void {
     this.update(d => {
-      const o = d.sections[sectionIndex].filterButton?.groups[groupIndex]?.options[optionIndex];
+      const o = d.sections[sectionIndex].filterButton?.groups[groupIndex]?.options?.[optionIndex];
       if (o) o.custom = checked || undefined;
+    });
+  }
+  toggleFilterGroupOptionsSource(sectionIndex: number, groupIndex: number, enabled: boolean): void {
+    this.update(d => {
+      const g = d.sections[sectionIndex].filterButton?.groups[groupIndex];
+      if (!g) return;
+      g.optionsSource = enabled ? { endpoint: '', auth: 'bearer', itemsField: '' } : undefined;
+      if (enabled) { g.options = undefined; g.field = undefined; }
+    });
+  }
+  setFilterGroupOptionsSourceProp<K extends keyof SduiFilterOptionsSource>(
+    sectionIndex: number, groupIndex: number, key: K, value: SduiFilterOptionsSource[K],
+  ): void {
+    this.update(d => {
+      const os = d.sections[sectionIndex].filterButton?.groups[groupIndex]?.optionsSource;
+      if (os) os[key] = value;
+    });
+  }
+  setFilterGroupOptionsSourceItemsField(sectionIndex: number, groupIndex: number, value: string): void {
+    this.update(d => {
+      const os = d.sections[sectionIndex].filterButton?.groups[groupIndex]?.optionsSource;
+      if (!os) return;
+      os.itemsField = value.includes(',') ? value.split(',').map(v => v.trim()).filter(Boolean) : value;
+    });
+  }
+  filterGroupOptionsSourceItemsFieldText(sectionIndex: number, groupIndex: number): string {
+    const itemsField = this.descriptor().sections[sectionIndex]?.filterButton?.groups[groupIndex]?.optionsSource?.itemsField;
+    return Array.isArray(itemsField) ? itemsField.join(', ') : (itemsField ?? '');
+  }
+  queryParamKeys(sectionIndex: number, groupIndex: number): string[] {
+    return Object.keys(this.descriptor().sections[sectionIndex]?.filterButton?.groups[groupIndex]?.queryParams ?? {});
+  }
+  addQueryParam(sectionIndex: number, groupIndex: number): void {
+    this.update(d => {
+      const g = d.sections[sectionIndex].filterButton?.groups[groupIndex];
+      if (!g) return;
+      g.queryParams = { ...(g.queryParams ?? {}), [`param${Object.keys(g.queryParams ?? {}).length + 1}`]: '' };
+    });
+  }
+  renameQueryParamKey(sectionIndex: number, groupIndex: number, oldKey: string, newKey: string): void {
+    this.update(d => {
+      const g = d.sections[sectionIndex].filterButton?.groups[groupIndex];
+      if (!g?.queryParams || !newKey || oldKey === newKey) return;
+      const entries = Object.entries(g.queryParams).map(([k, v]) => [k === oldKey ? newKey : k, v] as const);
+      g.queryParams = Object.fromEntries(entries);
+    });
+  }
+  setQueryParamValue(sectionIndex: number, groupIndex: number, key: string, value: string): void {
+    this.update(d => {
+      const g = d.sections[sectionIndex].filterButton?.groups[groupIndex];
+      if (g?.queryParams) g.queryParams[key] = value;
+    });
+  }
+  removeQueryParam(sectionIndex: number, groupIndex: number, key: string): void {
+    this.update(d => {
+      const g = d.sections[sectionIndex].filterButton?.groups[groupIndex];
+      if (g?.queryParams) delete g.queryParams[key];
     });
   }
 
@@ -659,6 +896,27 @@ export class SduiFunctionBuilderDialog {
   }
   setRowDetailProp(i: number, key: keyof SduiRowDetail, value: unknown): void {
     this.update(d => { const rd = d.sections[i].rowDetail; if (rd) (rd as unknown as Record<string, unknown>)[key] = value; });
+  }
+  toggleRowDetailTapAction(i: number, enabled: boolean): void {
+    this.update(d => { const rd = d.sections[i].rowDetail; if (rd) rd.tapAction = enabled ? createEmptyAction('navigateSdui') : null; });
+  }
+  addRowDetailChip(i: number): void {
+    this.update(d => {
+      const rd = d.sections[i].rowDetail;
+      if (!rd) return;
+      rd.chips = [...(rd.chips ?? []), { labelKey: '' }];
+    });
+  }
+  setRowDetailChipProp(i: number, ci: number, key: 'labelKey' | 'visibleIf', value: string): void {
+    this.update(d => {
+      const chip = d.sections[i].rowDetail?.chips?.[ci];
+      if (!chip) return;
+      if (key === 'labelKey') chip.labelKey = value;
+      else chip.visibleIf = value || undefined;
+    });
+  }
+  removeRowDetailChip(i: number, ci: number): void {
+    this.update(d => { d.sections[i].rowDetail?.chips?.splice(ci, 1); });
   }
   addRowDetailSection(i: number): void {
     this.update(d => { d.sections[i].rowDetail?.sections.push(createEmptyRowDetailSection()); });
@@ -1014,6 +1272,37 @@ export class SduiFunctionBuilderDialog {
     return Object.keys(fields ?? {});
   }
 
+  // qrScanner.extract — mappa chiaveStato → regola (modificatore inline tipo "part:/:1"; le
+  // regole oggetto {regex,group} eventualmente già presenti nell'entity sono preservate ma non
+  // editabili graficamente, solo tramite valore stringa qui).
+  extractKeys(extract: Record<string, string | { regex: string; group: number }> | undefined): string[] {
+    return Object.keys(extract ?? {});
+  }
+  addExtractEntry(extract: Record<string, string | { regex: string; group: number }> | undefined): Record<string, string | { regex: string; group: number }> {
+    const next = { ...(extract ?? {}) };
+    const n = Object.keys(next).length;
+    next[`campo${n + 1}`] = '';
+    return next;
+  }
+  renameExtractKey(extract: Record<string, string | { regex: string; group: number }> | undefined, oldKey: string, newKey: string): Record<string, string | { regex: string; group: number }> {
+    const next = { ...(extract ?? {}) };
+    if (!newKey || oldKey === newKey || next[oldKey] === undefined) return next;
+    next[newKey] = next[oldKey];
+    delete next[oldKey];
+    return next;
+  }
+  setExtractValue(extract: Record<string, string | { regex: string; group: number }> | undefined, key: string, value: string): Record<string, string | { regex: string; group: number }> {
+    return { ...(extract ?? {}), [key]: value };
+  }
+  removeExtractEntry(extract: Record<string, string | { regex: string; group: number }> | undefined, key: string): Record<string, string | { regex: string; group: number }> {
+    const next = { ...(extract ?? {}) };
+    delete next[key];
+    return next;
+  }
+  extractValueAsString(value: string | { regex: string; group: number } | undefined): string {
+    return typeof value === 'string' ? value : '';
+  }
+
   addStaticOptionValue(sectionIndex: number, fieldIndex: number): void {
     this.update(d => {
       const f = d.sections[sectionIndex].fields?.[fieldIndex];
@@ -1030,10 +1319,16 @@ export class SduiFunctionBuilderDialog {
     });
   }
 
-  setMenuItemProp(sectionIndex: number, itemIndex: number, key: 'icon' | 'labelKey', value: string): void {
+  setMenuItemProp(sectionIndex: number, itemIndex: number, key: 'icon' | 'labelKey' | 'descriptionKey' | 'svg_icon' | 'badge' | 'visibleIf' | 'trailingIcon', value: string | undefined): void {
     this.update(d => {
       const item = d.sections[sectionIndex].items?.[itemIndex];
       if (item) (item as unknown as Record<string, unknown>)[key] = value;
+    });
+  }
+  setMenuItemIconBackground(sectionIndex: number, itemIndex: number, value: boolean | undefined): void {
+    this.update(d => {
+      const item = d.sections[sectionIndex].items?.[itemIndex];
+      if (item) item.iconBackground = value;
     });
   }
   setColumnProp(sectionIndex: number, colIndex: number, key: 'key' | 'labelKey' | 'sortable', value: string | boolean): void {
@@ -1094,11 +1389,27 @@ export class SduiFunctionBuilderDialog {
   setFlatFieldProp(list: SduiFlatField[] | undefined, index: number, key: 'labelKey' | 'field', value: string): SduiFlatField[] {
     return (list ?? []).map((f, i) => (i === index ? { ...f, [key]: value } : f));
   }
-  setDetailActionProp(detailAction: SduiDetailAction | undefined, key: 'linkKey' | 'subtitleField' | 'badgeField' | 'officesField' | 'officeTitleKey', value: string): SduiDetailAction {
+  setDetailActionProp(detailAction: SduiDetailAction | undefined, key: 'linkKey' | 'subtitleField' | 'badgeField' | 'officesField' | 'officeTitleKey' | 'titleVariant' | 'subtitleVariant' | 'officeTitleVariant', value: string): SduiDetailAction {
     return { ...(detailAction ?? { linkKey: '' }), [key]: value };
   }
   setDetailActionFlatFields(detailAction: SduiDetailAction | undefined, key: 'flatFields' | 'officeFields', list: SduiFlatField[]): SduiDetailAction {
     return { ...(detailAction ?? { linkKey: '' }), [key]: list };
+  }
+
+  // radioCardList: chips[]/lines[]/titleChips[] — liste di template {template, icon?} (§10 manuale).
+  addRadioCardTemplateItem(list: SduiRadioCardTemplateItem[] | undefined): SduiRadioCardTemplateItem[] {
+    return [...(list ?? []), { template: '' }];
+  }
+  removeRadioCardTemplateItem(list: SduiRadioCardTemplateItem[] | undefined, index: number): SduiRadioCardTemplateItem[] {
+    return (list ?? []).filter((_, i) => i !== index);
+  }
+  setRadioCardTemplateItemProp(list: SduiRadioCardTemplateItem[] | undefined, index: number, key: 'template' | 'icon', value: string): SduiRadioCardTemplateItem[] {
+    return (list ?? []).map((it, i) => (i === index ? { ...it, [key]: key === 'icon' && !value ? undefined : value } : it));
+  }
+
+  // qrScanner.scanFrame — toggle + shape/size.
+  setScanFrameProp(scanFrame: { shape?: 'square' | 'rect' | 'none'; size?: number } | undefined, key: 'shape' | 'size', value: unknown): { shape?: 'square' | 'rect' | 'none'; size?: number } {
+    return { ...(scanFrame ?? {}), [key]: value };
   }
 
   // ------------------------------------------------------------------
@@ -1108,7 +1419,7 @@ export class SduiFunctionBuilderDialog {
   toggleHasOnSubmit(has: boolean): void {
     this.update(d => { d.onSubmit = has ? createEmptyOnSubmit() : null; });
   }
-  setOnSubmitProp(key: 'method' | 'endpoint' | 'auth' | 'submitLabelKey', value: string): void {
+  setOnSubmitProp(key: 'method' | 'endpoint' | 'auth' | 'submitLabelKey' | 'cancelLabelKey', value: string): void {
     this.update(d => { if (d.onSubmit) d.onSubmit[key] = value; });
   }
   addBodyMappingEntry(): void {
@@ -1133,20 +1444,29 @@ export class SduiFunctionBuilderDialog {
   }
   bodyMappingKeys(): string[] { return Object.keys(this.descriptor().onSubmit?.bodyMapping ?? {}); }
 
-  // onSubmit.requestTransform (unflattenNested, §4.1/§5 manuale) — applicato al body dopo bodyMapping
-  toggleOnSubmitRequestTransform(enabled: boolean): void {
+  // onSubmit.requestTransform (unflattenNested/convertDates/convertTypes/chain, §4.1/§5 manuale)
+  // — applicato al body dopo bodyMapping, un solo tipo alla volta (eccetto "chain", che li combina
+  // ma non è editabile a blocchi dal wizard: solo preservato come JSON grezzo, vedi SduiOnSubmit).
+  setRequestTransformType(type: 'none' | 'unflattenNested' | 'convertDates' | 'convertTypes'): void {
     this.update(d => {
       if (!d.onSubmit) return;
-      d.onSubmit.requestTransform = enabled ? { type: 'unflattenNested', itemsPath: '', targetPath: '', fields: {} } : null;
+      if (type === 'none') { d.onSubmit.requestTransform = null; return; }
+      if (type === 'unflattenNested') d.onSubmit.requestTransform = { type, itemsPath: '', targetPath: '', fields: {} };
+      else if (type === 'convertDates') d.onSubmit.requestTransform = { type, fields: [] };
+      else d.onSubmit.requestTransform = { type, fields: {} };
     });
   }
+  unflattenRequestTransform(): { type: 'unflattenNested'; itemsPath: string; targetPath: string; fields: Record<string, string> } | undefined {
+    const rt = this.descriptor().onSubmit?.requestTransform;
+    return rt?.type === 'unflattenNested' ? rt : undefined;
+  }
   setRequestTransformProp(key: 'itemsPath' | 'targetPath', value: string): void {
-    this.update(d => { if (d.onSubmit?.requestTransform) d.onSubmit.requestTransform[key] = value; });
+    this.update(d => { const rt = d.onSubmit?.requestTransform; if (rt?.type === 'unflattenNested') rt[key] = value; });
   }
   addRequestTransformFieldEntry(): void {
     this.update(d => {
       const rt = d.onSubmit?.requestTransform;
-      if (!rt) return;
+      if (rt?.type !== 'unflattenNested') return;
       const n = Object.keys(rt.fields).length;
       rt.fields[`campo${n + 1}`] = '';
     });
@@ -1154,20 +1474,58 @@ export class SduiFunctionBuilderDialog {
   renameRequestTransformFieldKey(oldKey: string, newKey: string): void {
     this.update(d => {
       const rt = d.onSubmit?.requestTransform;
-      if (!rt || !newKey || oldKey === newKey) return;
+      if (rt?.type !== 'unflattenNested' || !newKey || oldKey === newKey) return;
       rt.fields[newKey] = rt.fields[oldKey];
       delete rt.fields[oldKey];
     });
   }
   setRequestTransformFieldValue(key: string, value: string): void {
-    this.update(d => { const rt = d.onSubmit?.requestTransform; if (rt) rt.fields[key] = value; });
+    this.update(d => { const rt = d.onSubmit?.requestTransform; if (rt?.type === 'unflattenNested') rt.fields[key] = value; });
   }
   removeRequestTransformFieldEntry(key: string): void {
-    this.update(d => { const rt = d.onSubmit?.requestTransform; if (rt) delete rt.fields[key]; });
+    this.update(d => { const rt = d.onSubmit?.requestTransform; if (rt?.type === 'unflattenNested') delete rt.fields[key]; });
   }
   requestTransformFieldKeys(): string[] {
-    return Object.keys(this.descriptor().onSubmit?.requestTransform?.fields ?? {});
+    const rt = this.descriptor().onSubmit?.requestTransform;
+    return rt?.type === 'unflattenNested' ? Object.keys(rt.fields) : [];
   }
+  convertDatesRequestTransformFields(): string {
+    const rt = this.descriptor().onSubmit?.requestTransform;
+    return rt?.type === 'convertDates' ? rt.fields.join(', ') : '';
+  }
+  setConvertDatesRequestTransformFields(csv: string): void {
+    this.update(d => {
+      const rt = d.onSubmit?.requestTransform;
+      if (rt?.type === 'convertDates') rt.fields = csv.split(',').map(s => s.trim()).filter(Boolean);
+    });
+  }
+  convertTypesRequestTransformFieldKeys(): string[] {
+    const rt = this.descriptor().onSubmit?.requestTransform;
+    return rt?.type === 'convertTypes' ? Object.keys(rt.fields) : [];
+  }
+  addConvertTypesRequestTransformField(): void {
+    this.update(d => {
+      const rt = d.onSubmit?.requestTransform;
+      if (rt?.type !== 'convertTypes') return;
+      const n = Object.keys(rt.fields).length;
+      rt.fields[`campo${n + 1}`] = 'number';
+    });
+  }
+  renameConvertTypesRequestTransformFieldKey(oldKey: string, newKey: string): void {
+    this.update(d => {
+      const rt = d.onSubmit?.requestTransform;
+      if (rt?.type !== 'convertTypes' || !newKey || oldKey === newKey) return;
+      rt.fields[newKey] = rt.fields[oldKey];
+      delete rt.fields[oldKey];
+    });
+  }
+  setConvertTypesRequestTransformFieldValue(key: string, value: 'number' | 'boolean'): void {
+    this.update(d => { const rt = d.onSubmit?.requestTransform; if (rt?.type === 'convertTypes') rt.fields[key] = value; });
+  }
+  removeConvertTypesRequestTransformFieldEntry(key: string): void {
+    this.update(d => { const rt = d.onSubmit?.requestTransform; if (rt?.type === 'convertTypes') delete rt.fields[key]; });
+  }
+
 
   // onSubmit.multipart (§5.0 manuale) — upload multipart/form-data alternativo al body JSON
   toggleOnSubmitMultipart(enabled: boolean): void {
@@ -1186,6 +1544,54 @@ export class SduiFunctionBuilderDialog {
   }
   setOnSuccessMessageKey(v: string): void { this.update(d => { if (d.onSubmit) d.onSubmit.onSuccess.messageKey = v; }); }
   setOnErrorMessageKey(v: string): void { this.update(d => { if (d.onSubmit) d.onSubmit.onError.messageKey = v; }); }
+
+  // navigateSdui/showTransitionScreen/resetToRoute/popScreen per l'onSubmit a livello screen (non flow step).
+  toggleOnSuccessNavigateSdui(enabled: boolean): void {
+    this.update(d => { if (d.onSubmit) d.onSubmit.onSuccess.navigateSdui = enabled ? createEmptyOnSuccessNavigateSdui() : null; });
+  }
+  setOnSuccessNavigateSduiEntity(value: string): void {
+    this.update(d => { const n = d.onSubmit?.onSuccess.navigateSdui; if (n) n.entity = value; });
+  }
+  onSuccessNavigateSduiInitialStateKeys(): string[] {
+    return Object.keys(this.descriptor().onSubmit?.onSuccess.navigateSdui?.initialState ?? {});
+  }
+  addOnSuccessNavigateSduiInitialState(): void {
+    this.update(d => {
+      const n = d.onSubmit?.onSuccess.navigateSdui;
+      if (!n) return;
+      const count = Object.keys(n.initialState).length;
+      n.initialState[`campo${count + 1}`] = '$.campo';
+    });
+  }
+  renameOnSuccessNavigateSduiInitialStateKey(oldKey: string, newKey: string): void {
+    this.update(d => {
+      const n = d.onSubmit?.onSuccess.navigateSdui;
+      if (!n || !newKey || oldKey === newKey) return;
+      n.initialState[newKey] = n.initialState[oldKey];
+      delete n.initialState[oldKey];
+    });
+  }
+  setOnSuccessNavigateSduiInitialStateValue(key: string, value: string): void {
+    this.update(d => { const n = d.onSubmit?.onSuccess.navigateSdui; if (n) n.initialState[key] = value; });
+  }
+  removeOnSuccessNavigateSduiInitialStateEntry(key: string): void {
+    this.update(d => { const n = d.onSubmit?.onSuccess.navigateSdui; if (n) delete n.initialState[key]; });
+  }
+  toggleOnSuccessShowTransitionScreen(enabled: boolean): void {
+    this.update(d => { if (d.onSubmit) d.onSubmit.onSuccess.showTransitionScreen = enabled ? createEmptyShowTransitionScreen() : null; });
+  }
+  setOnSuccessShowTransitionScreenProp(key: keyof SduiShowTransitionScreen, value: unknown): void {
+    this.update(d => {
+      const t = d.onSubmit?.onSuccess.showTransitionScreen;
+      if (t) (t as unknown as Record<string, unknown>)[key] = value;
+    });
+  }
+  setOnSubmitResetToRoute(value: string): void {
+    this.update(d => { if (d.onSubmit) d.onSubmit.onSuccess.resetToRoute = value || undefined; });
+  }
+  setOnSubmitPopScreen(value: boolean): void {
+    this.update(d => { if (d.onSubmit) d.onSubmit.onSuccess.popScreen = value || undefined; });
+  }
 
   /** §17.5 — vedi SduiOnSubmit.onSuccess.completeLogin. */
   toggleCompleteLogin(v: boolean): void {
@@ -1239,6 +1645,9 @@ export class SduiFunctionBuilderDialog {
   menuItemActionRef(si: number, mi: number): SduiActionRef { return { kind: 'menuItem', si, mi }; }
   actionSheetItemActionRef(si: number, ai: number, rsi?: number): SduiActionRef { return { kind: 'actionsSheet', si, ai, rsi }; }
   documentDownloadActionRef(si: number, rsi: number): SduiActionRef { return { kind: 'documentDownload', si, rsi }; }
+  rowDetailTapActionRef(si: number): SduiActionRef { return { kind: 'rowDetailTap', si }; }
+  fieldActionRef(si: number, fi: number, prop: 'action' | 'onScan'): SduiActionRef { return { kind: 'field', si, fi, prop }; }
+  flowFieldActionRef(si: number, fi: number, prop: 'action' | 'onScan'): SduiActionRef { return { kind: 'flowField', si, fi, prop }; }
 
   private actionAt(d: SduiDescriptor, ref: SduiActionRef): SduiAction | null | undefined {
     switch (ref.kind) {
@@ -1246,6 +1655,9 @@ export class SduiFunctionBuilderDialog {
       case 'menuItem': return d.sections[ref.si]?.items?.[ref.mi]?.action;
       case 'actionsSheet': return this.actionsSheetTarget(d, ref.si, ref.rsi)?.actionsSheet?.[ref.ai]?.action;
       case 'documentDownload': return d.sections[ref.si]?.rowDetail?.sections[ref.rsi]?.action;
+      case 'rowDetailTap': return d.sections[ref.si]?.rowDetail?.tapAction;
+      case 'field': return d.sections[ref.si]?.fields?.[ref.fi]?.[ref.prop];
+      case 'flowField': return d.steps[ref.si]?.fields?.[ref.fi]?.[ref.prop];
     }
   }
   private setActionAt(d: SduiDescriptor, ref: SduiActionRef, action: SduiAction): void {
@@ -1263,6 +1675,21 @@ export class SduiFunctionBuilderDialog {
       case 'documentDownload': {
         const rs = d.sections[ref.si]?.rowDetail?.sections[ref.rsi];
         if (rs) rs.action = action;
+        return;
+      }
+      case 'rowDetailTap': {
+        const rd = d.sections[ref.si]?.rowDetail;
+        if (rd) rd.tapAction = action;
+        return;
+      }
+      case 'field': {
+        const field = d.sections[ref.si]?.fields?.[ref.fi];
+        if (field) field[ref.prop] = action;
+        return;
+      }
+      case 'flowField': {
+        const field = d.steps[ref.si]?.fields?.[ref.fi];
+        if (field) field[ref.prop] = action;
         return;
       }
     }
@@ -1329,7 +1756,7 @@ export class SduiFunctionBuilderDialog {
   }
 
   // onSuccess (confirmAndCall)
-  setActionOnSuccessProp(ref: SduiActionRef, key: 'messageKey' | 'refreshDataSource', value: unknown): void {
+  setActionOnSuccessProp(ref: SduiActionRef, key: 'messageKey' | 'refreshDataSource' | 'popScreen', value: unknown): void {
     this.update(d => {
       const a = this.actionAt(d, ref);
       if (!a) return;
@@ -1401,6 +1828,80 @@ export class SduiFunctionBuilderDialog {
     });
   }
 
+  // toggleField — confirmStyle "sheet" + successSheet (§6 manuale)
+  setActionConfirmStyle(ref: SduiActionRef, value: '' | 'sheet'): void {
+    this.update(d => {
+      const a = this.actionAt(d, ref);
+      if (a) a.confirmStyle = value === 'sheet' ? 'sheet' : undefined;
+    });
+  }
+  toggleActionSuccessSheet(ref: SduiActionRef, has: boolean): void {
+    this.update(d => {
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      a.successSheet = has ? createEmptyToggleFieldSuccessSheet() : null;
+    });
+  }
+  setActionSuccessSheetProp(
+    ref: SduiActionRef,
+    key: keyof import('./sdui-model').SduiToggleFieldSuccessSheet,
+    value: string,
+  ): void {
+    this.update(d => {
+      const sheet = this.actionAt(d, ref)?.successSheet;
+      if (sheet) (sheet as unknown as Record<string, string>)[key] = value;
+    });
+  }
+
+  // addToCalendar (§6 manuale)
+  actionLocationText(ref: SduiActionRef): string {
+    const loc = this.actionAt(this.descriptor(), ref)?.location;
+    if (!loc) return '';
+    return Array.isArray(loc) ? loc.join(', ') : loc;
+  }
+  setActionLocationText(ref: SduiActionRef, text: string): void {
+    this.update(d => {
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      const parts = text.split(',').map(p => p.trim()).filter(Boolean);
+      a.location = parts.length === 0 ? undefined : parts.length === 1 ? parts[0] : parts;
+    });
+  }
+  actionDescriptionText(ref: SduiActionRef): string {
+    const desc = this.actionAt(this.descriptor(), ref)?.description;
+    if (!desc?.length) return '';
+    return desc.map(line => (typeof line === 'string' ? line : JSON.stringify(line))).join('\n');
+  }
+  setActionDescriptionText(ref: SduiActionRef, text: string): void {
+    this.update(d => {
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      a.description = lines.length === 0 ? undefined : lines.map(line => {
+        if (line.startsWith('{')) {
+          try { return JSON.parse(line) as { labelKey: string; value: string }; } catch { /* non-JSON line, keep as string */ }
+        }
+        return line;
+      });
+    });
+  }
+
+  // analytics (§6 manuale) — generico su qualunque tipo di azione
+  toggleActionAnalytics(ref: SduiActionRef, has: boolean): void {
+    this.update(d => {
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      a.analytics = has ? {} : undefined;
+    });
+  }
+  setActionAnalyticsProp(ref: SduiActionRef, key: 'category' | 'event' | 'name', value: string): void {
+    this.update(d => {
+      const a = this.actionAt(d, ref);
+      if (!a) return;
+      a.analytics = { ...(a.analytics ?? {}), [key]: value || undefined };
+    });
+  }
+
   // ------------------------------------------------------------------
   // Flow — step editor
   // ------------------------------------------------------------------
@@ -1469,7 +1970,7 @@ export class SduiFunctionBuilderDialog {
       if (opt) opt[key] = value;
     });
   }
-  setFlowStepOnSubmitProp(stepIndex: number, key: 'method' | 'endpoint' | 'auth' | 'submitLabelKey', value: string): void {
+  setFlowStepOnSubmitProp(stepIndex: number, key: 'method' | 'endpoint' | 'auth' | 'submitLabelKey' | 'cancelLabelKey', value: string): void {
     this.update(d => { const os = d.steps[stepIndex].onSubmit; if (os) os[key] = value; });
   }
   /** onSubmit.failureCheck (§5.2.1 manuale) — solo per flow step: la risposta HTTP 200 viene
@@ -1606,75 +2107,57 @@ export class SduiFunctionBuilderDialog {
     });
   }
 
-  toggleConclusion(stepIndex: number, enabled: boolean): void {
+  toggleNavigateSdui(stepIndex: number, enabled: boolean): void {
     this.update(d => {
       const os = d.steps[stepIndex].onSubmit;
-      if (os) os.onSuccess.conclusion = enabled ? createEmptyConclusion() : null;
+      if (os) os.onSuccess.navigateSdui = enabled ? createEmptyOnSuccessNavigateSdui() : null;
     });
   }
-  setConclusionProp(stepIndex: number, key: keyof SduiConclusion, value: unknown): void {
+  setNavigateSduiEntity(stepIndex: number, value: string): void {
+    this.update(d => { const n = d.steps[stepIndex].onSubmit?.onSuccess.navigateSdui; if (n) n.entity = value; });
+  }
+  navigateSduiInitialStateKeys(stepIndex: number): string[] {
+    return Object.keys(this.descriptor().steps[stepIndex]?.onSubmit?.onSuccess.navigateSdui?.initialState ?? {});
+  }
+  addNavigateSduiInitialState(stepIndex: number): void {
     this.update(d => {
-      const c = d.steps[stepIndex].onSubmit?.onSuccess.conclusion;
-      if (c) (c as unknown as Record<string, unknown>)[key] = value;
+      const n = d.steps[stepIndex].onSubmit?.onSuccess.navigateSdui;
+      if (!n) return;
+      const count = Object.keys(n.initialState).length;
+      n.initialState[`campo${count + 1}`] = '$.campo';
     });
   }
-  togglePayAction(stepIndex: number, enabled: boolean): void {
-    this.update(d => { const c = d.steps[stepIndex].onSubmit?.onSuccess.conclusion; if (c) c.payAction = enabled ? { url: '' } : null; });
-  }
-  setPayActionUrl(stepIndex: number, value: string): void {
-    this.update(d => { const p = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.payAction; if (p) p.url = value; });
-  }
-  setPayActionLabelKey(stepIndex: number, value: string): void {
-    this.update(d => { const p = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.payAction; if (p) p.labelKey = value; });
-  }
-  toggleDownloadAction(stepIndex: number, enabled: boolean): void {
+  renameNavigateSduiInitialStateKey(stepIndex: number, oldKey: string, newKey: string): void {
     this.update(d => {
-      const c = d.steps[stepIndex].onSubmit?.onSuccess.conclusion;
-      if (c) c.downloadAction = enabled ? { endpoint: '', auth: 'bearer', fileName: '' } : null;
+      const n = d.steps[stepIndex].onSubmit?.onSuccess.navigateSdui;
+      if (!n || !newKey || oldKey === newKey) return;
+      n.initialState[newKey] = n.initialState[oldKey];
+      delete n.initialState[oldKey];
     });
   }
-  setDownloadActionProp(stepIndex: number, key: 'endpoint' | 'auth' | 'fileName' | 'labelKey', value: string): void {
+  setNavigateSduiInitialStateValue(stepIndex: number, key: string, value: string): void {
+    this.update(d => { const n = d.steps[stepIndex].onSubmit?.onSuccess.navigateSdui; if (n) n.initialState[key] = value; });
+  }
+  removeNavigateSduiInitialStateEntry(stepIndex: number, key: string): void {
+    this.update(d => { const n = d.steps[stepIndex].onSubmit?.onSuccess.navigateSdui; if (n) delete n.initialState[key]; });
+  }
+  toggleShowTransitionScreen(stepIndex: number, enabled: boolean): void {
     this.update(d => {
-      const da = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.downloadAction;
-      if (da) (da as unknown as Record<string, unknown>)[key] = value;
+      const os = d.steps[stepIndex].onSubmit;
+      if (os) os.onSuccess.showTransitionScreen = enabled ? createEmptyShowTransitionScreen() : null;
     });
   }
-  toggleCancelAction(stepIndex: number, enabled: boolean): void {
+  setShowTransitionScreenProp(stepIndex: number, key: keyof SduiShowTransitionScreen, value: unknown): void {
     this.update(d => {
-      const c = d.steps[stepIndex].onSubmit?.onSuccess.conclusion;
-      if (c) c.cancelAction = enabled ? { endpoint: '', method: 'PUT', auth: 'bearer', bodyMapping: {}, confirmTitleKey: '', confirmMessageKey: '' } : null;
+      const t = d.steps[stepIndex].onSubmit?.onSuccess.showTransitionScreen;
+      if (t) (t as unknown as Record<string, unknown>)[key] = value;
     });
   }
-  setCancelActionProp(stepIndex: number, key: 'endpoint' | 'method' | 'auth' | 'confirmTitleKey' | 'confirmMessageKey' | 'labelKey', value: string): void {
-    this.update(d => {
-      const ca = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.cancelAction;
-      if (ca) (ca as unknown as Record<string, unknown>)[key] = value;
-    });
+  setOnSuccessResetToRoute(stepIndex: number, value: string): void {
+    this.update(d => { const os = d.steps[stepIndex].onSubmit; if (os) os.onSuccess.resetToRoute = value || undefined; });
   }
-  cancelActionBodyMappingKeys(stepIndex: number): string[] {
-    return Object.keys(this.descriptor().steps[stepIndex]?.onSubmit?.onSuccess.conclusion?.cancelAction?.bodyMapping ?? {});
-  }
-  addCancelActionBodyMapping(stepIndex: number): void {
-    this.update(d => {
-      const ca = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.cancelAction;
-      if (!ca) return;
-      const n = Object.keys(ca.bodyMapping).length;
-      ca.bodyMapping[`campo${n + 1}`] = '@.patientId';
-    });
-  }
-  renameCancelActionBodyMappingKey(stepIndex: number, oldKey: string, newKey: string): void {
-    this.update(d => {
-      const ca = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.cancelAction;
-      if (!ca || !newKey || oldKey === newKey) return;
-      ca.bodyMapping[newKey] = ca.bodyMapping[oldKey];
-      delete ca.bodyMapping[oldKey];
-    });
-  }
-  setCancelActionBodyMappingValue(stepIndex: number, key: string, value: string): void {
-    this.update(d => { const ca = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.cancelAction; if (ca) ca.bodyMapping[key] = value; });
-  }
-  removeCancelActionBodyMappingEntry(stepIndex: number, key: string): void {
-    this.update(d => { const ca = d.steps[stepIndex].onSubmit?.onSuccess.conclusion?.cancelAction; if (ca) delete ca.bodyMapping[key]; });
+  setOnSuccessPopScreen(stepIndex: number, value: boolean): void {
+    this.update(d => { const os = d.steps[stepIndex].onSubmit; if (os) os.onSuccess.popScreen = value || undefined; });
   }
 
 
@@ -1882,6 +2365,7 @@ function jsonToDescriptor(json: Record<string, unknown>, fallbackEntityName: str
   d.flowId = (json['flowId'] as string) ?? (kind === 'flow' ? fallbackEntityName : '');
   d.titleKey = (json['titleKey'] as string) ?? '';
   d.subtitleKey = json['subtitleKey'] as string | undefined;
+  d.hideGlobalAppBarActions = Boolean(json['hideGlobalAppBarActions']);
   d.initialStateJson = json['initialState'] ? JSON.stringify(json['initialState'], null, 2) : '{}';
   d.confirmLeaveIfDirty = Boolean(json['confirmLeaveIfDirty']);
   d.showTechnicalError = Boolean(json['showTechnicalError']);
@@ -2025,6 +2509,19 @@ function fieldFromJson(f: Record<string, unknown>): SduiField {
       ? (primaryAction['sequence'] as Record<string, unknown>[]).map(sequenceCallFromJson)
       : undefined;
   }
+  // filePicker: la chiave JSON grezza è 'style' ("attachments"), rinominata filePickerStyle
+  // nel model per non collidere con lo 'style' di azioni/successSheet (filled/outline/destructive).
+  if (f['component'] === 'filePicker' && f['style'] === 'attachments') {
+    field.filePickerStyle = 'attachments';
+  }
+  // actionButton/qrScanner: action/onScan sono SduiAction annidate (stesso editor di menu/
+  // actionsSheet), vanno riparsate con actionFromJson invece dello spread grezzo di Object.assign.
+  if (f['component'] === 'actionButton') {
+    field.action = f['action'] ? actionFromJson(f['action'] as Record<string, unknown>) : createEmptyAction('reload');
+  }
+  if (f['component'] === 'qrScanner') {
+    field.onScan = f['onScan'] ? actionFromJson(f['onScan'] as Record<string, unknown>) : createEmptyAction('reload');
+  }
   return field;
 }
 
@@ -2035,7 +2532,12 @@ function actionFromJson(a: Record<string, unknown>): SduiAction {
 function onSubmitFromJson(o: Record<string, unknown>): ReturnType<typeof createEmptyOnSubmit> {
   const base = createEmptyOnSubmit();
   const onSuccessRaw = (o['onSuccess'] as Record<string, unknown>) ?? {};
-  const conclusionRaw = onSuccessRaw['conclusion'] as Record<string, unknown> | undefined;
+  // `conclusion` (schermata nativa di flow) è stata rimossa dal motore (sh-core f18190e):
+  // un'entity storica che la contenesse ancora viene letta ignorandola silenziosamente
+  // (non fa più nulla lato engine), senza tentare un fallback automatico su `navigateSdui`
+  // perché richiederebbe un'entity di destinazione che il wizard non può inventare da solo.
+  const navigateSduiRaw = onSuccessRaw['navigateSdui'] as Record<string, unknown> | undefined;
+  const showTransitionScreenRaw = onSuccessRaw['showTransitionScreen'] as Record<string, unknown> | undefined;
   return {
     ...base,
     ...(o as object),
@@ -2044,7 +2546,12 @@ function onSubmitFromJson(o: Record<string, unknown>): ReturnType<typeof createE
     onSuccess: {
       ...base.onSuccess,
       ...onSuccessRaw,
-      conclusion: conclusionRaw ? ({ ...createEmptyConclusion(), ...conclusionRaw } as SduiConclusion) : null,
+      navigateSdui: navigateSduiRaw
+        ? ({ ...createEmptyOnSuccessNavigateSdui(), ...navigateSduiRaw, initialState: (navigateSduiRaw['initialState'] as Record<string, string>) ?? {} } as SduiOnSuccessNavigateSdui)
+        : null,
+      showTransitionScreen: showTransitionScreenRaw
+        ? ({ ...createEmptyShowTransitionScreen(), ...showTransitionScreenRaw } as SduiShowTransitionScreen)
+        : null,
     },
     onError: { ...base.onError, ...(o['onError'] as object ?? {}) },
     requestTransform: (o['requestTransform'] as never) ?? null,

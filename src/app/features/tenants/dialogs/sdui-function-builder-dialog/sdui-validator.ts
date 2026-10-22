@@ -54,6 +54,9 @@ function validateScreen(d: SduiDescriptor, push: (s: SduiIssue['severity'], p: s
     if (d.dataSource.method && d.dataSource.method !== 'GET' && Object.keys(d.dataSource.bodyMapping ?? {}).length === 0) {
       push('warning', 'dataSource', `method "${d.dataSource.method}" senza bodyMapping/body: verrà inviato un body vuoto {}.`);
     }
+    if (d.dataSource.basicAuth && d.dataSource.auth !== 'public') {
+      push('warning', 'dataSource.basicAuth', 'basicAuth andrebbe usato con auth "public", altrimenti l\'header Authorization Basic verrà sovrascritto dall\'auth bearer.');
+    }
     const rt = d.dataSource.responseTransform;
     if (rt?.type === 'flattenNested') {
       if (!rt.arrayPath) push('error', 'dataSource.responseTransform', 'arrayPath obbligatorio per flattenNested.');
@@ -62,6 +65,12 @@ function validateScreen(d: SduiDescriptor, push: (s: SduiIssue['severity'], p: s
     if (rt?.type === 'wrapAsSingleGroup') {
       if (!rt.itemsPath) push('error', 'dataSource.responseTransform', 'itemsPath obbligatorio per wrapAsSingleGroup.');
       if (!rt.targetPath) push('error', 'dataSource.responseTransform', 'targetPath obbligatorio per wrapAsSingleGroup.');
+      rt.dateFlags?.forEach((f, i) => {
+        if (!f.dateField || !f.targetField || !f.pastValue) push('error', `dataSource.responseTransform.dateFlags[${i}]`, 'dateField, targetField e pastValue sono obbligatori.');
+      });
+    }
+    if (rt?.type === 'mapFields' && Object.keys(rt.fields).length === 0) {
+      push('warning', 'dataSource.responseTransform', 'mapFields senza campi: non aggiungerà nulla alla risposta.');
     }
   }
 
@@ -74,7 +83,7 @@ function validateScreen(d: SduiDescriptor, push: (s: SduiIssue['severity'], p: s
         push('error', `onSubmit.bodyMapping.${key}`, '"@." non è supportato in bodyMapping di onSubmit su screen — usa {patientId}/{userId} nell\'endpoint.');
       }
     }
-    if (d.onSubmit.requestTransform) {
+    if (d.onSubmit.requestTransform?.type === 'unflattenNested') {
       if (!d.onSubmit.requestTransform.itemsPath) push('error', 'onSubmit.requestTransform', 'itemsPath obbligatorio per unflattenNested.');
       if (!d.onSubmit.requestTransform.targetPath) push('error', 'onSubmit.requestTransform', 'targetPath obbligatorio per unflattenNested.');
     }
@@ -119,28 +128,16 @@ function validateFlowStep(
         if (!os.endpoint) push('error', `${path}.onSubmit`, 'endpoint obbligatorio (oppure usa "sequence" per una catena di chiamate).');
       }
 
-      const concl = os.onSuccess.conclusion;
-      if (concl) {
-        if (!concl.titleKey?.trim()) push('error', `${path}.onSubmit.onSuccess.conclusion`, 'titleKey obbligatorio.');
-        if (concl.payAction && !concl.payAction.url?.trim()) {
-          push('error', `${path}.onSubmit.onSuccess.conclusion.payAction`, 'url obbligatorio quando payAction è presente.');
-        }
-        if (concl.downloadAction) {
-          if (!concl.downloadAction.endpoint?.trim()) push('error', `${path}.onSubmit.onSuccess.conclusion.downloadAction`, 'endpoint obbligatorio.');
-          if (!concl.downloadAction.fileName?.trim()) push('error', `${path}.onSubmit.onSuccess.conclusion.downloadAction`, 'fileName obbligatorio.');
-        }
-        if (concl.cancelAction) {
-          const ca = concl.cancelAction;
-          if (!ca.endpoint?.trim()) push('error', `${path}.onSubmit.onSuccess.conclusion.cancelAction`, 'endpoint obbligatorio.');
-          if (!ca.confirmTitleKey?.trim()) push('error', `${path}.onSubmit.onSuccess.conclusion.cancelAction`, 'confirmTitleKey obbligatorio.');
-          if (!ca.confirmMessageKey?.trim()) push('error', `${path}.onSubmit.onSuccess.conclusion.cancelAction`, 'confirmMessageKey obbligatorio.');
-          for (const key of Object.keys(ca.bodyMapping ?? {})) {
-            const val = ca.bodyMapping[key];
-            if (val?.includes('@.userId')) {
-              push('warning', `${path}.onSubmit.onSuccess.conclusion.cancelAction.bodyMapping.${key}`, '"@.userId" non è supportato: risolve silenziosamente a null. Nel motore SDUI il prefisso "@." supporta solo "@.patientId".');
-            }
-          }
-        }
+      const nav = os.onSuccess.navigateSdui;
+      if (nav && !nav.entity?.trim()) {
+        push('error', `${path}.onSubmit.onSuccess.navigateSdui`, 'entity obbligatorio.');
+      }
+      const ts = os.onSuccess.showTransitionScreen;
+      if (ts && !ts.titleKey?.trim()) {
+        push('error', `${path}.onSubmit.onSuccess.showTransitionScreen`, 'titleKey obbligatorio.');
+      }
+      if (ts && os.onSuccess.action !== 'setActivePatient') {
+        push('warning', `${path}.onSubmit.onSuccess.showTransitionScreen`, 'showTransitionScreen è valido solo con onSuccess.action = "setActivePatient".');
       }
     }
   } else if (!step.next?.trim()) {
@@ -211,18 +208,21 @@ function validateSection(
       if (!s.itemsPath) push('error', path, 'itemsPath obbligatorio.');
       if (!s.columns?.length) push('warning', path, 'Nessuna colonna dichiarata.');
       validateRowDetail(s, path, push);
+      validateFilterButton(s, path, push);
       break;
     case 'groupedTable':
       if (!s.groupsPath) push('error', path, 'groupsPath obbligatorio.');
       if (!s.groupLabelField) push('warning', path, 'groupLabelField non dichiarato: userà il default del motore "label" (ricade a stringa vuota se il campo non esiste sui gruppi).');
       if (!s.columns?.length) push('warning', path, 'Nessuna colonna dichiarata.');
       validateRowDetail(s, path, push);
+      validateFilterButton(s, path, push);
       break;
     case 'cardList':
       if (!s.groupsPath) push('error', path, 'groupsPath obbligatorio.');
       if (!s.groupLabelField) push('warning', path, 'groupLabelField non dichiarato: userà il default del motore "label" (ricade a stringa vuota se il campo non esiste sui gruppi).');
       if (!s.card?.elements?.length && !s.card?.titleField) push('warning', `${path}.card`, 'titleField non dichiarato (formato legacy): la card non avrà alcun titolo visibile. Ignorato se usi il layout libero "card.elements".');
       validateRowDetail(s, path, push);
+      validateFilterButton(s, path, push);
       break;
     case 'filterBar':
       if (!s.dateFilter?.fromField && !s.searchField) {
@@ -247,9 +247,34 @@ function validateSection(
 
 function validateRowDetail(s: SduiSection, path: string, push: (sev: SduiIssue['severity'], p: string, m: string) => void): void {
   if (!s.rowDetail) return;
+  if (s.rowDetail.tapAction) {
+    if (s.rowDetail.sections?.length) {
+      push('warning', `${path}.rowDetail`, 'tapAction e sections sono presenti insieme: con tapAction il tap esegue l\'azione invece di aprire il dettaglio, quindi sections/badge/endpoint sottostanti vengono ignorati.');
+    }
+    return;
+  }
   if (!s.rowDetail.sections?.length) {
     push('error', `${path}.rowDetail`, 'sections obbligatorio: senza, il tap sulla riga non apre nulla (anche con detailEndpoint presente).');
   }
+}
+
+function validateFilterButton(s: SduiSection, path: string, push: (sev: SduiIssue['severity'], p: string, m: string) => void): void {
+  if (!s.filterButton) return;
+  s.filterButton.groups.forEach((g, i) => {
+    const gPath = `${path}.filterButton.groups[${i}]`;
+    if (g.optionsSource) {
+      if (!g.optionsSource.endpoint) push('error', gPath, 'optionsSource.endpoint obbligatorio.');
+      if (!g.optionsSource.itemsField || (Array.isArray(g.optionsSource.itemsField) && !g.optionsSource.itemsField.length)) {
+        push('error', gPath, 'optionsSource.itemsField obbligatorio.');
+      }
+      if (!g.optionsSource.valueTemplate && !g.optionsSource.valueField) {
+        push('error', gPath, 'optionsSource richiede valueTemplate o valueField per identificare ogni opzione.');
+      }
+      if (g.field) push('warning', gPath, 'field e optionsSource sono presenti insieme: con optionsSource il gruppo è server-side e field viene ignorato.');
+    } else if (!g.field && !g.dateRangeField) {
+      push('warning', gPath, 'Nessuno tra field/optionsSource/dateRangeField dichiarato: il gruppo non filtrerà nulla.');
+    }
+  });
 }
 
 function validateField(
@@ -301,9 +326,11 @@ function validateField(
   }
 }
 
-function validateAction(a: { type: string; entity?: string; assetPath?: string; endpoint?: string; call?: { bodyMapping?: Record<string, string> }; confirmTitleKey?: string; confirmMessageKey?: string }, path: string, push: (sev: SduiIssue['severity'], p: string, m: string) => void): void {
+function validateAction(a: { type: string; entity?: string; assetPath?: string; endpoint?: string; call?: { bodyMapping?: Record<string, string> }; confirmTitleKey?: string; confirmMessageKey?: string; start?: string; successSheet?: { primaryLabelKey?: string } | null }, path: string, push: (sev: SduiIssue['severity'], p: string, m: string) => void): void {
   if (a.type === 'navigateSdui' && !a.entity && !a.assetPath) push('error', path, 'entity (o assetPath) obbligatorio per navigateSdui.');
   if (a.type === 'downloadFile' && !a.endpoint) push('error', path, 'endpoint obbligatorio per downloadFile.');
+  if (a.type === 'addToCalendar' && !a.start) push('error', path, 'start obbligatorio per addToCalendar.');
+  if (a.successSheet && !a.successSheet.primaryLabelKey) push('error', `${path}.successSheet`, 'primaryLabelKey obbligatorio in successSheet.');
   if (a.type === 'confirmAndCall') {
     if (!a.confirmTitleKey || !a.confirmMessageKey) push('error', path, 'confirmTitleKey/confirmMessageKey obbligatori per confirmAndCall.');
     if (!a.call?.bodyMapping) return;
