@@ -19,18 +19,191 @@
       </div>
     }
 
-    <nav class="sdui-wizard__stepnav">
-      @for (s of steps(); track s.key; let i = $index) {
-        <button
-          type="button"
-          class="sdui-wizard__step-btn"
-          [class.sdui-wizard__step-btn--active]="stepIndex() === i"
-          (click)="goToStep(i)"
-        >{{ s.label | translate }}</button>
-      }
-    </nav>
-
     <div class="sdui-wizard__body">
+      <nav class="sdui-wizard__sidebar">
+        @for (s of steps(); track s.key; let i = $index) {
+          <div class="sdui-wizard__nav-group">
+            <button
+              type="button"
+              class="sdui-wizard__nav-item"
+              [class.sdui-wizard__nav-item--active]="stepIndex() === i"
+              [matTooltip]="s.tip | translate"
+              matTooltipPosition="right"
+              (click)="goToStep(i)"
+            ><mat-icon class="sdui-wizard__nav-item-icon">{{ s.icon }}</mat-icon>{{ s.label | translate }}</button>
+
+            @if (s.key === 'sections' && descriptor().sections.length > 0) {
+              <div class="sdui-wizard__nav-subtree">
+                @for (sec of descriptor().sections; track $index; let si = $index) {
+                  <button
+                    type="button"
+                    class="sdui-wizard__nav-subitem"
+                    [class.sdui-wizard__nav-subitem--active]="stepIndex() === i && expandedSectionIndex() === si"
+                    [matTooltip]="(sec.id || ('#' + si)) + ' — ' + (resolveTranslation(sec.titleKey) || sec.type)"
+                    matTooltipPosition="right"
+                    (click)="selectSectionInSidebar(i, si)"
+                  >
+                    <mat-icon class="sdui-wizard__nav-subitem-icon">{{ sectionTypeIcon(sec.type) }}</mat-icon>
+                    <span class="sdui-wizard__nav-subitem-label">{{ sec.id || ('#' + si) }}</span>
+                  </button>
+                }
+              </div>
+            }
+
+            @if (s.key === 'steps' && descriptor().steps.length > 0) {
+              <div class="sdui-wizard__nav-subtree">
+                @for (fs of descriptor().steps; track $index; let fsi = $index) {
+                  <button
+                    type="button"
+                    class="sdui-wizard__nav-subitem"
+                    [class.sdui-wizard__nav-subitem--active]="stepIndex() === i && activeFlowStepIndex() === fsi"
+                    [matTooltip]="(fs.id || ('#' + fsi)) + ' — ' + (resolveTranslation(fs.titleKey) || ('sduiWizard.steps.stepLabel' | translate: { n: fsi + 1 }))"
+                    matTooltipPosition="right"
+                    (click)="selectFlowStepInSidebar(i, fsi)"
+                  >
+                    <mat-icon class="sdui-wizard__nav-subitem-icon">looks_one</mat-icon>
+                    <span class="sdui-wizard__nav-subitem-label">{{ fs.id || ('#' + fsi) }}</span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </nav>
+
+      @if (canvasVisible()) {
+        <div class="sdui-wizard__canvas">
+          <div class="sdui-wizard__phone">
+            <div class="sdui-wizard__phone-status"><span>9:41</span><span>●●●●  100%</span></div>
+            <div class="sdui-wizard__phone-appbar">{{ resolveTranslation(descriptor().titleKey) || data.entityName }}</div>
+            <div class="sdui-wizard__phone-screen">
+              @if (descriptor().kind === 'screen') {
+              @if (descriptor().sections.length === 0) {
+                <p class="sdui-wizard__phone-empty">{{ 'sduiWizard.canvas.empty' | translate }}</p>
+              }
+              @for (sec of descriptor().sections; track $index; let si = $index) {
+                <div
+                  class="sdui-wizard__phone-section"
+                  [class.sdui-wizard__phone-section--active]="expandedSectionIndex() === si"
+                  (click)="selectSectionInSidebar(sectionsStepIndex(), si)"
+                >
+                  @if (sec.titleKey) { <div class="sdui-wizard__phone-section-title">{{ resolveTranslation(sec.titleKey) }}</div> }
+
+                  @switch (sec.type) {
+                    @case ('form') {
+                      <ng-container *ngTemplateOutlet="fieldMockPreview; context: { fields: sec.fields ?? [] }"></ng-container>
+                    }
+                    @case ('list') {
+                      @for (it of [1, 2]; track $index) {
+                        <div class="sdui-wizard__mock-list-item">
+                          <div class="sdui-wizard__mock-card-column">
+                            <span class="sdui-wizard__mock-card-title">{{ resolveTranslation(sec.itemTemplate?.titleField) || sec.itemTemplate?.titleField }}</span>
+                            @if (sec.itemTemplate?.subtitleField) {
+                              <span class="sdui-wizard__mock-card-subtitle">{{ sec.itemTemplate?.subtitleField }}</span>
+                            }
+                          </div>
+                          @if (sec.itemTemplate?.valueField) {
+                            <span class="sdui-wizard__mock-card-text">{{ sec.itemTemplate?.valueField }}</span>
+                          }
+                        </div>
+                      }
+                    }
+                    @case ('menu') {
+                      @for (mi of (sec.items ?? []); track $index) {
+                        <div class="sdui-wizard__mock-menu-item">
+                          @if (sec.showIcons !== false) {
+                            <span class="sdui-wizard__mock-menu-icon"><mat-icon>{{ mi.icon || 'chevron_right' }}</mat-icon></span>
+                          }
+                          <div class="sdui-wizard__mock-card-column">
+                            <span class="sdui-wizard__mock-menu-label">{{ resolveTranslation(mi.labelKey) }}</span>
+                            @if (mi.descriptionKey) { <span class="sdui-wizard__mock-card-subtitle">{{ resolveTranslation(mi.descriptionKey) }}</span> }
+                          </div>
+                          @if (mi.badge) {
+                            <span class="sdui-wizard__mock-chip" [style.background]="mi.badge === 'login' ? '#16a34a' : '#2563eb'" [style.color]="'#fff'">{{ mi.badge }}</span>
+                          }
+                          <mat-icon class="sdui-wizard__mock-menu-arrow">{{ mi.trailingIcon || 'chevron_right' }}</mat-icon>
+                        </div>
+                      }
+                    }
+                    @case ('info') {
+                      <div class="sdui-wizard__mock-banner">{{ resolveTranslation(sec.descriptionKey) || ('sduiWizard.sectionTypes.info.label' | translate) }}</div>
+                      @if (sec.linkLabelKey) {
+                        <span class="sdui-wizard__mock-link">{{ resolveTranslation(sec.linkLabelKey) }}</span>
+                      }
+                    }
+                    @case ('filterBar') {
+                      <div class="sdui-wizard__mock-filterbar">
+                        @if (sec.searchField) { <span class="sdui-wizard__mock-search"><mat-icon>search</mat-icon></span> }
+                        @if (sec.filterButton) { <span class="sdui-wizard__mock-chip">{{ resolveTranslation(sec.filterButton.labelKey) }}</span> }
+                        @if (sec.dateFilter) { <span class="sdui-wizard__mock-chip">{{ 'sduiWizard.canvas.filters' | translate }}</span> }
+                      </div>
+                    }
+                    @case ('eventsSummary') {
+                      <div class="sdui-wizard__mock-card sdui-wizard__mock-card--summary">
+                        <mat-icon>event</mat-icon>
+                        <span>{{ resolveTranslation(sec.summaryLabelKey) }}</span>
+                        @if (sec.fromField || sec.toField) {
+                          <span class="sdui-wizard__mock-card-subtitle">{{ sec.fromField }} – {{ sec.toField }}</span>
+                        }
+                      </div>
+                    }
+                    @case ('calendar') {
+                      <div class="sdui-wizard__mock-calendar">
+                        @for (d of calendarMockDays; track $index) { <span></span> }
+                      </div>
+                      <ng-container *ngTemplateOutlet="sectionCardPreview; context: { sec: sec }"></ng-container>
+                    }
+                    @default {
+                      <!-- table / groupedTable / cardList: header colonne (se dichiarate) + legenda badge (se
+                           configurata) + anteprima ricorsiva di card.elements/card legacy -->
+                      @if ((sec.columns ?? []).length > 0) {
+                        <div class="sdui-wizard__mock-table-header">
+                          @for (c of (sec.columns ?? []); track $index) { <span>{{ resolveTranslation(c.labelKey) }}</span> }
+                        </div>
+                      }
+                      @if (badgeEntries(sec.badgeMap).length > 0 || badgeEntries(sec.secondaryBadgeMap).length > 0) {
+                        <div class="sdui-wizard__mock-badge-legend">
+                          @for (b of badgeEntries(sec.badgeMap); track $index) {
+                            <span class="sdui-wizard__mock-chip" [style.background]="b.color" [style.color]="'#fff'">{{ resolveTranslation(b.labelKey) }}</span>
+                          }
+                          @for (b of badgeEntries(sec.secondaryBadgeMap); track $index) {
+                            <span class="sdui-wizard__mock-chip" [style.background]="b.color" [style.color]="'#fff'">{{ resolveTranslation(b.labelKey) }}</span>
+                          }
+                        </div>
+                      }
+                      <ng-container *ngTemplateOutlet="sectionCardPreview; context: { sec: sec }"></ng-container>
+                    }
+                  }
+                </div>
+              }
+              } @else {
+                @if (descriptor().steps.length === 0) {
+                  <p class="sdui-wizard__phone-empty">{{ 'sduiWizard.canvas.empty' | translate }}</p>
+                }
+                @if (activeFlowStep(); as step) {
+                  <div class="sdui-wizard__phone-section sdui-wizard__phone-section--active">
+                    @if (step.titleKey) { <div class="sdui-wizard__phone-section-title">{{ resolveTranslation(step.titleKey) }}</div> }
+                    @if (step.descriptionKey) { <div class="sdui-wizard__mock-card-subtitle">{{ resolveTranslation(step.descriptionKey) }}</div> }
+                    <ng-container *ngTemplateOutlet="fieldMockPreview; context: { fields: step.fields ?? [] }"></ng-container>
+                  </div>
+                }
+                @if (descriptor().steps.length > 1) {
+                  <div class="sdui-wizard__mock-flow-progress">
+                    @for (st of descriptor().steps; track $index; let fsi = $index) {
+                      <span
+                        class="sdui-wizard__mock-flow-dot"
+                        [class.sdui-wizard__mock-flow-dot--active]="activeFlowStepIndex() === fsi"
+                        (click)="selectFlowStepInSidebar(stepsStepIndex(), fsi)"
+                      ></span>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      }
+
       <div class="sdui-wizard__main">
 
         @switch (currentStepKey()) {
@@ -57,14 +230,14 @@
 
             <mat-form-field appearance="outline" class="sdui-wizard__field">
               <mat-label>{{ 'sduiWizard.labels.titleKey' | translate }}</mat-label>
-              <input matInput [ngModel]="descriptor().titleKey" (ngModelChange)="setTitleKey($event)" [placeholder]="'sduiWizard.ph.titleKeyExample' | translate" />
+              <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="descriptor().titleKey" (ngModelChange)="setTitleKey($event)" [placeholder]="'sduiWizard.ph.titleKeyExample' | translate" />
               <mat-hint>{{ 'sduiWizard.base.titleKeyHint' | translate }}</mat-hint>
             </mat-form-field>
 
             @if (descriptor().kind === 'screen') {
               <mat-form-field appearance="outline" class="sdui-wizard__field">
                 <mat-label>{{ 'sduiWizard.labels.subtitleKeyOptional' | translate }}</mat-label>
-                <input matInput [ngModel]="descriptor().subtitleKey ?? ''" (ngModelChange)="setSubtitleKey($event)" />
+                <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="descriptor().subtitleKey ?? ''" (ngModelChange)="setSubtitleKey($event)" />
               </mat-form-field>
 
               <mat-checkbox
@@ -74,7 +247,7 @@
             } @else {
               <mat-form-field appearance="outline" class="sdui-wizard__field">
                 <mat-label>{{ 'sduiWizard.labels.onExitConfirmKeyOptional' | translate }}</mat-label>
-                <input matInput [ngModel]="descriptor().onExit?.confirmKey ?? ''" (ngModelChange)="setOnExitConfirmKey($event)" />
+                <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="descriptor().onExit?.confirmKey ?? ''" (ngModelChange)="setOnExitConfirmKey($event)" />
                 <mat-hint>{{ 'sduiWizard.base.onExitConfirmHint' | translate }}</mat-hint>
               </mat-form-field>
 
@@ -394,7 +567,7 @@
                     }
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.groupLabelKey' | translate }}</mat-label>
-                      <input matInput [ngModel]="rt.groupLabelKey ?? ''" (ngModelChange)="setWrapGroupLabelKey($event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="rt.groupLabelKey ?? ''" (ngModelChange)="setWrapGroupLabelKey($event)" />
                       <mat-hint>{{ 'sduiWizard.dataSource.groupLabelKeyEmptyHint' | translate }}</mat-hint>
                     </mat-form-field>
 
@@ -584,14 +757,20 @@
 
             <div cdkDropList (cdkDropListDropped)="dropSection($event)">
               @for (section of descriptor().sections; track $index; let i = $index) {
-                <div cdkDrag class="sdui-wizard__card">
-                  <div class="sdui-wizard__card-header">
-                    <mat-icon cdkDragHandle class="sdui-wizard__drag-handle">drag_indicator</mat-icon>
+                <div [id]="'sdui-section-card-' + i" cdkDrag class="sdui-wizard__card" [class.sdui-wizard__card--collapsed]="expandedSectionIndex() !== i">
+                  <div class="sdui-wizard__card-header" (click)="toggleSectionExpanded(i)">
+                    <mat-icon cdkDragHandle class="sdui-wizard__drag-handle" (click)="$event.stopPropagation()">drag_indicator</mat-icon>
+                    <mat-icon class="sdui-wizard__card-chevron">{{ expandedSectionIndex() === i ? 'expand_less' : 'expand_more' }}</mat-icon>
+                    <mat-icon class="sdui-wizard__card-type-icon">{{ sectionTypeIcon(section.type) }}</mat-icon>
                     <strong>{{ section.type }}</strong>
+                    @if (section.id) { <span class="sdui-wizard__card-summary">#{{ section.id }}</span> }
+                    @if (section.titleKey) { <span class="sdui-wizard__card-summary">{{ section.titleKey }}</span> }
                     <span class="sdui-wizard__spacer"></span>
-                    <button mat-icon-button type="button" (click)="removeSection(i)"><mat-icon>delete</mat-icon></button>
+                    <button mat-icon-button type="button" (click)="removeSection(i); $event.stopPropagation()"><mat-icon>delete</mat-icon></button>
                   </div>
 
+                  @if (expandedSectionIndex() === i) {
+                  <div class="sdui-wizard__card-body">
                   <div class="sdui-wizard__row">
                     <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                       <mat-label>{{ 'sduiWizard.labels.id' | translate }}</mat-label>
@@ -599,7 +778,7 @@
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.titleKey' | translate }}</mat-label>
-                      <input matInput [ngModel]="section.titleKey ?? ''" (ngModelChange)="setSectionTitleKey(i, $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="section.titleKey ?? ''" (ngModelChange)="setSectionTitleKey(i, $event)" />
                     </mat-form-field>
                   </div>
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
@@ -676,13 +855,13 @@
                     <div class="sdui-wizard__row">
                       <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                         <mat-label>{{ 'sduiWizard.labels.descriptionKey' | translate }}</mat-label>
-                        <input matInput [ngModel]="section.descriptionKey ?? ''" (ngModelChange)="setSectionDescriptionKey(i, $event)" />
+                        <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="section.descriptionKey ?? ''" (ngModelChange)="setSectionDescriptionKey(i, $event)" />
                       </mat-form-field>
                     </div>
                     <div class="sdui-wizard__row">
                       <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                         <mat-label>{{ 'sduiWizard.labels.linkLabelKey' | translate }}</mat-label>
-                        <input matInput [ngModel]="section.linkLabelKey ?? ''" (ngModelChange)="setSectionProp(i, 'linkLabelKey', $event)" />
+                        <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="section.linkLabelKey ?? ''" (ngModelChange)="setSectionProp(i, 'linkLabelKey', $event)" />
                       </mat-form-field>
                       <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                         <mat-label>{{ 'sduiWizard.labels.linkUrl' | translate }}</mat-label>
@@ -722,14 +901,14 @@
                           </mat-form-field>
                           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                             <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                            <input matInput [ngModel]="item.labelKey" (ngModelChange)="setMenuItemProp(i, mi, 'labelKey', $event)" />
+                            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="item.labelKey" (ngModelChange)="setMenuItemProp(i, mi, 'labelKey', $event)" />
                           </mat-form-field>
                           <button mat-icon-button type="button" (click)="removeMenuItem(i, mi)"><mat-icon>delete</mat-icon></button>
                         </div>
                         <div class="sdui-wizard__row">
                           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                             <mat-label>{{ 'sduiWizard.labels.descriptionKey' | translate }}</mat-label>
-                            <input matInput [ngModel]="item.descriptionKey ?? ''" (ngModelChange)="setMenuItemProp(i, mi, 'descriptionKey', $event || undefined)" />
+                            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="item.descriptionKey ?? ''" (ngModelChange)="setMenuItemProp(i, mi, 'descriptionKey', $event || undefined)" />
                           </mat-form-field>
                           <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                             <mat-label>{{ 'sduiWizard.labels.trailingIcon' | translate }}</mat-label>
@@ -855,7 +1034,7 @@
                           </mat-form-field>
                           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                             <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                            <input matInput [ngModel]="section.badgeLabelKeys?.[key] ?? ''" (ngModelChange)="setBadgeLabelKeyValue(i, false, key, $event)" />
+                            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="section.badgeLabelKeys?.[key] ?? ''" (ngModelChange)="setBadgeLabelKeyValue(i, false, key, $event)" />
                           </mat-form-field>
                           <button mat-icon-button type="button" (click)="removeBadgeLabelKeyEntry(i, false, key)"><mat-icon>delete</mat-icon></button>
                         </div>
@@ -873,7 +1052,7 @@
                           </mat-form-field>
                           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                             <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                            <input matInput [ngModel]="section.secondaryBadgeLabelKeys?.[key] ?? ''" (ngModelChange)="setBadgeLabelKeyValue(i, true, key, $event)" />
+                            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="section.secondaryBadgeLabelKeys?.[key] ?? ''" (ngModelChange)="setBadgeLabelKeyValue(i, true, key, $event)" />
                           </mat-form-field>
                           <button mat-icon-button type="button" (click)="removeBadgeLabelKeyEntry(i, true, key)"><mat-icon>delete</mat-icon></button>
                         </div>
@@ -886,7 +1065,7 @@
                       <p class="sdui-wizard__tip">{{ 'sduiWizard.sections.summaryTip' | translate }}</p>
                       <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                         <mat-label>{{ 'sduiWizard.labels.summaryLabelKeyN' | translate }}</mat-label>
-                        <input matInput [ngModel]="section.summaryLabelKey ?? ''" (ngModelChange)="setSectionProp(i, 'summaryLabelKey', $event)" placeholder="MyScreen.elementsFound" />
+                        <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="section.summaryLabelKey ?? ''" (ngModelChange)="setSectionProp(i, 'summaryLabelKey', $event)" placeholder="MyScreen.elementsFound" />
                       </mat-form-field>
                       @if (section.type === 'cardList') {
                         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
@@ -944,7 +1123,7 @@
                           </mat-form-field>
                           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                             <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                            <input matInput [ngModel]="att.labelKey ?? ''" (ngModelChange)="setRowAttachmentProp(i, 'labelKey', $event || undefined)" />
+                            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="att.labelKey ?? ''" (ngModelChange)="setRowAttachmentProp(i, 'labelKey', $event || undefined)" />
                           </mat-form-field>
                         </div>
                       }
@@ -1008,7 +1187,7 @@
                           </mat-form-field>
                           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                             <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                            <input matInput [ngModel]="col.labelKey" (ngModelChange)="setColumnProp(i, ci, 'labelKey', $event)" />
+                            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="col.labelKey" (ngModelChange)="setColumnProp(i, ci, 'labelKey', $event)" />
                           </mat-form-field>
                           <mat-checkbox [checked]="!!col.sortable" (change)="setColumnProp(i, ci, 'sortable', $event.checked)">{{ 'sduiWizard.labels.sortable' | translate }}</mat-checkbox>
                           <button mat-icon-button type="button" (click)="removeColumn(i, ci)"><mat-icon>delete</mat-icon></button>
@@ -1034,7 +1213,7 @@
                           </mat-form-field>
                           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                             <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                            <input matInput [ngModel]="sf.labelKey" (ngModelChange)="setSortableFieldLabelKey(i, si, $event)" />
+                            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="sf.labelKey" (ngModelChange)="setSortableFieldLabelKey(i, si, $event)" />
                           </mat-form-field>
                           <button mat-icon-button type="button" (click)="removeSortableField(i, si)"><mat-icon>delete</mat-icon></button>
                         </div>
@@ -1052,7 +1231,7 @@
                       <p class="sdui-wizard__tip">{{ 'sduiWizard.sections.filterButtonTip' | translate }}</p>
                       <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                         <mat-label>{{ 'sduiWizard.labels.labelKeyRequired' | translate }}</mat-label>
-                        <input matInput [ngModel]="fb.labelKey" (ngModelChange)="setFilterButtonLabelKey(i, $event)" />
+                        <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="fb.labelKey" (ngModelChange)="setFilterButtonLabelKey(i, $event)" />
                       </mat-form-field>
                       @for (g of fb.groups; track $index; let gi = $index) {
                         <div class="sdui-wizard__card">
@@ -1068,7 +1247,7 @@
                             </mat-form-field>
                             <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                               <mat-label>{{ 'sduiWizard.labels.titleKey' | translate }}</mat-label>
-                              <input matInput [ngModel]="g.titleKey ?? ''" (ngModelChange)="setFilterGroupProp(i, gi, 'titleKey', $event || undefined)" />
+                              <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="g.titleKey ?? ''" (ngModelChange)="setFilterGroupProp(i, gi, 'titleKey', $event || undefined)" />
                             </mat-form-field>
                             <mat-checkbox [checked]="!!g.multiSelect" (change)="setFilterGroupProp(i, gi, 'multiSelect', $event.checked)">
                               {{ 'sduiWizard.sections.multiSelectLabel' | translate }}
@@ -1173,7 +1352,7 @@
                               <div class="sdui-wizard__row">
                                 <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                                   <mat-label>{{ 'sduiWizard.labels.dateLabelKey' | translate }}</mat-label>
-                                  <input matInput [ngModel]="drf.dateLabelKey ?? ''" (ngModelChange)="setFilterGroupDateRangeProp(i, gi, 'dateLabelKey', $event)" />
+                                  <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="drf.dateLabelKey ?? ''" (ngModelChange)="setFilterGroupDateRangeProp(i, gi, 'dateLabelKey', $event)" />
                                 </mat-form-field>
                               </div>
                               <p class="sdui-wizard__tip">{{ 'sduiWizard.sections.dateLabelKeyTip' | translate }}</p>
@@ -1181,11 +1360,11 @@
                               <div class="sdui-wizard__row">
                                 <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                                   <mat-label>{{ 'sduiWizard.labels.fromLabelKey' | translate }}</mat-label>
-                                  <input matInput [ngModel]="drf.fromLabelKey ?? ''" (ngModelChange)="setFilterGroupDateRangeProp(i, gi, 'fromLabelKey', $event)" />
+                                  <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="drf.fromLabelKey ?? ''" (ngModelChange)="setFilterGroupDateRangeProp(i, gi, 'fromLabelKey', $event)" />
                                 </mat-form-field>
                                 <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                                   <mat-label>{{ 'sduiWizard.labels.toLabelKey' | translate }}</mat-label>
-                                  <input matInput [ngModel]="drf.toLabelKey ?? ''" (ngModelChange)="setFilterGroupDateRangeProp(i, gi, 'toLabelKey', $event)" />
+                                  <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="drf.toLabelKey ?? ''" (ngModelChange)="setFilterGroupDateRangeProp(i, gi, 'toLabelKey', $event)" />
                                 </mat-form-field>
                               </div>
                             }
@@ -1200,7 +1379,7 @@
                               </mat-form-field>
                               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                                 <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                                <input matInput [ngModel]="o.labelKey ?? ''" (ngModelChange)="setFilterOptionProp(i, gi, oi, 'labelKey', $event || undefined)" />
+                                <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="o.labelKey ?? ''" (ngModelChange)="setFilterOptionProp(i, gi, oi, 'labelKey', $event || undefined)" />
                               </mat-form-field>
                               <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                                 <mat-label>{{ 'sduiWizard.labels.daysAgo' | translate }}</mat-label>
@@ -1233,7 +1412,7 @@
                                 </mat-form-field>
                                 <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                                   <mat-label>{{ 'sduiWizard.labels.numberLabelKey' | translate }}</mat-label>
-                                  <input matInput [ngModel]="o.numberLabelKey ?? ''" (ngModelChange)="setFilterOptionProp(i, gi, oi, 'numberLabelKey', $event || undefined)" />
+                                  <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="o.numberLabelKey ?? ''" (ngModelChange)="setFilterOptionProp(i, gi, oi, 'numberLabelKey', $event || undefined)" />
                                 </mat-form-field>
                                 <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                                   <mat-label>{{ 'sduiWizard.labels.numberDefault' | translate }}</mat-label>
@@ -1283,7 +1462,7 @@
                       </mat-form-field>
                       <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                         <mat-label>{{ 'sduiWizard.labels.labelKeyMustContainN' | translate }}</mat-label>
-                        <input matInput [ngModel]="section.summaryLabelKey ?? ''" (ngModelChange)="setSectionProp(i, 'summaryLabelKey', $event)" />
+                        <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="section.summaryLabelKey ?? ''" (ngModelChange)="setSectionProp(i, 'summaryLabelKey', $event)" />
                       </mat-form-field>
                     </div>
                     @if (pathPreview(section.groupsPathSummary); as pv) {
@@ -1310,7 +1489,7 @@
                     <div class="sdui-wizard__row">
                       <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                         <mat-label>{{ 'sduiWizard.labels.eventsTitleKey' | translate }}</mat-label>
-                        <input matInput [ngModel]="section.eventsTitleKey ?? ''" (ngModelChange)="setSectionProp(i, 'eventsTitleKey', $event)" />
+                        <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="section.eventsTitleKey ?? ''" (ngModelChange)="setSectionProp(i, 'eventsTitleKey', $event)" />
                       </mat-form-field>
                       <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                         <mat-label>{{ 'sduiWizard.labels.variant' | translate }}</mat-label>
@@ -1322,7 +1501,7 @@
                       </mat-form-field>
                       <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                         <mat-label>{{ 'sduiWizard.labels.searchPlaceholderKey' | translate }}</mat-label>
-                        <input matInput [ngModel]="section.searchPlaceholderKey ?? ''" (ngModelChange)="setSectionProp(i, 'searchPlaceholderKey', $event)" />
+                        <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="section.searchPlaceholderKey ?? ''" (ngModelChange)="setSectionProp(i, 'searchPlaceholderKey', $event)" />
                       </mat-form-field>
                     </div>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
@@ -1347,6 +1526,8 @@
                     <p class="sdui-wizard__tip">{{ 'sduiWizard.sections.calendarTip' | translate }}</p>
                     <p class="sdui-wizard__tip">{{ 'sduiWizard.sections.advancedAttrsTip' | translate }}</p>
                     <ng-container *ngTemplateOutlet="rowDetailEditor; context: { sectionIndex: i }"></ng-container>
+                  }
+                  </div>
                   }
                 </div>
               }
@@ -1385,11 +1566,11 @@
               <div class="sdui-wizard__row">
                 <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                   <mat-label>{{ 'sduiWizard.labels.submitLabelKey' | translate }}</mat-label>
-                  <input matInput [ngModel]="os.submitLabelKey ?? ''" (ngModelChange)="setOnSubmitProp('submitLabelKey', $event)" />
+                  <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="os.submitLabelKey ?? ''" (ngModelChange)="setOnSubmitProp('submitLabelKey', $event)" />
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                   <mat-label>{{ 'sduiWizard.labels.cancelLabelKey' | translate }}</mat-label>
-                  <input matInput [ngModel]="os.cancelLabelKey ?? ''" (ngModelChange)="setOnSubmitProp('cancelLabelKey', $event)" />
+                  <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="os.cancelLabelKey ?? ''" (ngModelChange)="setOnSubmitProp('cancelLabelKey', $event)" />
                 </mat-form-field>
               </div>
               <p class="sdui-wizard__tip">{{ 'sduiWizard.submit.cancelLabelKeyTip' | translate }}</p>
@@ -1513,11 +1694,11 @@
                 <div class="sdui-wizard__row">
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.titleKeyRequired' | translate }}</mat-label>
-                    <input matInput [ngModel]="ss.titleKey" (ngModelChange)="setSuccessScreenProp('titleKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ss.titleKey" (ngModelChange)="setSuccessScreenProp('titleKey', $event)" />
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.subtitleKeyOptional' | translate }}</mat-label>
-                    <input matInput [ngModel]="ss.subtitleKey ?? ''" (ngModelChange)="setSuccessScreenProp('subtitleKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ss.subtitleKey ?? ''" (ngModelChange)="setSuccessScreenProp('subtitleKey', $event)" />
                   </mat-form-field>
                 </div>
                 <mat-checkbox [checked]="!!ss.summary" (change)="toggleSuccessScreenSummary($event.checked)">
@@ -1531,11 +1712,11 @@
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.badgeKey' | translate }}</mat-label>
-                      <input matInput [ngModel]="summary.badgeKey ?? ''" (ngModelChange)="setSuccessScreenSummaryProp('badgeKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="summary.badgeKey ?? ''" (ngModelChange)="setSuccessScreenSummaryProp('badgeKey', $event)" />
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.dateLabelKey' | translate }}</mat-label>
-                      <input matInput [ngModel]="summary.dateLabelKey ?? ''" (ngModelChange)="setSuccessScreenSummaryProp('dateLabelKey', $event)" [placeholder]="'sduiWizard.ph.dateLabelKeyExample' | translate" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="summary.dateLabelKey ?? ''" (ngModelChange)="setSuccessScreenSummaryProp('dateLabelKey', $event)" [placeholder]="'sduiWizard.ph.dateLabelKeyExample' | translate" />
                     </mat-form-field>
                   </div>
                 }
@@ -1551,7 +1732,7 @@
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.labelKeyRequired' | translate }}</mat-label>
-                      <input matInput [ngModel]="act.labelKey" (ngModelChange)="setSuccessScreenActionProp(ai, 'labelKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="act.labelKey" (ngModelChange)="setSuccessScreenActionProp(ai, 'labelKey', $event)" />
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                       <mat-label>{{ 'sduiWizard.labels.style' | translate }}</mat-label>
@@ -1578,11 +1759,11 @@
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                   <mat-label>{{ 'sduiWizard.labels.onSuccessMessageKey' | translate }}</mat-label>
-                  <input matInput [ngModel]="os.onSuccess.messageKey ?? ''" (ngModelChange)="setOnSuccessMessageKey($event)" />
+                  <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="os.onSuccess.messageKey ?? ''" (ngModelChange)="setOnSuccessMessageKey($event)" />
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                   <mat-label>{{ 'sduiWizard.labels.onErrorMessageKey' | translate }}</mat-label>
-                  <input matInput [ngModel]="os.onError.messageKey ?? ''" (ngModelChange)="setOnErrorMessageKey($event)" />
+                  <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="os.onError.messageKey ?? ''" (ngModelChange)="setOnErrorMessageKey($event)" />
                 </mat-form-field>
               </div>
               <mat-checkbox [checked]="!!os.onSuccess.navigateSdui" (change)="toggleOnSuccessNavigateSdui($event.checked)">
@@ -1622,17 +1803,17 @@
                   <div class="sdui-wizard__row">
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.titleKeyRequired' | translate }}</mat-label>
-                      <input matInput [ngModel]="ts.titleKey" (ngModelChange)="setOnSuccessShowTransitionScreenProp('titleKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ts.titleKey" (ngModelChange)="setOnSuccessShowTransitionScreenProp('titleKey', $event)" />
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.subtitleKey' | translate }}</mat-label>
-                      <input matInput [ngModel]="ts.subtitleKey ?? ''" (ngModelChange)="setOnSuccessShowTransitionScreenProp('subtitleKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ts.subtitleKey ?? ''" (ngModelChange)="setOnSuccessShowTransitionScreenProp('subtitleKey', $event)" />
                     </mat-form-field>
                   </div>
                   <div class="sdui-wizard__row">
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.captionKey' | translate }}</mat-label>
-                      <input matInput [ngModel]="ts.captionKey ?? ''" (ngModelChange)="setOnSuccessShowTransitionScreenProp('captionKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ts.captionKey ?? ''" (ngModelChange)="setOnSuccessShowTransitionScreenProp('captionKey', $event)" />
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                       <mat-label>{{ 'sduiWizard.labels.durationMs' | translate }}</mat-label>
@@ -1679,12 +1860,12 @@
 
             <div cdkDropList (cdkDropListDropped)="dropFlowStep($event)">
               @for (step of descriptor().steps; track $index; let si = $index) {
-                <div cdkDrag class="sdui-wizard__card">
-                  <div class="sdui-wizard__card-header">
+                <div [id]="'sdui-flow-step-card-' + si" cdkDrag class="sdui-wizard__card" [class.sdui-wizard__card--active]="activeFlowStepIndex() === si">
+                  <div class="sdui-wizard__card-header" (click)="selectFlowStepInSidebar(stepIndex(), si)">
                     <mat-icon cdkDragHandle class="sdui-wizard__drag-handle">drag_indicator</mat-icon>
                     <strong>{{ 'sduiWizard.steps.stepLabel' | translate: { n: si + 1 } }}</strong>
                     <span class="sdui-wizard__spacer"></span>
-                    <button mat-icon-button type="button" (click)="removeFlowStep(si)"><mat-icon>delete</mat-icon></button>
+                    <button mat-icon-button type="button" (click)="removeFlowStep(si); $event.stopPropagation()"><mat-icon>delete</mat-icon></button>
                   </div>
 
                   <div class="sdui-wizard__row">
@@ -1694,12 +1875,12 @@
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.titleKeyRequired' | translate }}</mat-label>
-                      <input matInput [ngModel]="step.titleKey" (ngModelChange)="setFlowStepProp(si, 'titleKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="step.titleKey" (ngModelChange)="setFlowStepProp(si, 'titleKey', $event)" />
                     </mat-form-field>
                   </div>
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.descriptionKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="step.descriptionKey ?? ''" (ngModelChange)="setFlowStepProp(si, 'descriptionKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="step.descriptionKey ?? ''" (ngModelChange)="setFlowStepProp(si, 'descriptionKey', $event)" />
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.visibleIfOptional' | translate }}</mat-label>
@@ -1791,11 +1972,11 @@
                       <div class="sdui-wizard__row">
                         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                           <mat-label>{{ 'sduiWizard.labels.submitLabelKey' | translate }}</mat-label>
-                          <input matInput [ngModel]="os.submitLabelKey ?? ''" (ngModelChange)="setFlowStepOnSubmitProp(si, 'submitLabelKey', $event)" />
+                          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="os.submitLabelKey ?? ''" (ngModelChange)="setFlowStepOnSubmitProp(si, 'submitLabelKey', $event)" />
                         </mat-form-field>
                         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                           <mat-label>{{ 'sduiWizard.labels.cancelLabelKey' | translate }}</mat-label>
-                          <input matInput [ngModel]="os.cancelLabelKey ?? ''" (ngModelChange)="setFlowStepOnSubmitProp(si, 'cancelLabelKey', $event)" />
+                          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="os.cancelLabelKey ?? ''" (ngModelChange)="setFlowStepOnSubmitProp(si, 'cancelLabelKey', $event)" />
                         </mat-form-field>
                       </div>
 
@@ -1853,17 +2034,17 @@
                           <div class="sdui-wizard__row">
                             <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                               <mat-label>{{ 'sduiWizard.labels.titleKeyRequired' | translate }}</mat-label>
-                              <input matInput [ngModel]="ts.titleKey" (ngModelChange)="setShowTransitionScreenProp(si, 'titleKey', $event)" />
+                              <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ts.titleKey" (ngModelChange)="setShowTransitionScreenProp(si, 'titleKey', $event)" />
                             </mat-form-field>
                             <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                               <mat-label>{{ 'sduiWizard.labels.subtitleKey' | translate }}</mat-label>
-                              <input matInput [ngModel]="ts.subtitleKey ?? ''" (ngModelChange)="setShowTransitionScreenProp(si, 'subtitleKey', $event)" />
+                              <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ts.subtitleKey ?? ''" (ngModelChange)="setShowTransitionScreenProp(si, 'subtitleKey', $event)" />
                             </mat-form-field>
                           </div>
                           <div class="sdui-wizard__row">
                             <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                               <mat-label>{{ 'sduiWizard.labels.captionKey' | translate }}</mat-label>
-                              <input matInput [ngModel]="ts.captionKey ?? ''" (ngModelChange)="setShowTransitionScreenProp(si, 'captionKey', $event)" />
+                              <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ts.captionKey ?? ''" (ngModelChange)="setShowTransitionScreenProp(si, 'captionKey', $event)" />
                             </mat-form-field>
                             <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                               <mat-label>{{ 'sduiWizard.labels.durationMs' | translate }}</mat-label>
@@ -1983,7 +2164,7 @@
       @if (field.component !== 'row' && field.component !== 'column') {
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.labelKey" (ngModelChange)="setProp('labelKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.labelKey" (ngModelChange)="setProp('labelKey', $event)" />
         </mat-form-field>
       }
       <button mat-icon-button type="button" (click)="remove()"><mat-icon>delete</mat-icon></button>
@@ -2013,7 +2194,7 @@
       <div class="sdui-wizard__row">
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.hintKeyOptional' | translate }}</mat-label>
-          <input matInput [ngModel]="field.hintKey ?? ''" (ngModelChange)="setProp('hintKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.hintKey ?? ''" (ngModelChange)="setProp('hintKey', $event)" />
           <mat-hint>{{ 'sduiWizard.field.hintKeyHint' | translate }}</mat-hint>
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
@@ -2061,7 +2242,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.placeholderKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.placeholderKey ?? ''" (ngModelChange)="setProp('placeholderKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.placeholderKey ?? ''" (ngModelChange)="setProp('placeholderKey', $event)" />
         </mat-form-field>
       </div>
       <div class="sdui-wizard__row">
@@ -2071,7 +2252,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.maxSizeErrorKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.maxSizeErrorKey ?? ''" (ngModelChange)="setProp('maxSizeErrorKey', $event || undefined)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.maxSizeErrorKey ?? ''" (ngModelChange)="setProp('maxSizeErrorKey', $event || undefined)" />
         </mat-form-field>
       </div>
       <mat-checkbox [checked]="field.filePickerStyle === 'attachments'" (change)="setProp('filePickerStyle', $event.checked ? 'attachments' : undefined)">
@@ -2081,25 +2262,25 @@
         <div class="sdui-wizard__row">
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.emptyTitleKey' | translate }}</mat-label>
-            <input matInput [ngModel]="field.emptyTitleKey ?? ''" (ngModelChange)="setProp('emptyTitleKey', $event || undefined)" />
+            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.emptyTitleKey ?? ''" (ngModelChange)="setProp('emptyTitleKey', $event || undefined)" />
           </mat-form-field>
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.helpKey' | translate }}</mat-label>
-            <input matInput [ngModel]="field.helpKey ?? ''" (ngModelChange)="setProp('helpKey', $event || undefined)" />
+            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.helpKey ?? ''" (ngModelChange)="setProp('helpKey', $event || undefined)" />
           </mat-form-field>
         </div>
         <div class="sdui-wizard__row">
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.buttonLabelKey' | translate }}</mat-label>
-            <input matInput [ngModel]="field.buttonLabelKey ?? ''" (ngModelChange)="setProp('buttonLabelKey', $event || undefined)" />
+            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.buttonLabelKey ?? ''" (ngModelChange)="setProp('buttonLabelKey', $event || undefined)" />
           </mat-form-field>
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.removeLabelKey' | translate }}</mat-label>
-            <input matInput [ngModel]="field.removeLabelKey ?? ''" (ngModelChange)="setProp('removeLabelKey', $event || undefined)" />
+            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.removeLabelKey ?? ''" (ngModelChange)="setProp('removeLabelKey', $event || undefined)" />
           </mat-form-field>
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.replaceLabelKey' | translate }}</mat-label>
-            <input matInput [ngModel]="field.replaceLabelKey ?? ''" (ngModelChange)="setProp('replaceLabelKey', $event || undefined)" />
+            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.replaceLabelKey ?? ''" (ngModelChange)="setProp('replaceLabelKey', $event || undefined)" />
           </mat-form-field>
         </div>
       }
@@ -2178,28 +2359,28 @@
       <div class="sdui-wizard__row">
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.linkKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.linkKey ?? ''" (ngModelChange)="setProp('linkKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.linkKey ?? ''" (ngModelChange)="setProp('linkKey', $event)" />
         </mat-form-field>
       </div>
       <p class="sdui-wizard__tip">{{ 'sduiWizard.fieldComponents.infoBannerLinkTip' | translate }}</p>
       <div class="sdui-wizard__row">
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.infoDialogTitleKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.infoDialogTitleKey ?? ''" (ngModelChange)="setProp('infoDialogTitleKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.infoDialogTitleKey ?? ''" (ngModelChange)="setProp('infoDialogTitleKey', $event)" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.infoDialogBodyKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.infoDialogBodyKey ?? ''" (ngModelChange)="setProp('infoDialogBodyKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.infoDialogBodyKey ?? ''" (ngModelChange)="setProp('infoDialogBodyKey', $event)" />
         </mat-form-field>
       </div>
       <div class="sdui-wizard__row">
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.buttonKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.buttonKey ?? ''" (ngModelChange)="setProp('buttonKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.buttonKey ?? ''" (ngModelChange)="setProp('buttonKey', $event)" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.actionMessageKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.actionMessageKey ?? ''" (ngModelChange)="setProp('actionMessageKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.actionMessageKey ?? ''" (ngModelChange)="setProp('actionMessageKey', $event)" />
         </mat-form-field>
       </div>
       <p class="sdui-wizard__tip">{{ 'sduiWizard.fieldComponents.infoBannerButtonTip' | translate }}</p>
@@ -2238,15 +2419,15 @@
       <div class="sdui-wizard__row">
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.delegateHeaderKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.delegateHeaderKey ?? ''" (ngModelChange)="setProp('delegateHeaderKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.delegateHeaderKey ?? ''" (ngModelChange)="setProp('delegateHeaderKey', $event)" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.loadMoreLabelKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.loadMoreLabelKey ?? ''" (ngModelChange)="setProp('loadMoreLabelKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.loadMoreLabelKey ?? ''" (ngModelChange)="setProp('loadMoreLabelKey', $event)" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.ownBadgeKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.ownBadgeKey ?? ''" (ngModelChange)="setProp('ownBadgeKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.ownBadgeKey ?? ''" (ngModelChange)="setProp('ownBadgeKey', $event)" />
         </mat-form-field>
       </div>
       <p class="sdui-wizard__tip">{{ 'sduiWizard.fieldComponents.loadMoreLabelKeyTip' | translate }}</p>
@@ -2278,7 +2459,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.emptyDelegatesKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.emptyDelegatesKey ?? ''" (ngModelChange)="setProp('emptyDelegatesKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.emptyDelegatesKey ?? ''" (ngModelChange)="setProp('emptyDelegatesKey', $event)" />
         </mat-form-field>
       </div>
       <div class="sdui-wizard__row">
@@ -2318,7 +2499,7 @@
           <div class="sdui-wizard__row">
             <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
               <mat-label>{{ 'sduiWizard.labels.linkKeyRequired' | translate }}</mat-label>
-              <input matInput [ngModel]="da.linkKey" (ngModelChange)="setProp('detailAction', setDetailActionProp(field.detailAction, 'linkKey', $event))" />
+              <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="da.linkKey" (ngModelChange)="setProp('detailAction', setDetailActionProp(field.detailAction, 'linkKey', $event))" />
             </mat-form-field>
             <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
               <mat-label>{{ 'sduiWizard.labels.subtitleField' | translate }}</mat-label>
@@ -2354,7 +2535,7 @@
             <div class="sdui-wizard__row">
               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                 <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                <input matInput [ngModel]="ff.labelKey" (ngModelChange)="setProp('detailAction', setDetailActionFlatFields(field.detailAction, 'flatFields', setFlatFieldProp(da.flatFields, ffi, 'labelKey', $event)))" />
+                <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ff.labelKey" (ngModelChange)="setProp('detailAction', setDetailActionFlatFields(field.detailAction, 'flatFields', setFlatFieldProp(da.flatFields, ffi, 'labelKey', $event)))" />
               </mat-form-field>
               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                 <mat-label>{{ 'sduiWizard.labels.field' | translate }}</mat-label>
@@ -2371,7 +2552,7 @@
             </mat-form-field>
             <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
               <mat-label>{{ 'sduiWizard.labels.officeTitleKey' | translate }}</mat-label>
-              <input matInput [ngModel]="da.officeTitleKey ?? ''" (ngModelChange)="setProp('detailAction', setDetailActionProp(field.detailAction, 'officeTitleKey', $event))" placeholder="common.office" />
+              <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="da.officeTitleKey ?? ''" (ngModelChange)="setProp('detailAction', setDetailActionProp(field.detailAction, 'officeTitleKey', $event))" placeholder="common.office" />
             </mat-form-field>
           </div>
           <p class="sdui-wizard__label-strong">{{ 'sduiWizard.fieldComponents.officeFieldsLabel' | translate }}</p>
@@ -2379,7 +2560,7 @@
             <div class="sdui-wizard__row">
               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                 <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                <input matInput [ngModel]="of2.labelKey" (ngModelChange)="setProp('detailAction', setDetailActionFlatFields(field.detailAction, 'officeFields', setFlatFieldProp(da.officeFields, ofi, 'labelKey', $event)))" />
+                <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="of2.labelKey" (ngModelChange)="setProp('detailAction', setDetailActionFlatFields(field.detailAction, 'officeFields', setFlatFieldProp(da.officeFields, ofi, 'labelKey', $event)))" />
               </mat-form-field>
               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                 <mat-label>{{ 'sduiWizard.labels.field' | translate }}</mat-label>
@@ -2413,12 +2594,32 @@
           <input matInput [ngModel]="field.badgeField ?? ''" (ngModelChange)="setProp('badgeField', $event)" />
         </mat-form-field>
       </div>
+      <div class="sdui-wizard__row">
+        <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
+          <mat-label>{{ 'sduiWizard.labels.titleVariant' | translate }}</mat-label>
+          <mat-select [value]="field.titleVariant ?? 'standard'" (selectionChange)="setProp('titleVariant', $event.value)">
+            @for (v of textVariants; track v) { <mat-option [value]="v">{{ v }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
+          <mat-label>{{ 'sduiWizard.labels.subtitleVariant' | translate }}</mat-label>
+          <mat-select [value]="field.subtitleVariant ?? 'standard'" (selectionChange)="setProp('subtitleVariant', $event.value)">
+            @for (v of textVariants; track v) { <mat-option [value]="v">{{ v }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
+          <mat-label>{{ 'sduiWizard.labels.officeTitleVariant' | translate }}</mat-label>
+          <mat-select [value]="field.officeTitleVariant ?? 'standard'" (selectionChange)="setProp('officeTitleVariant', $event.value)">
+            @for (v of textVariants; track v) { <mat-option [value]="v">{{ v }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+      </div>
       <p class="sdui-wizard__label-strong">{{ 'sduiWizard.fieldComponents.flatFieldsLabel' | translate }}</p>
       @for (ff of field.flatFields ?? []; track $index; let ffi = $index) {
         <div class="sdui-wizard__row">
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-            <input matInput [ngModel]="ff.labelKey" (ngModelChange)="setProp('flatFields', setFlatFieldProp(field.flatFields, ffi, 'labelKey', $event))" />
+            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ff.labelKey" (ngModelChange)="setProp('flatFields', setFlatFieldProp(field.flatFields, ffi, 'labelKey', $event))" />
           </mat-form-field>
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.field' | translate }}</mat-label>
@@ -2435,7 +2636,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.officeTitleKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.officeTitleKey ?? ''" (ngModelChange)="setProp('officeTitleKey', $event)" placeholder="common.office" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.officeTitleKey ?? ''" (ngModelChange)="setProp('officeTitleKey', $event)" placeholder="common.office" />
         </mat-form-field>
       </div>
       <p class="sdui-wizard__label-strong">{{ 'sduiWizard.fieldComponents.officeFieldsLabel' | translate }}</p>
@@ -2443,7 +2644,7 @@
         <div class="sdui-wizard__row">
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-            <input matInput [ngModel]="of3.labelKey" (ngModelChange)="setProp('officeFields', setFlatFieldProp(field.officeFields, ofi2, 'labelKey', $event))" />
+            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="of3.labelKey" (ngModelChange)="setProp('officeFields', setFlatFieldProp(field.officeFields, ofi2, 'labelKey', $event))" />
           </mat-form-field>
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.field' | translate }}</mat-label>
@@ -2473,15 +2674,15 @@
       <div class="sdui-wizard__row">
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.hintKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.hintKey ?? ''" (ngModelChange)="setProp('hintKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.hintKey ?? ''" (ngModelChange)="setProp('hintKey', $event)" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.scanTitleKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.scanTitleKey ?? ''" (ngModelChange)="setProp('scanTitleKey', $event)" placeholder="common.scanTitle" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.scanTitleKey ?? ''" (ngModelChange)="setProp('scanTitleKey', $event)" placeholder="common.scanTitle" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.scanHintKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.scanHintKey ?? ''" (ngModelChange)="setProp('scanHintKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.scanHintKey ?? ''" (ngModelChange)="setProp('scanHintKey', $event)" />
         </mat-form-field>
       </div>
       <div class="sdui-wizard__row">
@@ -2495,7 +2696,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.scanInvalidKey' | translate }}</mat-label>
-          <input matInput [ngModel]="field.scanInvalidKey ?? ''" (ngModelChange)="setProp('scanInvalidKey', $event)" placeholder="common.scanInvalid" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.scanInvalidKey ?? ''" (ngModelChange)="setProp('scanInvalidKey', $event)" placeholder="common.scanInvalid" />
         </mat-form-field>
       </div>
       <div class="sdui-wizard__row">
@@ -2635,7 +2836,7 @@
               </mat-form-field>
               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                 <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                <input matInput [ngModel]="opt.labelKey" (ngModelChange)="setOption(oi, 'labelKey', $event)" />
+                <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="opt.labelKey" (ngModelChange)="setOption(oi, 'labelKey', $event)" />
               </mat-form-field>
               <button mat-icon-button type="button" (click)="removeOption(oi)"><mat-icon>delete</mat-icon></button>
             </div>
@@ -2715,7 +2916,7 @@
               </mat-form-field>
               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                 <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                <input matInput [ngModel]="field.options?.emptyFallback?.labelKey ?? ''" (ngModelChange)="setOptionsProp('emptyFallback', { value: field.options?.emptyFallback?.value ?? '', labelKey: $event })" />
+                <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="field.options?.emptyFallback?.labelKey ?? ''" (ngModelChange)="setOptionsProp('emptyFallback', { value: field.options?.emptyFallback?.value ?? '', labelKey: $event })" />
               </mat-form-field>
             </div>
           }
@@ -2947,7 +3148,7 @@
       @if (el.type === 'text') {
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.textLabelKeyOptional' | translate }}</mat-label>
-          <input matInput [ngModel]="el.labelKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'labelKey', $event)" placeholder="&#123;value&#125;" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="el.labelKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'labelKey', $event)" placeholder="&#123;value&#125;" />
         </mat-form-field>
       }
 
@@ -2955,7 +3156,7 @@
         <div class="sdui-wizard__row">
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-            <input matInput [ngModel]="el.labelKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'labelKey', $event)" />
+            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="el.labelKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'labelKey', $event)" />
           </mat-form-field>
           <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
             <mat-label>{{ 'sduiWizard.labels.orientation' | translate }}</mat-label>
@@ -2974,7 +3175,7 @@
         <div class="sdui-wizard__row">
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.emptyValueKey' | translate }}</mat-label>
-            <input matInput [ngModel]="el.emptyValueKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'emptyValueKey', $event || undefined)" />
+            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="el.emptyValueKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'emptyValueKey', $event || undefined)" />
             <mat-hint>{{ 'sduiWizard.sections.emptyValueKeyHint' | translate }}</mat-hint>
           </mat-form-field>
           <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
@@ -2991,7 +3192,7 @@
       @if (el.type === 'date') {
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.dateLabelKeyDefault' | translate }}</mat-label>
-          <input matInput [ngModel]="el.labelKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'labelKey', $event)" placeholder="common.issuedOn" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="el.labelKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'labelKey', $event)" placeholder="common.issuedOn" />
         </mat-form-field>
       }
 
@@ -3002,7 +3203,7 @@
       @if (el.type === 'personalBadge') {
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-          <input matInput [ngModel]="el.labelKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'labelKey', $event)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="el.labelKey ?? ''" (ngModelChange)="setCardElementProp(sectionIndex, path, 'labelKey', $event)" />
         </mat-form-field>
       }
 
@@ -3216,6 +3417,144 @@
 </ng-template>
 
 <!-- ============================================================= -->
+<!-- Canvas smartphone mockup (Fase B/C) — anteprima indicativa e ricorsiva di
+     card.elements (§3.9.1 manuale), usata per calendar/cardList/groupedTable/table
+     quando la card per-item è in formato atomico. Riflette tipo e nesting reali degli
+     elementi aggiunti nell'editor, non lo stile pixel-perfect del motore mobile. -->
+<!-- ============================================================= -->
+<ng-template #cardElementMockPreview let-elements="elements">
+  @for (el of elements; track $index) {
+    @switch (el.type) {
+      @case ('row') {
+        <div class="sdui-wizard__mock-card-row">
+          <ng-container *ngTemplateOutlet="cardElementMockPreview; context: { elements: el.children ?? [] }"></ng-container>
+        </div>
+      }
+      @case ('column') {
+        <div class="sdui-wizard__mock-card-column">
+          <ng-container *ngTemplateOutlet="cardElementMockPreview; context: { elements: el.children ?? [] }"></ng-container>
+        </div>
+      }
+      @case ('title') {
+        <span class="sdui-wizard__mock-card-title">{{ resolveTranslation(el.labelKey) || el.field || ('sduiWizard.cardElements.title' | translate) }}</span>
+      }
+      @case ('subtitle') {
+        <span class="sdui-wizard__mock-card-subtitle">{{ resolveTranslation(el.labelKey) || el.field || ('sduiWizard.cardElements.subtitle' | translate) }}</span>
+      }
+      @case ('divider') { <div class="sdui-wizard__mock-card-divider"></div> }
+      @case ('verticalDivider') { <div class="sdui-wizard__mock-card-vdivider"></div> }
+      @case ('spacer') { <div class="sdui-wizard__mock-card-spacer"></div> }
+      @case ('icon') { <mat-icon class="sdui-wizard__mock-card-icon">{{ el.icon || 'circle' }}</mat-icon> }
+      @case ('favorite') { <mat-icon class="sdui-wizard__mock-card-icon">star_border</mat-icon> }
+      @case ('dateBadge') {
+        <div class="sdui-wizard__mock-card-datebadge"><span>01</span><span>gen</span></div>
+      }
+      @case ('badge') { <span class="sdui-wizard__mock-chip">{{ resolveTranslation(el.labelKey) || el.field }}</span> }
+      @case ('personalBadge') { <span class="sdui-wizard__mock-chip">{{ resolveTranslation(el.labelKey) || el.field }}</span> }
+      @case ('chipsRow') {
+        <div class="sdui-wizard__mock-card-row">
+          <span class="sdui-wizard__mock-chip">{{ el.field || '—' }}</span>
+          <span class="sdui-wizard__mock-chip">{{ el.field || '—' }}</span>
+        </div>
+      }
+      @case ('date') {
+        <span class="sdui-wizard__mock-card-text">{{ resolveTranslation(el.labelKey) || el.field || ('sduiWizard.cardElements.date' | translate) }}</span>
+      }
+      @case ('keyValue') {
+        <div class="sdui-wizard__mock-card-keyvalue">
+          <span>{{ resolveTranslation(el.labelKey) || el.field }}</span>
+          <strong>—</strong>
+        </div>
+      }
+      @default {
+        <span class="sdui-wizard__mock-card-text">{{ resolveTranslation(el.labelKey) || el.field || el.type }}</span>
+      }
+    }
+  }
+</ng-template>
+
+<!-- ============================================================= -->
+<!-- Canvas: anteprima ricorsiva dei field (SduiField[]) di una sezione "form" — gestisce i
+     container row/column ricorsivamente (prima venivano mostrati come input vuoto) e il colore
+     indicativo dei chip (§8 manuale, variant -> palette CHIP_VARIANT_COLORS). -->
+<!-- ============================================================= -->
+<ng-template #fieldMockPreview let-fields="fields">
+  @for (f of fields; track $index) {
+    @if (mockFieldKind(f.component) === 'container') {
+      <div [class]="f.component === 'row' ? 'sdui-wizard__mock-card-row' : 'sdui-wizard__mock-card-column'">
+        <ng-container *ngTemplateOutlet="fieldMockPreview; context: { fields: f.children ?? [] }"></ng-container>
+      </div>
+    } @else {
+      <div class="sdui-wizard__mock-row">
+        @if (!mockFieldShowsOwnLabel(mockFieldKind(f.component))) {
+          <span class="sdui-wizard__mock-label">{{ resolveTranslation(f.labelKey) || f.id }}</span>
+        }
+        @switch (mockFieldKind(f.component)) {
+          @case ('checkbox') { <span class="sdui-wizard__mock-checkbox"></span> }
+          @case ('toggle') { <span class="sdui-wizard__mock-toggle"><span></span></span> }
+          @case ('select') { <span class="sdui-wizard__mock-select">⌄</span> }
+          @case ('text') { <span class="sdui-wizard__mock-text">{{ resolveTranslation(f.labelKey) || f.id }}</span> }
+          @case ('banner') { <div class="sdui-wizard__mock-banner">{{ resolveTranslation(f.labelKey) || f.id }}</div> }
+          @case ('button') { <span class="sdui-wizard__mock-button">{{ resolveTranslation(f.labelKey) || f.id }}</span> }
+          @case ('image') { <span class="sdui-wizard__mock-image"><mat-icon>image</mat-icon></span> }
+          @case ('chip') {
+            <span class="sdui-wizard__mock-chip" [style.background]="chipVariantColor(f.variant)" [style.color]="'#fff'">{{ resolveTranslation(f.labelKey) || f.id }}</span>
+          }
+          @case ('card') {
+            <div class="sdui-wizard__mock-card sdui-wizard__mock-card--elements">
+              <span class="sdui-wizard__mock-card-title">{{ resolveTranslation(f.labelKey) || f.id }}</span>
+            </div>
+          }
+          @default { <span class="sdui-wizard__mock-input"></span> }
+        }
+      </div>
+    }
+  }
+</ng-template>
+
+<!-- ============================================================= -->
+<!-- Canvas: anteprima della card per-item di calendar/cardList/table/groupedTable — gestisce sia
+     il formato atomico (card.elements, ricorsivo) sia quello legacy (titleField/subtitleField/
+     dateField/badgeField/favoriteField), oltre a rowAccent/leftBorder (bordo colorato) e
+     rowAttachment (icona+conteggio allegati). Nessun dato reale disponibile in editing: mostra
+     la struttura/i colori configurati, non un valore effettivo. -->
+<!-- ============================================================= -->
+<ng-template #sectionCardPreview let-sec="sec">
+  @if (sec.card?.elements) {
+    <div class="sdui-wizard__mock-card sdui-wizard__mock-card--elements" [style]="sectionAccentStyle(sec)">
+      <ng-container *ngTemplateOutlet="cardElementMockPreview; context: { elements: sec.card?.elements ?? [] }"></ng-container>
+    </div>
+  } @else if (sec.card; as c) {
+    <div class="sdui-wizard__mock-card sdui-wizard__mock-card--elements" [style]="sectionAccentStyle(sec)">
+      <div class="sdui-wizard__mock-card-row">
+        @if (c.dateField) { <div class="sdui-wizard__mock-card-datebadge"><span>01</span><span>gen</span></div> }
+        <div class="sdui-wizard__mock-card-column">
+          <span class="sdui-wizard__mock-card-title">{{ c.titleField }}</span>
+          @if (c.subtitleField) { <span class="sdui-wizard__mock-card-subtitle">{{ c.subtitleField }}</span> }
+        </div>
+        @if (c.favoriteField) { <mat-icon class="sdui-wizard__mock-card-icon">star_border</mat-icon> }
+      </div>
+      @if (badgeEntries(c.badgeMap).length > 0) {
+        <div class="sdui-wizard__mock-card-row">
+          @for (b of badgeEntries(c.badgeMap); track $index) {
+            <span class="sdui-wizard__mock-chip" [style.background]="b.color" [style.color]="'#fff'">{{ resolveTranslation(b.labelKey) }}</span>
+          }
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="sdui-wizard__mock-card" [style]="sectionAccentStyle(sec)"></div>
+    <div class="sdui-wizard__mock-card" [style]="sectionAccentStyle(sec)"></div>
+  }
+  @if (sec.rowAttachment) {
+    <div class="sdui-wizard__mock-card-row">
+      <mat-icon class="sdui-wizard__mock-card-icon">{{ sec.rowAttachment?.icon || 'attach_file' }}</mat-icon>
+      <span class="sdui-wizard__mock-card-subtitle">{{ resolveTranslation(sec.rowAttachment?.labelKey) }}</span>
+    </div>
+  }
+</ng-template>
+
+<!-- ============================================================= -->
 <!-- rowDetail (§3.10 manuale) — dettaglio riga per table/groupedTable/cardList/calendar -->
 <!-- ============================================================= -->
 <ng-template #rowDetailEditor let-sectionIndex="sectionIndex">
@@ -3303,7 +3642,7 @@
           </mat-form-field>
           <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
             <mat-label>{{ 'sduiWizard.labels.detailTitleKey' | translate }}</mat-label>
-            <input matInput [ngModel]="rd.detailTitleKey ?? ''" (ngModelChange)="setRowDetailProp(sectionIndex, 'detailTitleKey', $event)" />
+            <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="rd.detailTitleKey ?? ''" (ngModelChange)="setRowDetailProp(sectionIndex, 'detailTitleKey', $event)" />
           </mat-form-field>
         </div>
         <p class="sdui-wizard__tip">{{ 'sduiWizard.rowDetail.detailEndpointTip' | translate }}</p>
@@ -3320,7 +3659,7 @@
             <div class="sdui-wizard__row">
               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                 <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                <input matInput [ngModel]="chip.labelKey" (ngModelChange)="setRowDetailChipProp(sectionIndex, ci, 'labelKey', $event)" />
+                <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="chip.labelKey" (ngModelChange)="setRowDetailChipProp(sectionIndex, ci, 'labelKey', $event)" />
               </mat-form-field>
               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                 <mat-label>{{ 'sduiWizard.labels.visibleIf' | translate }}</mat-label>
@@ -3358,7 +3697,7 @@
             <div class="sdui-wizard__row">
               <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                 <mat-label>{{ 'sduiWizard.labels.titleKey' | translate }}</mat-label>
-                <input matInput [ngModel]="rs.titleKey ?? ''" (ngModelChange)="setRowDetailSectionProp(sectionIndex, si, 'titleKey', $event)" />
+                <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="rs.titleKey ?? ''" (ngModelChange)="setRowDetailSectionProp(sectionIndex, si, 'titleKey', $event)" />
               </mat-form-field>
               <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                 <mat-label>{{ 'sduiWizard.rowDetail.sectionKindLabel' | translate }}</mat-label>
@@ -3407,7 +3746,7 @@
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="f.labelKey" (ngModelChange)="setRowDetailSectionFieldProp(sectionIndex, si, fi, 'labelKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="f.labelKey" (ngModelChange)="setRowDetailSectionFieldProp(sectionIndex, si, fi, 'labelKey', $event)" />
                   </mat-form-field>
                   <button mat-icon-button type="button" (click)="removeRowDetailSectionField(sectionIndex, si, fi)"><mat-icon>delete</mat-icon></button>
                 </div>
@@ -3450,7 +3789,7 @@
       <div class="sdui-wizard__row">
         <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
           <mat-label>{{ 'sduiWizard.labels.labelKeyRequired' | translate }}</mat-label>
-          <input matInput [ngModel]="item.labelKey ?? ''" (ngModelChange)="setActionSheetItemProp(sectionIndex, ai, 'labelKey', $event, rowDetailSectionIndex)" />
+          <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="item.labelKey ?? ''" (ngModelChange)="setActionSheetItemProp(sectionIndex, ai, 'labelKey', $event, rowDetailSectionIndex)" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
           <mat-label>{{ 'sduiWizard.labels.style' | translate }}</mat-label>
@@ -3529,7 +3868,7 @@
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                   <mat-label>{{ 'sduiWizard.labels.labelKey' | translate }}</mat-label>
-                  <input matInput [ngModel]="pa.labelKey ?? ''" (ngModelChange)="setActionProp(ref, 'labelKey', $event)" />
+                  <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="pa.labelKey ?? ''" (ngModelChange)="setActionProp(ref, 'labelKey', $event)" />
                 </mat-form-field>
               </div>
               @if (pa.type === 'navigateSdui') {
@@ -3579,11 +3918,11 @@
                 <div class="sdui-wizard__row">
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.successMessageKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="pa.successMessageKey ?? ''" (ngModelChange)="setActionProp(ref, 'successMessageKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="pa.successMessageKey ?? ''" (ngModelChange)="setActionProp(ref, 'successMessageKey', $event)" />
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.errorMessageKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="pa.errorMessageKey ?? ''" (ngModelChange)="setActionProp(ref, 'errorMessageKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="pa.errorMessageKey ?? ''" (ngModelChange)="setActionProp(ref, 'errorMessageKey', $event)" />
                   </mat-form-field>
                 </div>
               }
@@ -3591,11 +3930,11 @@
                 <div class="sdui-wizard__row">
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.confirmTitleKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="pa.confirmTitleKey ?? ''" (ngModelChange)="setActionProp(ref, 'confirmTitleKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="pa.confirmTitleKey ?? ''" (ngModelChange)="setActionProp(ref, 'confirmTitleKey', $event)" />
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.confirmMessageKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="pa.confirmMessageKey ?? ''" (ngModelChange)="setActionProp(ref, 'confirmMessageKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="pa.confirmMessageKey ?? ''" (ngModelChange)="setActionProp(ref, 'confirmMessageKey', $event)" />
                   </mat-form-field>
                 </div>
                 @if (pa.call; as call) {
@@ -3644,11 +3983,11 @@
                   <div class="sdui-wizard__row">
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.titleKeyRequired' | translate }}</mat-label>
-                      <input matInput [ngModel]="ss.titleKey" (ngModelChange)="setActionOnSuccessShowSuccessScreenProp(ref, 'titleKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ss.titleKey" (ngModelChange)="setActionOnSuccessShowSuccessScreenProp(ref, 'titleKey', $event)" />
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.subtitleKeyOptional' | translate }}</mat-label>
-                      <input matInput [ngModel]="ss.subtitleKey ?? ''" (ngModelChange)="setActionOnSuccessShowSuccessScreenProp(ref, 'subtitleKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="ss.subtitleKey ?? ''" (ngModelChange)="setActionOnSuccessShowSuccessScreenProp(ref, 'subtitleKey', $event)" />
                     </mat-form-field>
                   </div>
                   <p class="sdui-wizard__label-strong">{{ 'sduiWizard.submit.successActionsLabel' | translate }}</p>
@@ -3656,7 +3995,7 @@
                     <div class="sdui-wizard__row">
                       <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                         <mat-label>{{ 'sduiWizard.labels.labelKeyRequired' | translate }}</mat-label>
-                        <input matInput [ngModel]="act.labelKey" (ngModelChange)="setActionOnSuccessShowSuccessScreenActionProp(ref, ai, 'labelKey', $event)" />
+                        <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="act.labelKey" (ngModelChange)="setActionOnSuccessShowSuccessScreenActionProp(ref, ai, 'labelKey', $event)" />
                       </mat-form-field>
                       <mat-form-field appearance="outline" class="sdui-wizard__field--sm">
                         <mat-label>{{ 'sduiWizard.labels.style' | translate }}</mat-label>
@@ -3675,7 +4014,7 @@
                 <div class="sdui-wizard__row">
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.onSuccessMessageKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="pa.onSuccess?.messageKey ?? ''" (ngModelChange)="setActionOnSuccessProp(ref, 'messageKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="pa.onSuccess?.messageKey ?? ''" (ngModelChange)="setActionOnSuccessProp(ref, 'messageKey', $event)" />
                   </mat-form-field>
                   <mat-checkbox [checked]="!!pa.onSuccess?.refreshDataSource" (change)="setActionOnSuccessProp(ref, 'refreshDataSource', $event.checked)">
                     {{ 'sduiWizard.actions.refreshDataSourceLabel' | translate }}
@@ -3826,11 +4165,11 @@
                   <div class="sdui-wizard__row">
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.titleKey' | translate }}</mat-label>
-                      <input matInput [ngModel]="sheet.titleKey ?? ''" (ngModelChange)="setActionSuccessSheetProp(ref, 'titleKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="sheet.titleKey ?? ''" (ngModelChange)="setActionSuccessSheetProp(ref, 'titleKey', $event)" />
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.messageKey' | translate }}</mat-label>
-                      <input matInput [ngModel]="sheet.messageKey ?? ''" (ngModelChange)="setActionSuccessSheetProp(ref, 'messageKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="sheet.messageKey ?? ''" (ngModelChange)="setActionSuccessSheetProp(ref, 'messageKey', $event)" />
                     </mat-form-field>
                   </div>
                   <div class="sdui-wizard__row">
@@ -3856,11 +4195,11 @@
                   <div class="sdui-wizard__row">
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.primaryLabelKeyRequired' | translate }}</mat-label>
-                      <input matInput [ngModel]="sheet.primaryLabelKey" (ngModelChange)="setActionSuccessSheetProp(ref, 'primaryLabelKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="sheet.primaryLabelKey" (ngModelChange)="setActionSuccessSheetProp(ref, 'primaryLabelKey', $event)" />
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                       <mat-label>{{ 'sduiWizard.labels.secondaryLabelKey' | translate }}</mat-label>
-                      <input matInput [ngModel]="sheet.secondaryLabelKey ?? ''" (ngModelChange)="setActionSuccessSheetProp(ref, 'secondaryLabelKey', $event)" />
+                      <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="sheet.secondaryLabelKey ?? ''" (ngModelChange)="setActionSuccessSheetProp(ref, 'secondaryLabelKey', $event)" />
                     </mat-form-field>
                   </div>
                   <p class="sdui-wizard__tip">{{ 'sduiWizard.actions.successSheetSecondaryTip' | translate }}</p>
@@ -4015,7 +4354,7 @@
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.titleKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="pa.titleKey ?? ''" (ngModelChange)="setActionProp(ref, 'titleKey', $event || undefined)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="pa.titleKey ?? ''" (ngModelChange)="setActionProp(ref, 'titleKey', $event || undefined)" />
                   </mat-form-field>
                 </div>
                 <p class="sdui-wizard__tip">{{ 'sduiWizard.actions.addToCalendarTitleFallbackTip' | translate }}</p>
@@ -4036,7 +4375,7 @@
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.successMessageKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="pa.successMessageKey ?? ''" (ngModelChange)="setActionProp(ref, 'successMessageKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="pa.successMessageKey ?? ''" (ngModelChange)="setActionProp(ref, 'successMessageKey', $event)" />
                   </mat-form-field>
                 </div>
               }
@@ -4044,11 +4383,11 @@
                 <div class="sdui-wizard__row">
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.confirmTitleKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="pa.confirmTitleKey ?? ''" (ngModelChange)="setActionProp(ref, 'confirmTitleKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="pa.confirmTitleKey ?? ''" (ngModelChange)="setActionProp(ref, 'confirmTitleKey', $event)" />
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="sdui-wizard__field--grow">
                     <mat-label>{{ 'sduiWizard.labels.confirmMessageKey' | translate }}</mat-label>
-                    <input matInput [ngModel]="pa.confirmMessageKey ?? ''" (ngModelChange)="setActionProp(ref, 'confirmMessageKey', $event)" />
+                    <input matInput [sduiKeyAutocomplete]="translationCatalog()" [ngModel]="pa.confirmMessageKey ?? ''" (ngModelChange)="setActionProp(ref, 'confirmMessageKey', $event)" />
                   </mat-form-field>
                 </div>
                 <p class="sdui-wizard__tip">{{ 'sduiWizard.actions.logoutTip' | translate }}</p>

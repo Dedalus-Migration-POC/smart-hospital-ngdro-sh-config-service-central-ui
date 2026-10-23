@@ -1118,6 +1118,10 @@
     "createNew": "Crea con wizard"
   },
   "sduiWizard": {
+    "keyAutocomplete": {
+      "unknownKey": "Chiave non ancora presente nel dizionario traduzioni",
+      "noMatch": "Nessuna corrispondenza"
+    },
     "actionTypes": {
       "call": {
         "label": "Chiamata generica",
@@ -1134,7 +1138,7 @@
       },
       "openExternal": {
         "label": "Apri link esterno",
-        "warning": "Placeholder non implementato: mostra solo uno snackbar, non apre realmente il link."
+        "warning": "Esegue davvero un'azione openExternal: apre il link nel browser/app di sistema."
       },
       "reload": {
         "label": "Ricarica i dati della schermata corrente"
@@ -1708,7 +1712,7 @@
       },
       "info": {
         "label": "Blocco informativo",
-        "tip": "Testo statico, opzionalmente con link (il link non apre nulla realmente)."
+        "tip": "Testo statico, opzionalmente con link (il link apre davvero linkUrl via openExternal)."
       },
       "list": {
         "label": "Lista con switch",
@@ -1729,7 +1733,7 @@
       "advancedAttrsTip": "Attributi avanzati (filterButton, badgeMap, rowDetail, tabs...) sono editabili nella vista JSON grezza dell'ultimo step, mantenendo la struttura già creata qui.",
       "columnsLabel": "Colonne:",
       "emptyTip": "Nessuna section — aggiungine una dai pulsanti sopra.",
-      "linkUrlTip": "⚠ linkUrl non apre realmente nulla (placeholder non implementato lato engine).",
+      "linkUrlTip": "Il tap sul link esegue un'azione openExternal verso questo URL (apre il browser/app di sistema).",
       "listRowTip": "Ogni riga è sempre uno switch — nessun altro tipo di riga supportato.",
       "menuIconsTip": "Icone valide (whitelist chiusa di 12): {{icons}}. Altro valore → fallback silenzioso su \"arrow_forward\".",
       "title": "Sezioni della schermata",
@@ -1800,6 +1804,15 @@
       "jsonCopied": "JSON copiato negli appunti",
       "resolveErrorsFirst": "Risolvi prima {{count}} errore/i bloccante/i (vedi pannello a destra)"
     },
+    "canvas": {
+      "empty": "Nessuna sezione ancora aggiunta",
+      "filters": "Filtri"
+    },
+    "cardElements": {
+      "title": "Titolo",
+      "subtitle": "Sottotitolo",
+      "date": "Data"
+    },
     "stepNav": {
       "base": "1. Base",
       "dataSource": "2. Origine dati",
@@ -1810,7 +1823,15 @@
       "previewScreen": "7. Anteprima e JSON",
       "flowSteps": "2. Step del flow",
       "translationsFlow": "3. Traduzioni",
-      "previewFlow": "4. Anteprima e JSON"
+      "previewFlow": "4. Anteprima e JSON",
+      "baseTip": "Tipo di funzione (screen/flow), identificativi e opzioni generali",
+      "dataSourceTip": "Chiamata di caricamento dati eseguita all'apertura della schermata",
+      "sectionsTip": "Blocchi di contenuto che compongono la schermata (form, liste, tabelle, menu...)",
+      "submitTip": "Come e dove vengono salvati i dati inseriti dall'utente",
+      "actionsTip": "Azione principale della schermata (bottone/icona in alto)",
+      "translationsTip": "Verifica delle chiavi di traduzione usate nel JSON generato",
+      "previewTip": "JSON finale generato dal wizard, pronto per il salvataggio",
+      "flowStepsTip": "Schermate in sequenza che compongono il flow"
     },
     "steps": {
       "addStepButton": "Aggiungi step",

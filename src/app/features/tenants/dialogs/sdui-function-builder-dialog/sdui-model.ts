@@ -122,9 +122,17 @@ export interface SduiDataSource {
   basicAuth?: { username: string; password: string };
 }
 
+/** Chiavi note di `SduiDataSource` — usata sia da `cleanDataSource` (withRaw) sia da
+ * `dataSourceFromJson` per capire quali chiavi del JSON grezzo sono "note" e quali vanno
+ * preservate come extra ignote al wizard. */
+export const SDUI_DATA_SOURCE_KNOWN_KEYS = [
+  'method', 'endpoint', 'auth', 'bodyMapping', 'responseTransform', 'defaultDateRange',
+  'captureToProfile', 'captureToState', 'headers', 'basicAuth',
+] as const;
+
 /** Legge un `dataSource` grezzo (screen o flow-step: stessa forma) da JSON. */
 export function dataSourceFromJson(ds: Record<string, unknown>): SduiDataSource {
-  return {
+  const out: SduiDataSource = {
     method: (ds['method'] as string) ?? 'GET',
     endpoint: (ds['endpoint'] as string) ?? '',
     auth: (ds['auth'] as string) ?? 'bearer',
@@ -136,6 +144,31 @@ export function dataSourceFromJson(ds: Record<string, unknown>): SduiDataSource 
     headers: (ds['headers'] as Record<string, string>) ?? undefined,
     basicAuth: (ds['basicAuth'] as { username: string; password: string }) ?? undefined,
   };
+  // Preserva eventuali chiavi ignote al wizard per il round-trip JSON -> wizard -> JSON.
+  for (const k of Object.keys(ds)) {
+    if (!(SDUI_DATA_SOURCE_KNOWN_KEYS as readonly string[]).includes(k)) {
+      (out as unknown as Record<string, unknown>)[k] = ds[k];
+    }
+  }
+  return out;
+}
+
+/** Serializza un `dataSource` (screen o flow-step, stessa forma, §4 manuale). Condivisa tra
+ * il descrittore root e `cleanFlowStep` per non duplicare la logica/il withRaw. */
+export function cleanDataSource(d: SduiDataSource): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    method: d.method || 'GET',
+    endpoint: d.endpoint,
+    auth: d.auth || 'bearer',
+  };
+  if (Object.keys(d.bodyMapping ?? {}).length > 0) out['bodyMapping'] = d.bodyMapping;
+  if (d.responseTransform) out['responseTransform'] = cleanResponseTransform(d.responseTransform);
+  if (d.defaultDateRange) out['defaultDateRange'] = d.defaultDateRange;
+  if (Object.keys(d.captureToProfile ?? {}).length > 0) out['captureToProfile'] = d.captureToProfile;
+  if (Object.keys(d.captureToState ?? {}).length > 0) out['captureToState'] = d.captureToState;
+  if (Object.keys(d.headers ?? {}).length > 0) out['headers'] = d.headers;
+  if (d.basicAuth?.username || d.basicAuth?.password) out['basicAuth'] = d.basicAuth;
+  return withRaw(d, SDUI_DATA_SOURCE_KNOWN_KEYS, out);
 }
 
 /** Legge un `responseTransform` grezzo, riconoscendo i tre tipi generici editabili dal
@@ -449,6 +482,9 @@ export interface SduiField {
   titleVariant?: 'compact' | 'medium' | 'standard' | 'large';
   descriptionVariant?: 'compact' | 'medium' | 'standard' | 'large';
   headerVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  // summaryCard — condivide titleVariant qui sopra, stesso significato/default di detailAction (§8 manuale).
+  subtitleVariant?: 'compact' | 'medium' | 'standard' | 'large';
+  officeTitleVariant?: 'compact' | 'medium' | 'standard' | 'large';
   /** Chiave in `meta` (dd/MM/yyyy o ISO) per il riquadro data a sinistra del testo. */
   dateBadgeField?: string;
   /** Chip arrotondate sotto il titolo, lette da `meta` (es. `{template: "{timeLabel}", icon: "schedule"}`). */
@@ -1422,19 +1458,7 @@ export function descriptorToJson(d: SduiDescriptor): Record<string, unknown> {
   if (d.kind === 'screen') {
     if (d.confirmLeaveIfDirty) out['confirmLeaveIfDirty'] = true;
     if (d.dataSource?.endpoint) {
-      const ds: Record<string, unknown> = {
-        method: d.dataSource.method || 'GET',
-        endpoint: d.dataSource.endpoint,
-        auth: d.dataSource.auth || 'bearer',
-      };
-      if (Object.keys(d.dataSource.bodyMapping ?? {}).length > 0) ds['bodyMapping'] = d.dataSource.bodyMapping;
-      if (d.dataSource.responseTransform) ds['responseTransform'] = cleanResponseTransform(d.dataSource.responseTransform);
-      if (d.dataSource.defaultDateRange) ds['defaultDateRange'] = d.dataSource.defaultDateRange;
-      if (Object.keys(d.dataSource.captureToProfile ?? {}).length > 0) ds['captureToProfile'] = d.dataSource.captureToProfile;
-      if (Object.keys(d.dataSource.captureToState ?? {}).length > 0) ds['captureToState'] = d.dataSource.captureToState;
-      if (Object.keys(d.dataSource.headers ?? {}).length > 0) ds['headers'] = d.dataSource.headers;
-      if (d.dataSource.basicAuth?.username || d.dataSource.basicAuth?.password) ds['basicAuth'] = d.dataSource.basicAuth;
-      out['dataSource'] = ds;
+      out['dataSource'] = cleanDataSource(d.dataSource);
     }
     out['sections'] = d.sections.map(cleanSection);
     if (d.primaryAction) out['primaryAction'] = cleanAction(d.primaryAction);
@@ -1462,10 +1486,15 @@ export function descriptorToJson(d: SduiDescriptor): Record<string, unknown> {
  *
  * Limite noto: copre solo i nodi il cui modello wizard è una copia diretta (o quasi) del
  * JSON originale (section, field, action, card, cardElement, rowDetail, actionsSheet item,
- * options, validation...). Nodi ricostruiti da zero a partire da singoli campi selezionati
- * (onSubmit, sequenceCall, conclusion, flowStep, voci di menu, dataSource,
- * flattenNested/wrapAsSingleGroup) non sono coperti: per questi resta valida la vista
- * JSON grezza come escape hatch per proprietà esotiche.
+ * menu item, options, validation...) — per questi `*FromJson` ricopia le chiavi extra sul
+ * modello (es. `sectionFromJson`/`actionSheetItemFromJson`), così `withRaw` le ritrova.
+ * Nodi ricostruiti da zero a partire da singoli campi selezionati (dataSource, sequenceCall,
+ * onSubmit/onSuccess/onError, rowDetailSection, flowStep) ora sono coperti anch'essi, tramite
+ * lo stesso pattern known-keys + ricopiatura extra lato `*FromJson` (vedi `SDUI_DATA_SOURCE_
+ * KNOWN_KEYS`, `SDUI_SEQUENCE_CALL_KNOWN_KEYS`, ecc.). Tipi non ancora coperti: `flattenNested`/
+ * `wrapAsSingleGroup`/`groupByField`/`mapFields` (transform note al wizard con chiavi extra
+ * indocumentate) e `conclusion` (rimosso dal motore, nessun fallback). Per questi resta valida
+ * la vista JSON grezza come escape hatch per proprietà esotiche.
  */
 function withRaw(node: object | null | undefined, knownKeys: readonly string[], out: Record<string, unknown>): Record<string, unknown> {
   if (!node) return out;
@@ -1615,7 +1644,7 @@ const SDUI_FIELD_KNOWN_KEYS = [
   'primaryActionSequence', 'primaryAction', 'actionMessageKey',
   'children', 'gap', 'widthPercent', 'flex', 'shrinkWrap',
   'badgeField', 'delegateHeaderKey', 'loadMoreLabelKey', 'filterBy', 'ownBadgeKey', 'detailAction',
-  'titleVariant', 'descriptionVariant', 'headerVariant', 'dateBadgeField', 'chips', 'lines', 'titleChips',
+  'titleVariant', 'descriptionVariant', 'headerVariant', 'subtitleVariant', 'officeTitleVariant', 'dateBadgeField', 'chips', 'lines', 'titleChips',
   'hideRadio', 'selectedBorderWidth', 'fullWidthLines', 'emptyDelegatesKey',
   'titleValueField', 'subtitleField', 'flatFields', 'officesField', 'officeTitleKey', 'officeFields',
   'action', 'scanTitleKey', 'scanPattern', 'scanHintKey', 'scanInvalidKey', 'formats', 'scanFrame', 'extract', 'onScan',
@@ -1719,6 +1748,9 @@ export function cleanField(f: SduiField): Record<string, unknown> {
     if (f.officesField) out['officesField'] = f.officesField;
     if (f.officeTitleKey) out['officeTitleKey'] = f.officeTitleKey;
     if (f.officeFields?.length) out['officeFields'] = f.officeFields;
+    if (f.titleVariant && f.titleVariant !== 'standard') out['titleVariant'] = f.titleVariant;
+    if (f.subtitleVariant && f.subtitleVariant !== 'standard') out['subtitleVariant'] = f.subtitleVariant;
+    if (f.officeTitleVariant && f.officeTitleVariant !== 'standard') out['officeTitleVariant'] = f.officeTitleVariant;
   }
   if (f.component === 'actionButton') {
     if (f.style && f.style !== 'filled') out['style'] = f.style;
@@ -1929,6 +1961,21 @@ const SDUI_SECTION_KNOWN_KEYS = [
   'dateField', 'eventsTitleKey', 'eventsTitleVariant',
 ] as const;
 
+/** Serializza una voce di menu (§3.4 manuale): `action` annidata sotto `action:`. Usa
+ * `withRaw` per preservare chiavi ignote al wizard (es. `titleVariant`) — vedi commento
+ * su `SDUI_MENU_ITEM_KNOWN_KEYS` e limite noto rimosso da `withRaw`. */
+function cleanMenuItem(i: SduiMenuItem): Record<string, unknown> {
+  const out: Record<string, unknown> = { labelKey: i.labelKey, action: cleanAction(i.action) };
+  if (i.icon) out['icon'] = i.icon;
+  if (i.descriptionKey) out['descriptionKey'] = i.descriptionKey;
+  if (i.svg_icon) out['svg_icon'] = i.svg_icon;
+  if (i.badge) out['badge'] = i.badge;
+  if (i.visibleIf) out['visibleIf'] = i.visibleIf;
+  if (i.trailingIcon) out['trailingIcon'] = i.trailingIcon;
+  if (i.iconBackground) out['iconBackground'] = true;
+  return withRaw(i, SDUI_MENU_ITEM_KNOWN_KEYS, out);
+}
+
 function cleanSection(s: SduiSection): Record<string, unknown> {
   const out: Record<string, unknown> = { id: s.id, type: s.type };
   if (s.titleKey) out['titleKey'] = s.titleKey;
@@ -1957,7 +2004,7 @@ function cleanSection(s: SduiSection): Record<string, unknown> {
   }
 
   if (s.type === 'menu') {
-    out['items'] = (s.items ?? []).map(i => ({ ...i, action: cleanAction(i.action) }));
+    out['items'] = (s.items ?? []).map(cleanMenuItem);
     if (s.layout) out['layout'] = s.layout;
     if (s.showIcons === false) out['showIcons'] = false;
     if (s.iconBackground) out['iconBackground'] = true;
@@ -2040,6 +2087,15 @@ export const SDUI_ACTION_SHEET_ITEM_KNOWN_KEYS = [
   'style', 'visibleWhenFieldTrue', 'visibleWhenFieldFalse', 'action',
 ] as const;
 
+/** Chiavi item-level note di `SduiMenuItem` — usata sia da `cleanMenuItem` (withRaw) sia
+ * dal parsing di `sectionFromJson` (section.items) in sdui-function-builder-dialog.ts per
+ * capire quali chiavi del JSON grezzo sono "note" e quali vanno preservate come extra
+ * ignote al wizard (es. `titleVariant` su una voce di menu non modellato). */
+export const SDUI_MENU_ITEM_KNOWN_KEYS = [
+  'icon', 'labelKey', 'descriptionKey', 'action', 'svg_icon', 'badge', 'visibleIf',
+  'trailingIcon', 'iconBackground',
+] as const;
+
 /** Serializza una voce di actionsSheet (§3.10 manuale): `action` è annidata sotto la
  * chiave `action:` (schema corretto/attuale — vedi commento su `SduiActionSheetItem`),
  * editata con lo stesso editor grafico generico di primaryAction/menu (#actionEditor). */
@@ -2061,6 +2117,13 @@ function cleanActionsSheet(items: SduiActionSheetItem[] | undefined): Record<str
   return (items ?? []).map(cleanActionSheetItem);
 }
 
+/** Chiavi note di `SduiRowDetailSection` — usata sia da `cleanRowDetailSection` (withRaw)
+ * sia da `rowDetailSectionFromJson` per preservare chiavi item-level ignote al wizard. */
+export const SDUI_ROW_DETAIL_SECTION_KNOWN_KEYS = [
+  'titleKey', 'type', 'field', 'preview', 'previewEndpoint', 'fields',
+  'titleField', 'subtitleField', 'action', 'actionsSheet',
+] as const;
+
 function cleanRowDetailSection(s: SduiRowDetailSection): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (s.titleKey) out['titleKey'] = s.titleKey;
@@ -2080,7 +2143,7 @@ function cleanRowDetailSection(s: SduiRowDetailSection): Record<string, unknown>
   }
   const actionsSheet = cleanActionsSheet(s.actionsSheet);
   if (actionsSheet.length) out['actionsSheet'] = actionsSheet;
-  return out;
+  return withRaw(s, SDUI_ROW_DETAIL_SECTION_KNOWN_KEYS, out);
 }
 
 const SDUI_ROW_DETAIL_KNOWN_KEYS = [
@@ -2110,6 +2173,18 @@ function cleanRowDetail(r: SduiRowDetail): Record<string, unknown> {
   return withRaw(r, SDUI_ROW_DETAIL_KNOWN_KEYS, out);
 }
 
+/** Chiavi note di `SduiSequenceCall` — usata sia da `cleanSequenceCall` (withRaw) sia da
+ * `sequenceCallFromJson` per preservare chiavi ignote al wizard (es. in `prefetchSequence`,
+ * `onSubmit.sequence`, `infoBanner.primaryAction.sequence`). */
+export const SDUI_SEQUENCE_CALL_KNOWN_KEYS = [
+  'method', 'endpoint', 'auth', 'bodyMapping', 'body', 'captureMapping', 'captureOptions',
+] as const;
+
+/** Chiavi note di `SduiCaptureOptions` (sotto-oggetto di `SduiSequenceCall.captureOptions`). */
+export const SDUI_CAPTURE_OPTIONS_KNOWN_KEYS = [
+  'stateKey', 'valueTemplate', 'itemsField', 'labelTemplate', 'sublabelTemplate', 'metaFields',
+] as const;
+
 function cleanSequenceCall(c: SduiSequenceCall): Record<string, unknown> {
   const out: Record<string, unknown> = { endpoint: c.endpoint };
   if (c.method && c.method !== 'GET') out['method'] = c.method;
@@ -2125,10 +2200,28 @@ function cleanSequenceCall(c: SduiSequenceCall): Record<string, unknown> {
     if (c.captureOptions.labelTemplate) co['labelTemplate'] = c.captureOptions.labelTemplate;
     if (c.captureOptions.sublabelTemplate) co['sublabelTemplate'] = c.captureOptions.sublabelTemplate;
     if (c.captureOptions.metaFields?.length) co['metaFields'] = c.captureOptions.metaFields;
-    out['captureOptions'] = co;
+    out['captureOptions'] = withRaw(c.captureOptions, SDUI_CAPTURE_OPTIONS_KNOWN_KEYS, co);
   }
-  return out;
+  return withRaw(c, SDUI_SEQUENCE_CALL_KNOWN_KEYS, out);
 }
+
+/** Chiavi note di `SduiOnSubmit` — usata sia da `cleanOnSubmit` (withRaw) sia da
+ * `onSubmitFromJson` (quest'ultima già preserva le chiavi extra tramite spread diretto
+ * del JSON grezzo, essendo un nodo "quasi copia diretta" nonostante la ricostruzione
+ * parziale di alcuni campi nidificati). */
+export const SDUI_ON_SUBMIT_KNOWN_KEYS = [
+  'method', 'endpoint', 'auth', 'submitLabelKey', 'cancelLabelKey', 'bodyMapping', 'sequence',
+  'failureCheck', 'requestTransform', 'multipart', 'fileField', 'fileFieldName', 'onSuccess', 'onError',
+] as const;
+
+/** Chiavi note di `SduiOnSubmit.onSuccess`. */
+export const SDUI_ON_SUCCESS_KNOWN_KEYS = [
+  'action', 'navigateBack', 'messageKey', 'valuePath', 'resetToRoute', 'popScreen',
+  'showSuccessScreen', 'showTransitionScreen', 'navigateSdui', 'completeLogin',
+] as const;
+
+/** Chiavi note di `SduiOnSubmit.onError`. */
+export const SDUI_ON_ERROR_KNOWN_KEYS = ['messageKey', 'action'] as const;
 
 function cleanOnSubmit(o: SduiOnSubmit): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -2156,38 +2249,44 @@ function cleanOnSubmit(o: SduiOnSubmit): Record<string, unknown> {
   if (o.onSuccess?.valuePath) onSuccess['valuePath'] = o.onSuccess.valuePath;
   if (o.onSuccess?.resetToRoute) onSuccess['resetToRoute'] = o.onSuccess.resetToRoute;
   if (o.onSuccess?.popScreen) onSuccess['popScreen'] = true;
+  // Possono coesistere (§5.3bis manuale): showSuccessScreen ha priorità nel comportamento
+  // a runtime (sostituisce l'auto-chiusura della schermata di attesa con la pagina di esito),
+  // ma entrambe le chiavi vanno comunque serializzate se presenti nel modello.
   if (o.onSuccess?.showSuccessScreen) {
     onSuccess['showSuccessScreen'] = o.onSuccess.showSuccessScreen;
-  } else if (o.onSuccess?.showTransitionScreen?.titleKey) {
+  }
+  if (o.onSuccess?.showTransitionScreen?.titleKey) {
     onSuccess['showTransitionScreen'] = o.onSuccess.showTransitionScreen;
   }
   if (o.onSuccess?.navigateSdui?.entity) onSuccess['navigateSdui'] = o.onSuccess.navigateSdui;
   // Fuori dal ramo showSuccessScreen: l'engine lo legge comunque (flow_renderer.dart,
   // `onSubmit['onSuccess']?['completeLogin'] == true`), indipendentemente dal resto.
   if (o.onSuccess?.completeLogin) onSuccess['completeLogin'] = true;
-  if (Object.keys(onSuccess).length > 0) out['onSuccess'] = onSuccess;
-  if (o.onError?.messageKey || o.onError?.action) {
-    const onError: Record<string, unknown> = {};
-    if (o.onError.messageKey) onError['messageKey'] = o.onError.messageKey;
-    if (o.onError.action) onError['action'] = o.onError.action;
-    out['onError'] = onError;
-  }
-  return out;
+  const onSuccessWithRaw = withRaw(o.onSuccess, SDUI_ON_SUCCESS_KNOWN_KEYS, onSuccess);
+  if (Object.keys(onSuccessWithRaw).length > 0) out['onSuccess'] = onSuccessWithRaw;
+  const onError: Record<string, unknown> = {};
+  if (o.onError?.messageKey) onError['messageKey'] = o.onError.messageKey;
+  if (o.onError?.action) onError['action'] = o.onError.action;
+  const onErrorWithRaw = withRaw(o.onError, SDUI_ON_ERROR_KNOWN_KEYS, onError);
+  if (Object.keys(onErrorWithRaw).length > 0) out['onError'] = onErrorWithRaw;
+  return withRaw(o, SDUI_ON_SUBMIT_KNOWN_KEYS, out);
 }
+
+/** Chiavi note di `SduiFlowStep` — usata sia da `cleanFlowStep` (withRaw) sia dal parsing
+ * inline di `descriptorFromJson` (ramo `kind === 'flow'`) in sdui-function-builder-dialog.ts.
+ * Include `isLastStep`, campo calcolato solo-UI (mai presente nel JSON grezzo, mai scritto
+ * in output): va comunque elencato qui perché `withRaw` itera sulle chiavi del modello (non
+ * solo su quelle del JSON originale) e lo tratterebbe altrimenti come un'ignota da preservare. */
+export const SDUI_FLOW_STEP_KNOWN_KEYS = [
+  'id', 'titleKey', 'descriptionKey', 'visibleIf', 'dataSource', 'prefetchSequence',
+  'fields', 'canProceed', 'reviewFields', 'onSubmit', 'next', 'isLastStep',
+] as const;
 
 function cleanFlowStep(s: SduiFlowStep): Record<string, unknown> {
   const out: Record<string, unknown> = { id: s.id, titleKey: s.titleKey };
   if (s.descriptionKey) out['descriptionKey'] = s.descriptionKey;
   if (s.visibleIf) out['visibleIf'] = s.visibleIf;
-  if (s.dataSource?.endpoint) {
-    const ds: Record<string, unknown> = { endpoint: s.dataSource.endpoint };
-    if (s.dataSource.method && s.dataSource.method !== 'GET') ds['method'] = s.dataSource.method;
-    if (s.dataSource.auth && s.dataSource.auth !== 'bearer') ds['auth'] = s.dataSource.auth;
-    if (Object.keys(s.dataSource.bodyMapping ?? {}).length > 0) ds['bodyMapping'] = s.dataSource.bodyMapping;
-    if (s.dataSource.responseTransform) ds['responseTransform'] = cleanResponseTransform(s.dataSource.responseTransform);
-    if (s.dataSource.defaultDateRange) ds['defaultDateRange'] = s.dataSource.defaultDateRange;
-    out['dataSource'] = ds;
-  }
+  if (s.dataSource?.endpoint) out['dataSource'] = cleanDataSource(s.dataSource);
   if (s.prefetchSequence?.length) out['prefetchSequence'] = s.prefetchSequence.map(cleanSequenceCall);
   if (s.fields.length > 0) out['fields'] = s.fields.map(cleanField);
   if (s.canProceed.length > 0) out['canProceed'] = s.canProceed;
@@ -2197,5 +2296,5 @@ function cleanFlowStep(s: SduiFlowStep): Record<string, unknown> {
   } else if (s.next) {
     out['next'] = s.next;
   }
-  return out;
+  return withRaw(s, SDUI_FLOW_STEP_KNOWN_KEYS, out);
 }

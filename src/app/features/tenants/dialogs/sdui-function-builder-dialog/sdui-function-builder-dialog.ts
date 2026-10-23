@@ -51,6 +51,7 @@ import {
   SduiRowDetail,
   SduiRowDetailSection,
   SduiActionSheetItem,
+  SduiBadgeEntry,
   SduiValidationKey,
   applyValidationKey,
   SduiCardElement,
@@ -58,6 +59,10 @@ import {
   SDUI_CARD_ELEMENT_TYPES,
   SDUI_CARD_ELEMENT_FIELD_BASED,
   SDUI_ACTION_SHEET_ITEM_KNOWN_KEYS,
+  SDUI_MENU_ITEM_KNOWN_KEYS,
+  SDUI_ROW_DETAIL_SECTION_KNOWN_KEYS,
+  SDUI_SEQUENCE_CALL_KNOWN_KEYS,
+  SDUI_FLOW_STEP_KNOWN_KEYS,
   createEmptyAction,
   createEmptyCaptureOptions,
   createEmptyCardElement,
@@ -85,7 +90,8 @@ import {
   dataSourceFromJson,
 } from './sdui-model';
 import { SduiIssue, validateDescriptor } from './sdui-validator';
-import { collectTranslationKeys, hasTranslation } from './sdui-translations';
+import { collectTranslationKeys, flattenTranslations, hasTranslation } from './sdui-translations';
+import { SduiKeyAutocompleteDirective } from './sdui-key-autocomplete';
 import { formatPathPreviewValue, PathPreviewResult, resolveSampleFieldKey, resolveSamplePath } from './sdui-path-preview';
 
 /** Localizza un'azione (§6 manuale) all'interno del descriptor: usato dall'editor azione
@@ -107,22 +113,41 @@ export interface SduiFunctionBuilderDialogData {
   tenantId: string;
 }
 
+/** Archetipi visivi usati dal canvas smartphone mockup (Fase B) per raggruppare i 20
+ * SduiFieldComponent in poche rappresentazioni generiche (riquadro input, checkbox, ecc.). */
+type MockFieldKind = 'input' | 'checkbox' | 'toggle' | 'select' | 'text' | 'banner' | 'button' | 'image' | 'chip' | 'card' | 'container';
+
 const WIZARD_STEPS = [
-  { key: 'base', label: 'sduiWizard.stepNav.base' },
-  { key: 'dataSource', label: 'sduiWizard.stepNav.dataSource' },
-  { key: 'sections', label: 'sduiWizard.stepNav.sections' },
-  { key: 'submit', label: 'sduiWizard.stepNav.submit' },
-  { key: 'actions', label: 'sduiWizard.stepNav.actions' },
-  { key: 'translations', label: 'sduiWizard.stepNav.translationsScreen' },
-  { key: 'preview', label: 'sduiWizard.stepNav.previewScreen' },
+  { key: 'base', label: 'sduiWizard.stepNav.base', icon: 'tune', tip: 'sduiWizard.stepNav.baseTip' },
+  { key: 'dataSource', label: 'sduiWizard.stepNav.dataSource', icon: 'cloud_download', tip: 'sduiWizard.stepNav.dataSourceTip' },
+  { key: 'sections', label: 'sduiWizard.stepNav.sections', icon: 'dashboard_customize', tip: 'sduiWizard.stepNav.sectionsTip' },
+  { key: 'submit', label: 'sduiWizard.stepNav.submit', icon: 'save', tip: 'sduiWizard.stepNav.submitTip' },
+  { key: 'actions', label: 'sduiWizard.stepNav.actions', icon: 'bolt', tip: 'sduiWizard.stepNav.actionsTip' },
+  { key: 'translations', label: 'sduiWizard.stepNav.translationsScreen', icon: 'translate', tip: 'sduiWizard.stepNav.translationsTip' },
+  { key: 'preview', label: 'sduiWizard.stepNav.previewScreen', icon: 'visibility', tip: 'sduiWizard.stepNav.previewTip' },
 ] as const;
 
 const FLOW_WIZARD_STEPS = [
-  { key: 'base', label: 'sduiWizard.stepNav.base' },
-  { key: 'steps', label: 'sduiWizard.stepNav.flowSteps' },
-  { key: 'translations', label: 'sduiWizard.stepNav.translationsFlow' },
-  { key: 'preview', label: 'sduiWizard.stepNav.previewFlow' },
+  { key: 'base', label: 'sduiWizard.stepNav.base', icon: 'tune', tip: 'sduiWizard.stepNav.baseTip' },
+  { key: 'steps', label: 'sduiWizard.stepNav.flowSteps', icon: 'dashboard_customize', tip: 'sduiWizard.stepNav.flowStepsTip' },
+  { key: 'translations', label: 'sduiWizard.stepNav.translationsFlow', icon: 'translate', tip: 'sduiWizard.stepNav.translationsTip' },
+  { key: 'preview', label: 'sduiWizard.stepNav.previewFlow', icon: 'visibility', tip: 'sduiWizard.stepNav.previewTip' },
 ] as const;
+
+/** Icona indicativa per tipo di section, usata nella sidebar ad albero e nell'header delle card
+ * nello step "Sezioni" — solo scopo di scansione visiva rapida, nessun impatto sul JSON generato. */
+const SECTION_TYPE_ICONS: Record<SduiSectionType, string> = {
+  form: 'edit_note',
+  list: 'view_list',
+  info: 'info',
+  menu: 'menu',
+  table: 'table_chart',
+  filterBar: 'filter_alt',
+  eventsSummary: 'event',
+  groupedTable: 'view_agenda',
+  cardList: 'view_module',
+  calendar: 'calendar_month',
+};
 
 @Component({
   selector: 'app-sdui-function-builder-dialog',
@@ -142,6 +167,7 @@ const FLOW_WIZARD_STEPS = [
     MatTooltipModule,
     DragDropModule,
     TranslatePipe,
+    SduiKeyAutocompleteDirective,
   ],
   providers: [
     // Campi compatti: non riservare spazio fisso per hint/errore quando assenti (662 mat-form-field nel wizard).
@@ -156,6 +182,22 @@ export class SduiFunctionBuilderDialog {
   private readonly translate = inject(TranslateService);
   readonly dialogRef = inject<MatDialogRef<SduiFunctionBuilderDialog, Record<string, unknown>>>(MatDialogRef);
   readonly data = inject<SduiFunctionBuilderDialogData>(MAT_DIALOG_DATA);
+
+  // --- Autocomplete *Key: lingua UI admin corrente (segue il toggle IT/EN del toolbar, non la
+  // lingua del dizionario SDUI mostrata nello step "Traduzioni", che resta sempre IT/EN/ES fisse) ---
+  readonly uiLang = signal(this.translate.currentLang || 'it');
+
+  /** Catalogo traduzioni (key→testo tradotto) per l'autocomplete dei campi *Key, nella lingua
+   * UI admin corrente. Vuoto finché `loadTranslations()` (avviato subito all'apertura, vedi
+   * costruttore) non ha completato il fetch di smh_it/smh_en dal tenant. */
+  readonly translationCatalog = computed(() =>
+    flattenTranslations(this.uiLang() === 'en' ? this.translationsEn() : this.translationsIt()),
+  );
+
+  constructor() {
+    this.translate.onLangChange.subscribe((e) => this.uiLang.set(e.lang));
+    this.loadTranslations();
+  }
 
   readonly kinds = SDUI_KINDS;
   readonly sectionTypes = SDUI_SECTION_TYPES;
@@ -183,6 +225,117 @@ export class SduiFunctionBuilderDialog {
 
   readonly steps = computed(() => (this.descriptor().kind === 'screen' ? WIZARD_STEPS : FLOW_WIZARD_STEPS));
   readonly currentStepKey = computed(() => this.steps()[this.stepIndex()]?.key ?? 'base');
+
+  // ------------------------------------------------------------------
+  // Canvas smartphone mockup (Fase B) — anteprima indicativa/generica delle sections,
+  // mostrata solo durante lo step "Sezioni": non riproduce pixel-per-pixel il rendering
+  // reale del motore SDUI mobile (vedi direzione confermata con l'utente), serve solo a
+  // dare un colpo d'occhio su struttura e ordine mentre si edita.
+  // ------------------------------------------------------------------
+
+  readonly sectionsStepIndex = computed(() => this.steps().findIndex(s => s.key === 'sections'));
+  readonly stepsStepIndex = computed(() => this.steps().findIndex(s => s.key === 'steps'));
+  readonly canvasVisible = computed(() => {
+    const kind = this.descriptor().kind;
+    const key = this.currentStepKey();
+    return (kind === 'screen' && key === 'sections') || (kind === 'flow' && key === 'steps');
+  });
+  readonly calendarMockDays = Array.from({ length: 21 });
+
+  // --- Canvas smartphone mockup per i flow: a differenza delle sections (tutte visibili insieme
+  // nel mockup screen), gli step di un flow sono mostrati uno alla volta all'utente finale — il
+  // canvas ne previsualizza quindi solo UNO per volta (`expandedFlowStepIndex`, default il primo). ---
+  readonly expandedFlowStepIndex = signal<number | null>(null);
+  readonly activeFlowStepIndex = computed(() => {
+    const idx = this.expandedFlowStepIndex();
+    const steps = this.descriptor().steps;
+    if (idx !== null && idx < steps.length) return idx;
+    return steps.length > 0 ? 0 : -1;
+  });
+  readonly activeFlowStep = computed(() => {
+    const idx = this.activeFlowStepIndex();
+    return idx >= 0 ? this.descriptor().steps[idx] : null;
+  });
+
+  /** Dall'albero di navigazione laterale, dal canvas o dalla card dell'editor: seleziona lo step
+   * di flow da mostrare nel canvas (mirror di `selectSectionInSidebar` per le sections). */
+  selectFlowStepInSidebar(stepIdx: number, flowStepIndex: number): void {
+    this.stepIndex.set(stepIdx);
+    this.expandedFlowStepIndex.set(flowStepIndex);
+    setTimeout(() => {
+      document.getElementById(`sdui-flow-step-card-${flowStepIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  private readonly FIELD_KIND_MAP: Record<SduiFieldComponent, MockFieldKind> = {
+    textInput: 'input', datePicker: 'input', timePicker: 'input', filePicker: 'input', qrScanner: 'input', captcha: 'input',
+    checkbox: 'checkbox', animatedCheck: 'checkbox',
+    toggle: 'toggle',
+    dropdown: 'select', radioCard: 'select', radioCardList: 'select',
+    summaryCard: 'card',
+    chip: 'chip',
+    staticText: 'text', readOnlyInfo: 'text',
+    infoBanner: 'banner',
+    row: 'container', column: 'container',
+    actionButton: 'button',
+    image: 'image',
+  };
+
+  mockFieldKind(c: SduiFieldComponent): MockFieldKind { return this.FIELD_KIND_MAP[c] ?? 'input'; }
+
+  /** `true` quando il mock del componente mostra già il proprio testo (niente label separata sopra). */
+  mockFieldShowsOwnLabel(kind: MockFieldKind): boolean {
+    return kind === 'text' || kind === 'banner' || kind === 'button' || kind === 'chip';
+  }
+
+  /** Palette indicativa per i 5 variant chip (§8 manuale) — solo per il canvas, nessun impatto sul JSON. */
+  private readonly CHIP_VARIANT_COLORS: Record<string, string> = {
+    primary: '#2563eb', success: '#16a34a', warning: '#d97706', danger: '#dc2626', neutral: '#6b7280',
+  };
+  chipVariantColor(v?: string): string { return this.CHIP_VARIANT_COLORS[v ?? 'neutral'] ?? '#6b7280'; }
+
+  /** Legenda indicativa di una badgeMap: il canvas non ha dati reali per valutare quale voce si
+   * applicherebbe, quindi mostra tutti i colori/etichette configurati come riferimento visivo. */
+  badgeEntries(map?: Record<string, SduiBadgeEntry>): SduiBadgeEntry[] { return map ? Object.values(map) : []; }
+
+  /** Colore indicativo per rowAccent/leftBorder quando non derivato da una badgeMap — prima voce
+   * della mappa se presente, altrimenti colore primario del tema canvas. */
+  accentColor(map?: Record<string, SduiBadgeEntry>): string {
+    const first = this.badgeEntries(map)[0];
+    return first?.color || '#2563eb';
+  }
+
+  /** Stile indicativo (bordo colorato) per rowAccent (groupedTable) / leftBorder (table) applicato
+   * alle card segnaposto del canvas — riflette posizione/colore configurati, non il valore reale
+   * dell'item (indisponibile in fase di editing). */
+  sectionAccentStyle(sec: SduiSection): Record<string, string> {
+    if (sec.rowAccent) {
+      const color = sec.rowAccent.colorFromBadge ? this.accentColor(sec.badgeMap) : '#2563eb';
+      return sec.rowAccent.position === 'top' ? { 'border-top': `3px solid ${color}` } : { 'border-left': `3px solid ${color}` };
+    }
+    if (sec.leftBorder) {
+      const vals = sec.leftBorderColorMap ? Object.values(sec.leftBorderColorMap) : [];
+      return { 'border-left': `3px solid ${vals[0] || '#2563eb'}` };
+    }
+    return {};
+  }
+
+  /** Risolve una translationKey nel dizionario IT caricato per lo step "Traduzioni" — fallback sulla chiave grezza se assente/non caricato. */
+  resolveTranslation(key: string | undefined | null): string {
+    if (!key) return '';
+    const dict = this.translationsIt();
+    if (!dict) return key;
+    const parts = key.split('.');
+    let current: unknown = dict;
+    for (const part of parts) {
+      if (current && typeof current === 'object' && part in (current as Record<string, unknown>)) {
+        current = (current as Record<string, unknown>)[part];
+      } else {
+        return key;
+      }
+    }
+    return typeof current === 'string' ? current : key;
+  }
 
   readonly issues = computed<SduiIssue[]>(() => validateDescriptor(this.descriptor()));
   readonly errorCount = computed(() => this.issues().filter(i => i.severity === 'error').length);
@@ -285,6 +438,21 @@ export class SduiFunctionBuilderDialog {
   goToStep(i: number): void { this.stepIndex.set(i); }
   next(): void { this.stepIndex.update(i => Math.min(i + 1, this.steps().length - 1)); }
   back(): void { this.stepIndex.update(i => Math.max(i - 1, 0)); }
+
+  /** Dall'albero di navigazione laterale o dal canvas: salta allo step "Sezioni", espande la
+   * sezione scelta e la porta in vista nell'editor (gli step/sezioni possono essere lunghi). */
+  selectSectionInSidebar(stepIdx: number, sectionIndex: number): void {
+    this.stepIndex.set(stepIdx);
+    this.expandedSectionIndex.set(sectionIndex);
+    // Il DOM della card non esiste ancora nel frame corrente se si cambia anche step: si aspetta
+    // il prossimo giro di change detection prima di cercarla.
+    setTimeout(() => {
+      document.getElementById(`sdui-section-card-${sectionIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  /** Icona indicativa per il tipo di section (sidebar ad albero + header card) — solo UI, nessun impatto sul JSON. */
+  sectionTypeIcon(type: SduiSectionType): string { return SECTION_TYPE_ICONS[type] ?? 'widgets'; }
 
   setKind(kind: SduiKind): void {
     this.update(d => {
@@ -718,12 +886,34 @@ export class SduiFunctionBuilderDialog {
   // Step 3 — Sections
   // ------------------------------------------------------------------
 
+  /** Indice della sezione attualmente espansa nello step "Sezioni" (accordion, una alla volta
+   * per evitare il "muro di campi" con tutte le sezioni aperte contemporaneamente). null = tutte chiuse. */
+  readonly expandedSectionIndex = signal<number | null>(null);
+  toggleSectionExpanded(i: number): void {
+    this.expandedSectionIndex.update(cur => (cur === i ? null : i));
+  }
   addSection(type: SduiSectionType): void {
     this.update(d => { d.sections.push(createEmptySection(type)); });
+    this.expandedSectionIndex.set(this.descriptor().sections.length - 1);
   }
-  removeSection(i: number): void { this.update(d => { d.sections.splice(i, 1); }); }
+  removeSection(i: number): void {
+    this.update(d => { d.sections.splice(i, 1); });
+    this.expandedSectionIndex.update(cur => {
+      if (cur === null) return null;
+      if (cur === i) return null;
+      return cur > i ? cur - 1 : cur;
+    });
+  }
   dropSection(event: CdkDragDrop<SduiSection[]>): void {
     this.update(d => moveItemInArray(d.sections, event.previousIndex, event.currentIndex));
+    this.expandedSectionIndex.update(cur => {
+      if (cur === null) return null;
+      if (cur === event.previousIndex) return event.currentIndex;
+      // Ricalcola l'indice spostando l'elemento intermedio come fa moveItemInArray.
+      if (event.previousIndex < event.currentIndex && cur > event.previousIndex && cur <= event.currentIndex) return cur - 1;
+      if (event.previousIndex > event.currentIndex && cur >= event.currentIndex && cur < event.previousIndex) return cur + 1;
+      return cur;
+    });
   }
   setSectionId(i: number, v: string): void { this.update(d => { d.sections[i].id = v; }); }
   setSectionTitleKey(i: number, v: string): void { this.update(d => { d.sections[i].titleKey = v; }); }
@@ -2257,22 +2447,42 @@ function isEmptyJsonValue(v: unknown): boolean {
 /** Alcuni serializer del wizard omettono deliberatamente una chiave quando il suo valore coincide
  * col default implicito del motore (JSON più compatto) — es. `"method": "GET"` o `"titleVariant":
  * "standard"` dichiarati esplicitamente nel JSON originale spariscono nel round-trip pur restando
- * validi. Senza questa mappa verrebbero segnalati come "persi" per errore (falso positivo). */
-const SDUI_DEFAULT_OMITTED_VALUES: Record<string, unknown> = {
-  method: 'GET',
-  auth: 'bearer',
-  variant: 'standard',
-  titleVariant: 'standard',
-  descriptionVariant: 'standard',
-  eventsTitleVariant: 'standard',
-  orientation: 'vertical',
-  mainAxisAlignment: 'start',
-  crossAxisAlignment: 'start',
-  itemsPath: 'items',
-  targetPath: 'groupedItems',
-  groupItemsField: 'items',
-  bordered: false,
-  leftBorder: false,
+ * validi. Senza questa mappa verrebbero segnalati come "persi" per errore (falso positivo).
+ *
+ * Ogni chiave mappa a un ARRAY di valori legittimamente omissibili (non un valore singolo): lo
+ * stesso nome di campo (es. `titleVariant`/`descriptionVariant`) ha default diversi a seconda del
+ * componente che lo possiede in `cleanField`/`cleanSection` (`'compact'` per `readOnlyInfo`,
+ * `'standard'` altrove) — con un solo valore per chiave, metà dei casi reali venivano segnalati
+ * come falsi positivi. Tenere sincronizzata con ogni `if (x.y !== DEFAULT) out['y'] = ...` nei
+ * `clean*()` di `sdui-model.ts`: un nuovo default omesso introdotto lì senza essere aggiunto qui
+ * torna a generare falsi positivi di "dati persi". */
+const SDUI_DEFAULT_OMITTED_VALUES: Record<string, unknown[]> = {
+  method: ['GET'],
+  auth: ['bearer'],
+  variant: ['standard'],
+  titleVariant: ['standard', 'compact'],
+  descriptionVariant: ['standard', 'compact'],
+  subtitleVariant: ['standard'],
+  officeTitleVariant: ['standard'],
+  headerVariant: ['standard'],
+  eventsTitleVariant: ['standard'],
+  labelVariant: ['standard'],
+  orientation: ['vertical'],
+  mainAxisAlignment: ['start'],
+  crossAxisAlignment: ['start'],
+  itemsPath: ['items'],
+  targetPath: ['groupedItems'],
+  groupItemsField: ['items'],
+  bordered: [false],
+  leftBorder: [false],
+  keyboardType: ['text'],
+  decimals: [2],
+  layout: ['default'],
+  cardPadding: [12],
+  style: ['filled'],
+  align: ['center'],
+  autoOpenIdField: ['id'],
+  field: ['documents'],
 };
 
 /** Confronta ricorsivamente il JSON originale con quello rigenerato dal wizard (stessa struttura,
@@ -2301,7 +2511,15 @@ function findLostAttributePaths(original: unknown, roundTripped: unknown, path =
     for (const [key, value] of Object.entries(original as Record<string, unknown>)) {
       const childPath = path ? `${path}.${key}` : key;
       if (!(key in rtObj)) {
-        const isLegitDefault = key in SDUI_DEFAULT_OMITTED_VALUES && value === SDUI_DEFAULT_OMITTED_VALUES[key];
+        // Migrazione flat legacy -> nested canonico (es. rowDetail.actionsSheet[], commit
+        // a88c384): un campo azione presente in root nell'originale può essere stato
+        // rigenerato sotto `action.<key>` dal wizard. Non è una perdita se lo troviamo lì.
+        const actionObj = rtObj['action'];
+        if (actionObj && typeof actionObj === 'object' && !Array.isArray(actionObj) && key in (actionObj as Record<string, unknown>)) {
+          lost.push(...findLostAttributePaths(value, (actionObj as Record<string, unknown>)[key], childPath));
+          continue;
+        }
+        const isLegitDefault = key in SDUI_DEFAULT_OMITTED_VALUES && SDUI_DEFAULT_OMITTED_VALUES[key].includes(value);
         if (!isEmptyJsonValue(value) && !isLegitDefault) lost.push(childPath);
       } else {
         lost.push(...findLostAttributePaths(value, rtObj[key], childPath));
@@ -2394,6 +2612,12 @@ function jsonToDescriptor(json: Record<string, unknown>, fallbackEntityName: str
         prefetchSequence: ((s['prefetchSequence'] as Record<string, unknown>[]) ?? []).map(sequenceCallFromJson),
       };
       if (s['onSubmit']) step.onSubmit = onSubmitFromJson(s['onSubmit'] as Record<string, unknown>);
+      // Preserva eventuali chiavi ignote al wizard per il round-trip JSON -> wizard -> JSON.
+      for (const k of Object.keys(s)) {
+        if (!(SDUI_FLOW_STEP_KNOWN_KEYS as readonly string[]).includes(k)) {
+          (step as unknown as Record<string, unknown>)[k] = s[k];
+        }
+      }
       return step;
     });
   }
@@ -2419,12 +2643,27 @@ function sectionFromJson(s: Record<string, unknown>): SduiSection {
   }
   if (Array.isArray(s['fields'])) section.fields = (s['fields'] as Record<string, unknown>[]).map(fieldFromJson);
   if (Array.isArray(s['items'])) {
-    section.items = (s['items'] as Record<string, unknown>[]).map(i => ({
-      icon: i['icon'] as string | undefined,
-      labelKey: (i['labelKey'] as string) ?? '',
-      descriptionKey: i['descriptionKey'] as string | undefined,
-      action: actionFromJson((i['action'] as Record<string, unknown>) ?? { type: 'reload' }),
-    }));
+    section.items = (s['items'] as Record<string, unknown>[]).map(i => {
+      const item = {
+        icon: i['icon'] as string | undefined,
+        labelKey: (i['labelKey'] as string) ?? '',
+        descriptionKey: i['descriptionKey'] as string | undefined,
+        action: actionFromJson((i['action'] as Record<string, unknown>) ?? { type: 'reload' }),
+        svg_icon: i['svg_icon'] as string | undefined,
+        badge: i['badge'] as 'link' | 'login' | undefined,
+        visibleIf: i['visibleIf'] as string | undefined,
+        trailingIcon: i['trailingIcon'] as string | undefined,
+        iconBackground: i['iconBackground'] as boolean | undefined,
+      };
+      // Preserva eventuali chiavi item-level ignote al wizard (es. titleVariant) per il
+      // round-trip JSON -> wizard -> JSON, come già fatto per actionSheetItemFromJson.
+      for (const k of Object.keys(i)) {
+        if (!(SDUI_MENU_ITEM_KNOWN_KEYS as readonly string[]).includes(k)) {
+          (item as unknown as Record<string, unknown>)[k] = i[k];
+        }
+      }
+      return item;
+    });
   }
   if (s['rowDetail']) {
     const rd = s['rowDetail'] as Record<string, unknown>;
@@ -2469,7 +2708,7 @@ function actionSheetItemFromJson(a: Record<string, unknown>): SduiActionSheetIte
 }
 
 function rowDetailSectionFromJson(s: Record<string, unknown>): SduiRowDetailSection {
-  return {
+  const section: SduiRowDetailSection = {
     titleKey: s['titleKey'] as string | undefined,
     type: s['type'] === 'attachedDocuments' || s['type'] === 'documentDownload' ? s['type'] as 'attachedDocuments' | 'documentDownload' : undefined,
     field: s['field'] as string | undefined,
@@ -2481,6 +2720,13 @@ function rowDetailSectionFromJson(s: Record<string, unknown>): SduiRowDetailSect
     subtitleField: s['subtitleField'] as string | undefined,
     action: s['action'] ? actionFromJson(s['action'] as Record<string, unknown>) : undefined,
   };
+  // Preserva eventuali chiavi ignote al wizard per il round-trip JSON -> wizard -> JSON.
+  for (const k of Object.keys(s)) {
+    if (!(SDUI_ROW_DETAIL_SECTION_KNOWN_KEYS as readonly string[]).includes(k)) {
+      (section as unknown as Record<string, unknown>)[k] = s[k];
+    }
+  }
+  return section;
 }
 
 
@@ -2560,7 +2806,7 @@ function onSubmitFromJson(o: Record<string, unknown>): ReturnType<typeof createE
 
 function sequenceCallFromJson(c: Record<string, unknown>): SduiSequenceCall {
   const call = createEmptySequenceCall();
-  return {
+  const result: SduiSequenceCall = {
     ...call,
     method: (c['method'] as string) ?? 'GET',
     endpoint: (c['endpoint'] as string) ?? '',
@@ -2572,4 +2818,11 @@ function sequenceCallFromJson(c: Record<string, unknown>): SduiSequenceCall {
       ? ({ ...createEmptyCaptureOptions(), ...(c['captureOptions'] as object) } as SduiCaptureOptions)
       : null,
   };
+  // Preserva eventuali chiavi ignote al wizard per il round-trip JSON -> wizard -> JSON.
+  for (const k of Object.keys(c)) {
+    if (!(SDUI_SEQUENCE_CALL_KNOWN_KEYS as readonly string[]).includes(k)) {
+      (result as unknown as Record<string, unknown>)[k] = c[k];
+    }
+  }
+  return result;
 }

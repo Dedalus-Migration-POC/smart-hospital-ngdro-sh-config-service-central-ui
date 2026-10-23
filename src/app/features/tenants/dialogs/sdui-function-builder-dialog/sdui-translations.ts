@@ -20,6 +20,26 @@ export function collectTranslationKeys(node: unknown, out = new Set<string>()): 
   return out;
 }
 
+/** Appiattisce un dizionario di traduzioni annidato (smh_it/en/es) in coppie {key, value} con
+ * chiave puntata, per il catalogo usato dall'autocomplete delle *Key del wizard. */
+export function flattenTranslations(dict: Record<string, unknown> | null | undefined): { key: string; value: string }[] {
+  const out: { key: string; value: string }[] = [];
+  const walk = (node: unknown, prefix: string) => {
+    if (node && typeof node === 'object' && !Array.isArray(node)) {
+      for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+        const path = prefix ? `${prefix}.${k}` : k;
+        if (typeof v === 'string') {
+          if (v.trim()) out.push({ key: path, value: v });
+        } else {
+          walk(v, path);
+        }
+      }
+    }
+  };
+  walk(dict ?? null, '');
+  return out;
+}
+
 /** Legge un valore da una mappa di traduzioni annidata (namespace puntato "Screen.title"). */
 export function hasTranslation(translations: Record<string, unknown> | null, key: string): boolean {
   if (!translations) return false;

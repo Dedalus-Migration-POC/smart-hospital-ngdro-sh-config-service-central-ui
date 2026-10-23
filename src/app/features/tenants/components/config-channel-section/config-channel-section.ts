@@ -979,7 +979,12 @@ export class ConfigChannelSection {
     const data: SduiFunctionBuilderDialogData = { value, entityName: this.entity(), tenantId: this.tenantId() };
     const ref = this.dialog.open<SduiFunctionBuilderDialog, SduiFunctionBuilderDialogData, Record<string, unknown>>(
       SduiFunctionBuilderDialog,
-      { data, autoFocus: 'first-tabbable', width: '96vw', maxWidth: '1800px', height: '94vh', maxHeight: '94vh' },
+      {
+        data,
+        autoFocus: 'first-tabbable',
+        width: '100vw', maxWidth: '100vw', height: '100vh', maxHeight: '100vh',
+        panelClass: 'sdui-wizard-fullscreen-panel',
+      },
     );
     ref.afterClosed().subscribe((result) => {
       if (result === undefined) return;
