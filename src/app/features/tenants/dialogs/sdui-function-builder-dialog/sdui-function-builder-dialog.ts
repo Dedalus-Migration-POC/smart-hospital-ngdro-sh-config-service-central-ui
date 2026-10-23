@@ -2486,6 +2486,7 @@ const SDUI_DEFAULT_OMITTED_VALUES: Record<string, unknown[]> = {
   sortGroupsDescending: [true],
   showIcons: [true],
   formats: [['qrCode']],
+  confirmLeaveIfDirty: [false],
 };
 
 /** Confronto per valore (non per riferimento) tra `value` e i default noti registrati per
@@ -2531,6 +2532,13 @@ function findLostAttributePaths(original: unknown, roundTripped: unknown, path =
         const actionObj = rtObj['action'];
         if (actionObj && typeof actionObj === 'object' && !Array.isArray(actionObj) && key in (actionObj as Record<string, unknown>)) {
           lost.push(...findLostAttributePaths(value, (actionObj as Record<string, unknown>)[key], childPath));
+          continue;
+        }
+        // screenId/flowId sono alias intercambiabili dello stesso identificatore libero
+        // (ignorato dal motore, solo debug/logging — §header manuale): su entity reali compare
+        // a volte "screenId" anche con kind:"flow". Non è una perdita se il wizard l'ha
+        // rigenerato sotto l'altra chiave con lo stesso valore.
+        if ((key === 'screenId' || key === 'flowId') && rtObj[key === 'screenId' ? 'flowId' : 'screenId'] === value) {
           continue;
         }
         const isLegitDefault = isLegitDefaultValue(key, value);
@@ -2593,8 +2601,14 @@ function jsonToDescriptor(json: Record<string, unknown>, fallbackEntityName: str
   const kind = (json['kind'] as SduiKind) ?? 'screen';
   const d = createEmptyDescriptor(kind, fallbackEntityName);
   d.schemaVersion = (json['schemaVersion'] as string) ?? '1.0.0';
-  d.screenId = (json['screenId'] as string) ?? (kind === 'screen' ? fallbackEntityName : '');
-  d.flowId = (json['flowId'] as string) ?? (kind === 'flow' ? fallbackEntityName : '');
+  // screenId/flowId è un identificatore libero (§header manuale): il motore non lo legge mai
+  // per logica, solo per logging/debug, e in entity reali compare indifferentemente come
+  // "screenId" anche su kind:"flow" (es. whr_login.json). Se la chiave attesa per il kind
+  // manca, recuperiamo il valore dall'altra prima di ricadere sul nome-entity di fallback,
+  // così da non scartare silenziosamente l'identificatore reale pubblicato.
+  const rawId = (json['screenId'] as string) ?? (json['flowId'] as string) ?? undefined;
+  d.screenId = (json['screenId'] as string) ?? (kind === 'screen' ? (rawId ?? fallbackEntityName) : '');
+  d.flowId = (json['flowId'] as string) ?? (kind === 'flow' ? (rawId ?? fallbackEntityName) : '');
   d.titleKey = (json['titleKey'] as string) ?? '';
   d.subtitleKey = json['subtitleKey'] as string | undefined;
   d.hideGlobalAppBarActions = Boolean(json['hideGlobalAppBarActions']);
