@@ -2483,7 +2483,21 @@ const SDUI_DEFAULT_OMITTED_VALUES: Record<string, unknown[]> = {
   align: ['center'],
   autoOpenIdField: ['id'],
   field: ['documents'],
+  sortGroupsDescending: [true],
+  showIcons: [true],
+  formats: [['qrCode']],
 };
+
+/** Confronto per valore (non per riferimento) tra `value` e i default noti registrati per
+ * `key` in SDUI_DEFAULT_OMITTED_VALUES — necessario perché un default-array (es. `formats:
+ * ['qrCode']` di qrScanner) non può mai essere lo stesso riferimento di un array appena
+ * deserializzato da JSON.parse: un semplice `.includes()` lo avrebbe sempre mancato. */
+function isLegitDefaultValue(key: string, value: unknown): boolean {
+  const allowed = SDUI_DEFAULT_OMITTED_VALUES[key];
+  if (!allowed) return false;
+  const serialized = JSON.stringify(value);
+  return allowed.some(v => JSON.stringify(v) === serialized);
+}
 
 /** Confronta ricorsivamente il JSON originale con quello rigenerato dal wizard (stessa struttura,
  * senza modifiche utente) e riporta i path presenti nell'originale ma completamente assenti dal
@@ -2519,7 +2533,7 @@ function findLostAttributePaths(original: unknown, roundTripped: unknown, path =
           lost.push(...findLostAttributePaths(value, (actionObj as Record<string, unknown>)[key], childPath));
           continue;
         }
-        const isLegitDefault = key in SDUI_DEFAULT_OMITTED_VALUES && SDUI_DEFAULT_OMITTED_VALUES[key].includes(value);
+        const isLegitDefault = isLegitDefaultValue(key, value);
         if (!isEmptyJsonValue(value) && !isLegitDefault) lost.push(childPath);
       } else {
         lost.push(...findLostAttributePaths(value, rtObj[key], childPath));
